@@ -10,11 +10,11 @@ import core.packets.KNXPacket;
 
 public interface DatagramPacketCallback {
 
-	void datagramPacket(DatagramSocket socket, DatagramPacket datagramPacket, String label)
+	void datagramPacket(Connection connection, DatagramSocket socket, DatagramPacket datagramPacket, String label)
 			throws UnknownHostException, IOException;
 
-	void knxPacket(DatagramSocket socket, final DatagramPacket datagramPacket, KNXPacket knxPacket, String label)
-			throws UnknownHostException, IOException;
+	void knxPacket(Connection connection, DatagramSocket socket, DatagramPacket datagramPacket, KNXPacket knxPacket,
+			String label) throws UnknownHostException, IOException;
 
 	void setKnxPacketConverter(KNXPacketConverter knxPacketConverter);
 

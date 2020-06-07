@@ -19,8 +19,8 @@ public abstract class BaseDatagramPacketCallback implements DatagramPacketCallba
 	private KNXPacketConverter knxPacketConverter;
 
 	@Override
-	public void datagramPacket(final DatagramSocket socket, final DatagramPacket datagramPacket, final String label)
-			throws UnknownHostException, IOException {
+	public void datagramPacket(final Connection connection, final DatagramSocket socket,
+			final DatagramPacket datagramPacket, final String label) throws UnknownHostException, IOException {
 
 //		socket.send(datagramPacket);
 
@@ -53,7 +53,7 @@ public abstract class BaseDatagramPacketCallback implements DatagramPacketCallba
 
 //		socket.send(datagramPacket);
 
-		knxPacket(socket, datagramPacket, knxPacket, label);
+		knxPacket(connection, socket, datagramPacket, knxPacket, label);
 	}
 
 	@Override

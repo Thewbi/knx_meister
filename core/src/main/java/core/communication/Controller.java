@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -16,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.common.NetworkUtils;
-import core.common.Utils;
 import core.packets.ConnectionRequestInformation;
 import core.packets.ConnectionResponseDataBlock;
 import core.packets.ConnectionStatus;
@@ -55,38 +55,25 @@ public class Controller extends BaseDatagramPacketCallback {
 
 	private int channelNumber = 0x01;
 
-	private static final Logger LOG = LogManager.getLogger("Controller");
+	private static final Logger LOG = LogManager.getLogger(Controller.class);
 
 	private final Map<String, HPAIStructure> deviceMap = new HashMap<>();
 
+	private ConnectionManager connectionManager;
+
 	public Controller() throws SocketException, UnknownHostException {
-
-//		try (final DatagramSocket socket = new DatagramSocket()) {
-//
-//			socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-//			localInetAddress = socket.getLocalAddress().getHostAddress();
-//		}
-
 		localInetAddress = InetAddress.getLocalHost().getHostAddress();
 	}
 
 	@Override
-	public void knxPacket(final DatagramSocket socket3671, final DatagramPacket datagramPacket,
-			final KNXPacket knxPacket, final String label) throws IOException {
-
-		LOG.trace("<<<<<<<<<<<<<<< RECEIVED " + knxPacket.getHeader().getServiceIdentifier());
+	public void knxPacket(final Connection connection, final DatagramSocket socket3671,
+			final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label) throws IOException {
 
 		HPAIStructure hpaiStructure = null;
 		InetAddress inetAddress = null;
 		int port = -1;
 
 		DeviceInformationDIB deviceInformationDIB = null;
-
-//		System.out.println(knxPacket);
-//		System.out.println("IP: " + inetAddress);
-//		System.out.println("Port: " + (hpaiStructure.getPort() & 0xFFFF));
-
-//		socket.send(datagramPacket);
 
 		switch (knxPacket.getHeader().getServiceIdentifier()) {
 
@@ -96,25 +83,22 @@ public class Controller extends BaseDatagramPacketCallback {
 
 		case SEARCH_REQUEST:
 
-			LOG.trace("<<<<<<<<<<<<< SEARCH_REQUEST {}", Utils.retrieveCurrentTimeAsString());
-			LOG.trace("\n" + knxPacket.toString());
+//			LOG.trace("<<<<<<<<<<<<< SEARCH_REQUEST {}", Utils.retrieveCurrentTimeAsString());
+//			LOG.trace("\n" + knxPacket.toString());
 
 			hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
-
-			if (hpaiStructure.getIpAddressAsObject().equals(InetAddress.getByName("192.168.56.1"))) {
-				return;
-			}
-
 			inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
 			port = hpaiStructure.getPort() & 0xFFFF;
 
-			sendSearchResponseToAddress(socket3671, inetAddress, port);
+			final KNXPacket sendSearchResponseToAddress = sendSearchResponseToAddress(socket3671, inetAddress, port);
 //			sendSearchResponseToSender(socket, datagramPacket);
+
+			connection.sendResponse(sendSearchResponseToAddress, new InetSocketAddress(inetAddress, port));
 			break;
 
 		case SEARCH_RESPONSE:
-			LOG.info("<<<<<<<<<<<<< SEARCH_RESPONSE {}", Utils.retrieveCurrentTimeAsString());
-			LOG.info("\n" + knxPacket.toString());
+//			LOG.info("<<<<<<<<<<<<< SEARCH_RESPONSE {}", Utils.retrieveCurrentTimeAsString());
+//			LOG.info("\n" + knxPacket.toString());
 
 			hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
 			inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
@@ -124,42 +108,53 @@ public class Controller extends BaseDatagramPacketCallback {
 					.get(DescriptionInformationBlockType.DEVICE_INFO);
 			deviceMap.put(deviceInformationDIB.getDeviceSerialNumberAsString(), hpaiStructure);
 
-			sendDescriptionRequest(inetAddress, port);
+			// TODO: use connection
+			final KNXPacket sendDescriptionRequest = sendDescriptionRequest(inetAddress, port);
+			connection.sendResponse(sendDescriptionRequest, new InetSocketAddress(inetAddress, port));
 			break;
 
 		case DESCRIPTION_REQUEST:
-			LOG.info("<<<<<<<<<<<<< DESCRIPTION_REQUEST {}", Utils.retrieveCurrentTimeAsString());
-			LOG.info("\n" + knxPacket.toString());
+//			LOG.info("<<<<<<<<<<<<< DESCRIPTION_REQUEST {}", Utils.retrieveCurrentTimeAsString());
+//			LOG.info("\n" + knxPacket.toString());
 
 			hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
 			inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
 			port = hpaiStructure.getPort() & 0xFFFF;
 
-			sendDescriptionResponse(socket3671, datagramPacket, inetAddress, port);
+			// TODO: use connection
+			final KNXPacket sendDescriptionResponse = sendDescriptionResponse(socket3671, datagramPacket, inetAddress,
+					port);
+
+			connection.sendResponse(sendDescriptionResponse, datagramPacket.getSocketAddress());
+//			connection.sendResponse(sendDescriptionResponse, new InetSocketAddress(inetAddress, port));
 			break;
 
 		case DESCRIPTION_RESPONSE:
-			LOG.info("<<<<<<<<<<<<< DESCRIPTION_RESPONSE {}", Utils.retrieveCurrentTimeAsString());
-			LOG.info("\n" + knxPacket.toString());
+//			LOG.info("<<<<<<<<<<<<< DESCRIPTION_RESPONSE {}", Utils.retrieveCurrentTimeAsString());
+//			LOG.info("\n" + knxPacket.toString());
 
 			deviceInformationDIB = (DeviceInformationDIB) knxPacket.getDibMap()
 					.get(DescriptionInformationBlockType.DEVICE_INFO);
 			hpaiStructure = deviceMap.get(deviceInformationDIB.getDeviceSerialNumberAsString());
 
-			sendConnectionRequest(socket3671, datagramPacket, knxPacket, hpaiStructure.getIpAddressAsObject(),
+			// TODO: use connection
+			final KNXPacket sendConnectionRequest = sendConnectionRequest(socket3671, datagramPacket, knxPacket,
+					hpaiStructure.getIpAddressAsObject(), hpaiStructure.getPort());
+
+			final InetSocketAddress inetSocketAddress = new InetSocketAddress(hpaiStructure.getIpAddressAsObject(),
 					hpaiStructure.getPort());
+			connection.sendResponse(sendConnectionRequest, inetSocketAddress);
 			break;
 
 		case CONNECT_REQUEST:
-
-			LOG.info("<<<<<<<<<<<<< CONNECT_REQUEST {}", Utils.retrieveCurrentTimeAsString());
+//			LOG.info("<<<<<<<<<<<<< CONNECT_REQUEST {}", Utils.retrieveCurrentTimeAsString());
+//			LOG.info("<<<<<<<<<<<<<\n" + knxPacket.toString());
 
 //			LOG.info("<<<<<<<<<<<<< CONNECT_REQUEST from Address " + socket3671.getPort());
 //			LOG.info("<<<<<<<<<<<<< CONNECT_REQUEST from Address " + socket3671.getLocalPort());
 //			LOG.info("<<<<<<<<<<<<< CONNECT_REQUEST from Address " + socket3671.getLocalAddress());
 //			LOG.info("<<<<<<<<<<<<< CONNECT_REQUEST from Address " + socket3671.getLocalSocketAddress());
 //			LOG.info("<<<<<<<<<<<<< CONNECT_REQUEST from Address " + socket3671.getRemoteSocketAddress());
-			LOG.info("<<<<<<<<<<<<<\n" + knxPacket.toString());
 
 			final Structure tunnelingStructure = knxPacket.getStructureMap().get(StructureType.TUNNELING_CONNECTION);
 			final Structure deviceManagementStructure = knxPacket.getStructureMap()
@@ -174,10 +169,16 @@ public class Controller extends BaseDatagramPacketCallback {
 				connectionType = ConnectionType.DEVICE_MGMT_CONNECTION;
 			}
 
+			final Connection newConnection = connectionManager.createNewConnection(socket3671, connectionType);
+
 			hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
 			final InetAddress controlInetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
 			final int controlPort = hpaiStructure.getPort() & 0xFFFF;
-			sendConnectionResponse(socket3671, datagramPacket, controlInetAddress, controlPort, connectionType);
+
+			// TODO: use connection
+			final KNXPacket sendConnectionResponse = sendConnectionResponse(socket3671, datagramPacket,
+					controlInetAddress, controlPort, connectionType);
+			newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
 
 //			hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_DATA_ENDPOINT_UDP);
 //			inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
@@ -187,28 +188,38 @@ public class Controller extends BaseDatagramPacketCallback {
 			break;
 
 		case CONNECTIONSTATE_REQUEST:
-			LOG.info("<<<<<<<<<<<<< CONNECTIONSTATE_REQUEST {}", Utils.retrieveCurrentTimeAsString());
-			LOG.info("\n" + knxPacket.toString());
+//			LOG.info("<<<<<<<<<<<<< CONNECTIONSTATE_REQUEST {}", Utils.retrieveCurrentTimeAsString());
+//			LOG.info("\n" + knxPacket.toString());
 
-			sendConnectionStateResponse(socket3671, datagramPacket, knxPacket, inetAddress, port);
+			final KNXPacket sendConnectionStateResponse = sendConnectionStateResponse(socket3671, datagramPacket,
+					knxPacket, inetAddress, port);
+
+			connection.sendResponse(sendConnectionStateResponse, datagramPacket.getSocketAddress());
 			break;
 
 		case DISCONNECT_REQUEST:
-			LOG.info("<<<<<<<<<<<<< DISCONNECT_REQUEST {}", Utils.retrieveCurrentTimeAsString());
-			LOG.info("\n" + knxPacket.toString());
+//			LOG.info("<<<<<<<<<<<<< DISCONNECT_REQUEST {}", Utils.retrieveCurrentTimeAsString());
+//			LOG.info("\n" + knxPacket.toString());
 
-			sendDisconnetResponse(socket3671, datagramPacket, knxPacket, inetAddress, port);
+			connectionManager.closeConnection(knxPacket.getCommunicationChannelId());
+
+			// TODO: use connection
+			final KNXPacket sendDisconnetResponse = sendDisconnetResponse(socket3671, datagramPacket, knxPacket,
+					inetAddress, port);
+
+			connection.sendResponse(sendDisconnetResponse, datagramPacket.getSocketAddress());
+//			connection.sendResponse(sendDisconnetResponse, new InetSocketAddress(inetAddress, port));
 			break;
 
 		case TUNNEL_REQUEST:
-			LOG.info("<<<<<<<<<<<<< TUNNEL_REQUEST {}", Utils.retrieveCurrentTimeAsString());
-			LOG.info("\n" + knxPacket.toString());
+//			LOG.info("<<<<<<<<<<<<< TUNNEL_REQUEST {}", Utils.retrieveCurrentTimeAsString());
+//			LOG.info("\n" + knxPacket.toString());
 
 			throw new RuntimeException("Not implemented!");
 
 		default:
-			LOG.info("<<<<<<<<<<<<< " + knxPacket.getHeader().getServiceIdentifier().name());
-			LOG.info("\n" + knxPacket.toString());
+//			LOG.info("<<<<<<<<<<<<< " + knxPacket.getHeader().getServiceIdentifier().name());
+//			LOG.info("\n" + knxPacket.toString());
 
 //			throw new RuntimeException("Unknown command!" + knxPacket.getHeader().getServiceIdentifier());
 //			System.out.println("Ignoring: " + knxPacket.getHeader().getServiceIdentifier().name());
@@ -217,7 +228,7 @@ public class Controller extends BaseDatagramPacketCallback {
 		}
 	}
 
-	private void sendConnectionRequest(final DatagramSocket socket, final DatagramPacket originalDatagramPacket,
+	private KNXPacket sendConnectionRequest(final DatagramSocket socket, final DatagramPacket originalDatagramPacket,
 			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
 
 		final HPAIStructure controlHPAIStructure = new HPAIStructure();
@@ -244,20 +255,25 @@ public class Controller extends BaseDatagramPacketCallback {
 		connectionRequestInformation.setKnxLayer(KNXLayer.TUNNEL_LINKLAYER.getValue());
 		knxPacket.getStructureMap().put(connectionRequestInformation.getStructureType(), connectionRequestInformation);
 
-		final byte[] bytes = knxPacket.getBytes();
+		return knxPacket;
 
-		final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
-
-//		final DatagramSocket socket = new DatagramSocket();
-		socket.send(datagramPacket);
-//		socket.close();
-
-		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
-				Utils.retrieveCurrentTimeAsString());
+//		final byte[] bytes = knxPacket.getBytes();
+//
+//		final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
+//
+////		final DatagramSocket socket = new DatagramSocket();
+////		socket.send(datagramPacket);
+////		socket.close();
+//
+////		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
+////				Utils.retrieveCurrentTimeAsString());
+//
+//		return datagramPacket;
 	}
 
-	private void sendDisconnetResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
+	private KNXPacket sendDisconnetResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
 			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
+
 		final KNXPacket knxPacket = new KNXPacket();
 
 		// header
@@ -266,27 +282,31 @@ public class Controller extends BaseDatagramPacketCallback {
 		knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
 		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
 
-		final byte[] bytes = knxPacket.getBytes();
+		return knxPacket;
 
-		LOG.info(Utils.integerToStringNoPrefix(bytes));
-
-//		final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
-		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
-				datagramPacket.getSocketAddress());
-
-//		socket.send(datagramPacket);
-//		socket.close();
-
-//		originalSocket.send(datagramPacket);
-		socket.send(outDatagramPacket);
-
-//		LOG.info(">>>>>>>>>> " + knxPacket.getHeader().getServiceIdentifier().toString() + " to IP "
-//				+ inetAddress.toString() + " Port: " + port);
-		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
-				Utils.retrieveCurrentTimeAsString());
+//		final byte[] bytes = knxPacket.getBytes();
+//
+////		LOG.info(Utils.integerToStringNoPrefix(bytes));
+//
+////		final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
+//		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
+//				datagramPacket.getSocketAddress());
+//
+////		socket.send(datagramPacket);
+////		socket.close();
+//
+////		originalSocket.send(datagramPacket);
+////		socket.send(outDatagramPacket);
+//
+////		LOG.info(">>>>>>>>>> " + knxPacket.getHeader().getServiceIdentifier().toString() + " to IP "
+////				+ inetAddress.toString() + " Port: " + port);
+////		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
+////				Utils.retrieveCurrentTimeAsString());
+//
+//		return outDatagramPacket;
 	}
 
-	private void sendConnectionStateResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
+	private KNXPacket sendConnectionStateResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
 			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
 
 		final KNXPacket knxPacket = new KNXPacket();
@@ -297,26 +317,28 @@ public class Controller extends BaseDatagramPacketCallback {
 		knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
 		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
 
-		LOG.trace(knxPacket);
+//		LOG.trace(knxPacket);
 
-		final byte[] bytes = knxPacket.getBytes();
+//		final byte[] bytes = knxPacket.getBytes();
 
-		LOG.trace(Utils.integerToStringNoPrefix(bytes));
+//		LOG.trace(Utils.integerToStringNoPrefix(bytes));
 
 //		final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
-		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
-				datagramPacket.getSocketAddress());
+//		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
+//				datagramPacket.getSocketAddress());
 
 //		socket.send(datagramPacket);
 //		socket.close();
 
 //		originalSocket.send(datagramPacket);
-		socket.send(outDatagramPacket);
+//		socket.send(outDatagramPacket);
 
 //		LOG.info(">>>>>>>>>> " + knxPacket.getHeader().getServiceIdentifier().toString() + " to IP "
 //				+ inetAddress.toString() + " Port: " + port);
-		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
-				Utils.retrieveCurrentTimeAsString());
+//		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
+//				Utils.retrieveCurrentTimeAsString());
+
+		return knxPacket;
 	}
 
 	/**
@@ -331,7 +353,7 @@ public class Controller extends BaseDatagramPacketCallback {
 	 * @param port
 	 * @throws IOException
 	 */
-	private void sendConnectionResponse(final DatagramSocket socket3671, final DatagramPacket datagramPacket,
+	private KNXPacket sendConnectionResponse(final DatagramSocket socket3671, final DatagramPacket datagramPacket,
 			final InetAddress inetAddress, final int port, final ConnectionType connectionType) throws IOException {
 
 //		LOG.info(">>>>>>>>>> SENDING CONNECTION_RESPONSE ...");
@@ -392,46 +414,53 @@ public class Controller extends BaseDatagramPacketCallback {
 			knxPacket.setConnectionResponseDataBlock(connectionResponseDataBlock);
 		}
 
-		final byte[] bytes = knxPacket.getBytes();
+		return knxPacket;
 
-		LOG.info("\n" + knxPacket.toString());
-
-		LOG.trace(Utils.integerToStringNoPrefix(bytes));
-
-		final boolean answerToControl = false;
-		if (answerToControl) {
-			// answer to control endpoint
-
-			DatagramSocket socket = null;
-			try {
-				socket = new DatagramSocket(3671);
-//				socket = new DatagramSocket();
-
-				final DatagramPacket outDatagramPacketSpecificIP = new DatagramPacket(bytes, bytes.length, inetAddress,
-						port);
-				socket.send(outDatagramPacketSpecificIP);
-
-//				outDatagramPacketSpecificIP = new DatagramPacket(bytes, bytes.length, inetAddress, port + 1);
+//		final byte[] bytes = knxPacket.getBytes();
+//
+////		LOG.info("\n" + knxPacket.toString());
+////		LOG.trace(Utils.integerToStringNoPrefix(bytes));
+//
+//		final boolean answerToControl = false;
+//		if (answerToControl) {
+//			// answer to control endpoint
+//
+//			DatagramSocket socket = null;
+//			try {
+//				socket = new DatagramSocket(3671);
+////				socket = new DatagramSocket();
+//
+//				final DatagramPacket outDatagramPacketSpecificIP = new DatagramPacket(bytes, bytes.length, inetAddress,
+//						port);
 //				socket.send(outDatagramPacketSpecificIP);
-			} catch (final java.net.SocketException e) {
-				e.printStackTrace();
-			} finally {
-				if (socket != null) {
-					socket.close();
-				}
-			}
-		}
-
-		final boolean answerToOriginal = true;
-		if (answerToOriginal) {
-			// answer to the original socket
-			final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
-					datagramPacket.getSocketAddress());
-			socket3671.send(outDatagramPacket);
-		}
-
-		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString() + " to IP "
-				+ inetAddress.toString() + " Port: " + port + " done.", Utils.retrieveCurrentTimeAsString());
+//
+////				outDatagramPacketSpecificIP = new DatagramPacket(bytes, bytes.length, inetAddress, port + 1);
+////				socket.send(outDatagramPacketSpecificIP);
+//			} catch (final java.net.SocketException e) {
+//				e.printStackTrace();
+//			} finally {
+//				if (socket != null) {
+//					socket.close();
+//				}
+//			}
+//		}
+//
+//		final boolean answerToOriginal = true;
+//		if (answerToOriginal) {
+//			// answer to the original socket
+//			final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
+//					datagramPacket.getSocketAddress());
+////			socket3671.send(outDatagramPacket);
+//
+////			LOG.info(
+////					">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString() + " to IP "
+////							+ inetAddress.toString() + " Port: " + port + " done.",
+////					Utils.retrieveCurrentTimeAsString());
+//
+//			return outDatagramPacket;
+//		}
+//
+//		return null;
 	}
 
 	/**
@@ -491,10 +520,10 @@ public class Controller extends BaseDatagramPacketCallback {
 		multicastSocket.send(datagramPacket);
 		multicastSocket.close();
 
-		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
-				Utils.retrieveCurrentTimeAsString());
+//		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
+//				Utils.retrieveCurrentTimeAsString());
 
-		LOG.info("sendSearchRequest() done.");
+//		LOG.info("sendSearchRequest() done.");
 	}
 
 	public void sendSearchResponseToSender(final DatagramSocket socket, final DatagramPacket datagramPacket)
@@ -513,23 +542,24 @@ public class Controller extends BaseDatagramPacketCallback {
 		socket.send(outDatagramPacket);
 //		socket.close();
 
-		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
-				Utils.retrieveCurrentTimeAsString());
+//		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
+//				Utils.retrieveCurrentTimeAsString());
 
 	}
 
-	public void sendSearchResponseToAddress(final DatagramSocket socket3671, final InetAddress inetAddress,
+	public KNXPacket sendSearchResponseToAddress(final DatagramSocket socket3671, final InetAddress inetAddress,
 			final int port) throws IOException {
 
-		LOG.trace("sendSearchResponseToAddress to " + inetAddress.toString() + " " + port);
+//		LOG.trace("sendSearchResponseToAddress to " + inetAddress.toString() + " " + port);
 
 		final KNXPacket knxPacket = retrieveSearchResponseKNXPacket();
+		return knxPacket;
 
-		final byte[] bytes = knxPacket.getBytes();
+//		final byte[] bytes = knxPacket.getBytes();
 
 //		System.out.println(Utils.integerToStringNoPrefix(bytes));
 
-		final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
+//		final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
 
 //		final NetworkInterface loopbackNetworkInterface = NetworkUtils
 //				.findInterfaceByIP(new byte[] { (byte) 127, (byte) 0, (byte) 0, (byte) 1 });
@@ -555,10 +585,12 @@ public class Controller extends BaseDatagramPacketCallback {
 //			}
 //		}
 
-		socket3671.send(datagramPacket);
+//		socket3671.send(datagramPacket);
 
-		LOG.trace(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
-				Utils.retrieveCurrentTimeAsString());
+//		LOG.trace(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
+//				Utils.retrieveCurrentTimeAsString());
+
+//		return datagramPacket;
 	}
 
 	private KNXPacket retrieveSearchResponseKNXPacket() throws UnknownHostException {
@@ -589,7 +621,7 @@ public class Controller extends BaseDatagramPacketCallback {
 		return knxPacket;
 	}
 
-	public void sendDescriptionRequest(final InetAddress inetAddress, final int port) throws IOException {
+	public KNXPacket sendDescriptionRequest(final InetAddress inetAddress, final int port) throws IOException {
 
 		final HPAIStructure hpaiStructure = new HPAIStructure();
 //		hpaiStructure.setIpAddress(new byte[] { (byte) 192, (byte) 168, (byte) 2, (byte) 1 });
@@ -601,19 +633,23 @@ public class Controller extends BaseDatagramPacketCallback {
 		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.DESCRIPTION_REQUEST);
 		knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
 
-		final byte[] bytes = knxPacket.getBytes();
+		return knxPacket;
 
-		final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
-
-		final DatagramSocket socket = new DatagramSocket();
-		socket.send(datagramPacket);
-		socket.close();
-
-		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
-				Utils.retrieveCurrentTimeAsString());
+//		final byte[] bytes = knxPacket.getBytes();
+//
+//		final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
+////
+////		final DatagramSocket socket = new DatagramSocket();
+////		socket.send(datagramPacket);
+////		socket.close();
+//
+////		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
+////				Utils.retrieveCurrentTimeAsString());
+//
+//		return datagramPacket;
 	}
 
-	private void sendDescriptionResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
+	private KNXPacket sendDescriptionResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
 			final InetAddress inetAddress, final int port) throws IOException {
 
 		final KNXPacket knxPacket = new KNXPacket();
@@ -634,18 +670,22 @@ public class Controller extends BaseDatagramPacketCallback {
 		final SuppSvcFamiliesDIB suppSvcFamiliesDIB = retrieveServiceFamiliesDIB();
 		knxPacket.getDibMap().put(suppSvcFamiliesDIB.getType(), suppSvcFamiliesDIB);
 
-		final byte[] bytes = knxPacket.getBytes();
+		return knxPacket;
 
-//		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
-		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
-				datagramPacket.getSocketAddress());
-
-//		final DatagramSocket socket = new DatagramSocket();
-		socket.send(outDatagramPacket);
-//		socket.close();
-
-		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
-				Utils.retrieveCurrentTimeAsString());
+//		final byte[] bytes = knxPacket.getBytes();
+//
+////		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length, inetAddress, port);
+//		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
+//				datagramPacket.getSocketAddress());
+//
+////		final DatagramSocket socket = new DatagramSocket();
+////		socket.send(outDatagramPacket);
+////		socket.close();
+//
+////		LOG.info(">>>>>>>>>> SENDING {} {}", knxPacket.getHeader().getServiceIdentifier().toString(),
+////				Utils.retrieveCurrentTimeAsString());
+//
+//		return outDatagramPacket;
 	}
 
 	/**
@@ -738,6 +778,10 @@ public class Controller extends BaseDatagramPacketCallback {
 		mfrDataDIB.setManufacturerId(0x00c5);
 
 		return mfrDataDIB;
+	}
+
+	public void setConnectionManager(final ConnectionManager connectionManager) {
+		this.connectionManager = connectionManager;
 	}
 
 }

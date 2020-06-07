@@ -27,7 +27,10 @@ public enum ConnectionType {
 	 */
 	OBJSVR_CONNECTION(0x08),
 
-	E_TUNNEL_CONNECTION(0x29);
+	E_TUNNEL_CONNECTION(0x29),
+
+	/** Used for multicast which requires no connection id id */
+	UNKNOWN(0x9999);
 
 	private final int id;
 
@@ -54,6 +57,9 @@ public enum ConnectionType {
 			return OBJSVR_CONNECTION;
 
 		case 0x29:
+			return UNKNOWN;
+
+		case 0x9999:
 			return E_TUNNEL_CONNECTION;
 
 		default:

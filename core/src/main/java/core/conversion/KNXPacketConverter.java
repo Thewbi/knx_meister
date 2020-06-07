@@ -145,12 +145,13 @@ public class KNXPacketConverter implements Converter<byte[], KNXPacket> {
 			break;
 
 		case CONNECT_RESPONSE:
-			break;
+			throw new RuntimeException("Cannot convert connect response!");
+//			break;
 
 		case CONNECTIONSTATE_REQUEST:
 			knxPacket.setCommunicationChannelId(source[index++]);
 
-			LOG.info("Connecting to channel: " + knxPacket.getCommunicationChannelId());
+//			LOG.info("Connecting to channel: " + knxPacket.getCommunicationChannelId());
 
 			final int reserved = source[index++];
 
@@ -163,7 +164,7 @@ public class KNXPacketConverter implements Converter<byte[], KNXPacket> {
 		case DISCONNECT_REQUEST:
 			knxPacket.setCommunicationChannelId(source[index++]);
 
-			LOG.info("Disconnecting from channel: " + knxPacket.getCommunicationChannelId());
+//			LOG.info("Disconnecting from channel: " + knxPacket.getCommunicationChannelId());
 
 			final int reserved2 = source[index++];
 
