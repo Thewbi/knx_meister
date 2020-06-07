@@ -268,7 +268,7 @@ public class Controller extends BaseDatagramPacketCallback {
 		if (addconnectionResponseDataBlock) {
 			// CRD - Connection Response Data Block
 			final ConnectionResponseDataBlock connectionResponseDataBlock = new ConnectionResponseDataBlock();
-
+			connectionResponseDataBlock.setConnectionType(connectionType);
 			if (connectionType != ConnectionType.DEVICE_MGMT_CONNECTION) {
 				connectionResponseDataBlock.setDeviceAddress(DEVICE_ADDRESS);
 			}
@@ -341,6 +341,7 @@ public class Controller extends BaseDatagramPacketCallback {
 			final int port) throws IOException {
 
 		final KNXPacket knxPacket = retrieveSearchResponseKNXPacket();
+
 		return knxPacket;
 	}
 
@@ -367,6 +368,7 @@ public class Controller extends BaseDatagramPacketCallback {
 		// Mft DIB
 		final MfrDataDIB mfrDataDIB = retrieveMfrDataDIB();
 		knxPacket.getDibMap().put(mfrDataDIB.getType(), mfrDataDIB);
+
 		return knxPacket;
 	}
 
