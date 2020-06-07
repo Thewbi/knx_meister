@@ -31,6 +31,7 @@ public class KNXPacket {
 			hpaiDataEndpoingStructureBuffer = structureMap.get(StructureType.HPAI_CONTROL_ENDPOINT_UDP).getBytes();
 		}
 
+		// Connection Response Datablock
 		byte[] crdBuffer = null;
 		if (getConnectionResponseDataBlock() != null) {
 			crdBuffer = getConnectionResponseDataBlock().getBytes();
@@ -122,11 +123,24 @@ public class KNXPacket {
 			}
 		}
 
+		// connection response
+		if (this.getCommunicationChannelId() >= 0x00) {
+			stringBuilder.append("ChannelId = " + getCommunicationChannelId()).append("\n");
+		}
+		if (this.getConnectionStatus() != ConnectionStatus.UNSET) {
+			stringBuilder.append("ConnectionStatus = " + getConnectionStatus().getValue()).append("\n").append("\n");
+		}
+
 		// DIB
 		if (MapUtils.isNotEmpty(dibMap)) {
 			for (final DescriptionInformationBlock dib : dibMap.values()) {
 				stringBuilder.append(dib.toString()).append("\n").append("\n");
 			}
+		}
+
+		// Connection Response Datablock
+		if (connectionResponseDataBlock != null) {
+			stringBuilder.append(connectionResponseDataBlock.toString()).append("\n").append("\n");
 		}
 
 		return stringBuilder.toString();

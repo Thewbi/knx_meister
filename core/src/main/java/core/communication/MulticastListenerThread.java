@@ -21,6 +21,7 @@ public class MulticastListenerThread implements Runnable {
 
 	private static final Logger LOG = LogManager.getLogger(MulticastListenerThread.class);
 
+	@SuppressWarnings("unused")
 	private boolean running;
 
 	private DatagramPacketCallback datagramPacketCallback;
@@ -79,6 +80,7 @@ public class MulticastListenerThread implements Runnable {
 				LOG.trace(prefix);
 
 				// filter all packets that have a 0.0.0.0 IP
+				@SuppressWarnings("unused")
 				final Structure structure = knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
 
 //					if (structure != null && structure instanceof HPAIStructure) {

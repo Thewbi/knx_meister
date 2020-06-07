@@ -25,7 +25,9 @@ public enum ConnectionType {
 	 * Data connection used for configuration and data transfer with an Object
 	 * Server in a KNXnet/IP device.
 	 */
-	OBJSVR_CONNECTION(0x08);
+	OBJSVR_CONNECTION(0x08),
+
+	E_TUNNEL_CONNECTION(0x29);
 
 	private final int id;
 
@@ -50,6 +52,9 @@ public enum ConnectionType {
 
 		case 0x08:
 			return OBJSVR_CONNECTION;
+
+		case 0x29:
+			return E_TUNNEL_CONNECTION;
 
 		default:
 			throw new RuntimeException("Unkown id " + id);

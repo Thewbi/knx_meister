@@ -1,5 +1,7 @@
 package core.packets;
 
+import core.common.Utils;
+
 /**
  * 7.5.3 Connection Response Data Block (CRD)
  */
@@ -21,13 +23,30 @@ public class ConnectionResponseDataBlock {
 
 	public byte[] getBytes() {
 
+		length = deviceAddress > 0 ? 4 : 2;
+
 		final byte[] bytes = new byte[length];
 		bytes[0] = (byte) length;
 		bytes[1] = (byte) connectionType.getValue();
-		bytes[2] = (byte) deviceAddress;
-		bytes[3] = (byte) (deviceAddress >> 8 & 0xFF);
+
+		if (deviceAddress > 0) {
+			bytes[2] = (byte) deviceAddress;
+			bytes[3] = (byte) (deviceAddress >> 8 & 0xFF);
+		}
 
 		return bytes;
+	}
+
+	@Override
+	public String toString() {
+
+		final StringBuilder stringBuilder = new StringBuilder();
+
+		stringBuilder.append("Connection Type = ").append(connectionType.name()).append(" (")
+				.append(connectionType.getValue()).append(")\n");
+		stringBuilder.append("KNX Individual Address = ").append(Utils.integerToString(deviceAddress)).append("\n");
+
+		return stringBuilder.toString();
 	}
 
 	public int getLength() {

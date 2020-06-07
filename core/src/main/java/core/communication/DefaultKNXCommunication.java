@@ -19,7 +19,6 @@ public class DefaultKNXCommunication implements KNXCommunication {
 			try {
 				Thread.sleep(1);
 			} catch (final InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		} finally {

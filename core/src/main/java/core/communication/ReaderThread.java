@@ -8,6 +8,8 @@ import java.net.InetSocketAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import core.common.Utils;
+
 public class ReaderThread implements Runnable {
 
 	private static final Logger LOG = LogManager.getLogger(ReaderThread.class);
@@ -15,6 +17,17 @@ public class ReaderThread implements Runnable {
 	private boolean running;
 
 	private DatagramPacketCallback datagramPacketCallback;
+
+	private final int bindPort;
+
+	/**
+	 * ctor
+	 *
+	 * @param bindPort
+	 */
+	public ReaderThread(final int bindPort) {
+		this.bindPort = bindPort;
+	}
 
 	@Override
 	public void run() {
@@ -29,7 +42,7 @@ public class ReaderThread implements Runnable {
 
 //			final InetSocketAddress address = new InetSocketAddress("192.168.2.1", 65000);
 //			final InetSocketAddress address = new InetSocketAddress("127.0.0.1", 65000);
-			final InetSocketAddress address = new InetSocketAddress("127.0.0.1", Controller.POINT_TO_POINT_PORT);
+			final InetSocketAddress address = new InetSocketAddress("127.0.0.1", bindPort);
 //			final InetSocketAddress address = new InetSocketAddress("192.168.56.1", 65000);
 
 			datagramSocket.bind(address);
@@ -44,7 +57,7 @@ public class ReaderThread implements Runnable {
 
 				datagramSocket.receive(datagramPacket);
 
-				LOG.info("Reader thread received.");
+				LOG.info("Reader thread received. {}", Utils.retrieveCurrentTimeAsString());
 
 //				LOG.info(datagramPacket.getSocketAddress());
 //				LOG.info(datagramPacket.getAddress());

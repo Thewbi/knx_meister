@@ -1,10 +1,14 @@
 package core.common;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 import org.apache.commons.lang3.StringUtils;
 
 public final class Utils {
+
+	private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
 	private Utils() {
 		// no instances of this class
@@ -77,6 +81,12 @@ public final class Utils {
 			data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4) + Character.digit(s.charAt(i + 1), 16));
 		}
 		return data;
+	}
+
+	public static String retrieveCurrentTimeAsString() {
+		final LocalDateTime now = LocalDateTime.now();
+
+		return dateTimeFormatter.format(now);
 	}
 
 }
