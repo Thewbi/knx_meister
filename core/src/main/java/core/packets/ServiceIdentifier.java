@@ -9,6 +9,8 @@ package core.packets;
  */
 public enum ServiceIdentifier {
 
+	UNKNOWN(0x0000),
+
 	/*
 	 * The following service families are defined for the version 1.0 KNXnet/IP
 	 * implementation of the eFCP protocol
@@ -114,6 +116,8 @@ public enum ServiceIdentifier {
 //	#define KIP_IPV4_UDP 0x01#
 //	define KIP_IPV4_TCP 0x02
 
+	public static final int UNKNOWN_CODE = 0x0000;
+
 	public static final int SEARCH_REQUEST_CODE = 0x0201;
 
 	public static final int SEARCH_RESPONSE_CODE = 0x0202;
@@ -157,6 +161,9 @@ public enum ServiceIdentifier {
 	public static ServiceIdentifier fromInt(final int id) {
 
 		switch (id) {
+
+		case UNKNOWN_CODE:
+			return UNKNOWN;
 
 		case SEARCH_REQUEST_CODE:
 			return SEARCH_REQUEST;

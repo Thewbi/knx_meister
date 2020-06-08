@@ -19,14 +19,24 @@ public class HPAIStructure extends Structure {
 		setStructureType(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
 	}
 
+	public HPAIStructure(final HPAIStructure other) {
+		setLength(other.getLength());
+		setStructureType(other.getStructureType());
+		ipAddress = other.ipAddress.clone();
+		port = other.port;
+	}
+
+	@Override
+	public Structure clone() {
+		return new HPAIStructure(this);
+	}
+
 	@Override
 	public byte[] getPayloadBytes() {
 
 		int index = 0;
 
 		final byte[] payload = new byte[6];
-//		payload[index++] = (byte) (getLength() & 0xFF);
-//		payload[index++] = (byte) StructureType.HPAI_CONTROL_ENDPOINT_UDP.getValue();
 		payload[index++] = ipAddress[0];
 		payload[index++] = ipAddress[1];
 		payload[index++] = ipAddress[2];

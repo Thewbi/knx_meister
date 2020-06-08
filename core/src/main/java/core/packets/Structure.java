@@ -10,6 +10,9 @@ public abstract class Structure {
 
 	public abstract void fromBytes(byte[] bytes, int startIndex);
 
+	@Override
+	public abstract Structure clone();
+
 	public int getPayloadLength() {
 		final byte[] bytes = getPayloadBytes();
 		return bytes == null ? 0 : bytes.length;

@@ -36,7 +36,7 @@ public class DeviceInformationDIB extends DescriptionInformationBlock {
 	 * KNXnet/IP device. This information may be used to identify the device or set
 	 * its Individual Address.
 	 */
-	private final byte[] deviceSerialNumber = new byte[6];
+	private byte[] deviceSerialNumber = new byte[6];
 
 	/**
 	 * The KNXnet/IP device routing multicast address shall be the multicast address
@@ -47,7 +47,7 @@ public class DeviceInformationDIB extends DescriptionInformationBlock {
 	 * Multicast Address, which shall be equal to the KNXnet/IP System Setup
 	 * Multicast Address.
 	 */
-	private final byte[] deviceRoutingMulticastAddress = new byte[4];
+	private byte[] deviceRoutingMulticastAddress = new byte[4];
 
 	/**
 	 * The KNXnet/IP device MAC address shall be the Ethernet MAC address of the
@@ -55,7 +55,7 @@ public class DeviceInformationDIB extends DescriptionInformationBlock {
 	 * Ethernet to a server allocating network resources, specifically the unicast
 	 * IP address for the KNXnet/IP device.
 	 */
-	private final byte[] deviceMacAddress = new byte[6];
+	private byte[] deviceMacAddress = new byte[6];
 
 	/**
 	 * The Device Friendly Name may be any NULL (00h) terminated ISO 8859-1
@@ -63,7 +63,28 @@ public class DeviceInformationDIB extends DescriptionInformationBlock {
 	 * identify the device to a user. Unused octets shall be filled with the NULL
 	 * (00h) character.
 	 */
-	private final byte[] deviceFriendlyName = new byte[30];
+	private byte[] deviceFriendlyName = new byte[30];
+
+	public DeviceInformationDIB() {
+
+	}
+
+	public DeviceInformationDIB(final DeviceInformationDIB other) {
+		setLength(other.getLength());
+		medium = other.medium;
+		deviceStatus = other.deviceStatus;
+		individualAddress = other.individualAddress;
+		projectInstallationIdentifier = other.projectInstallationIdentifier;
+		deviceSerialNumber = other.deviceSerialNumber.clone();
+		deviceRoutingMulticastAddress = other.deviceRoutingMulticastAddress.clone();
+		deviceMacAddress = other.deviceMacAddress.clone();
+		deviceFriendlyName = other.deviceFriendlyName.clone();
+	}
+
+	@Override
+	public DeviceInformationDIB clone() {
+		return new DeviceInformationDIB(this);
+	}
 
 	@Override
 	public DescriptionInformationBlockType getType() {

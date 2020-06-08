@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
+import core.common.Converter;
 import core.common.Utils;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
@@ -19,7 +20,7 @@ public class KNXPacketConverterTest {
 				(byte) 0x08, (byte) 0x01, (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04, (byte) 0x04,
 				(byte) 0xD2 };
 
-		final KNXPacketConverter knxPacketConverter = new KNXPacketConverter();
+		final Converter<byte[], KNXPacket> knxPacketConverter = new CoreKNXPacketConverter();
 
 		final KNXPacket knxPacket = knxPacketConverter.convert(data);
 
@@ -59,7 +60,7 @@ public class KNXPacketConverterTest {
 		final byte[] data = Utils.hexStringToByteArray(
 				"0610020200540801C0A80201FDE83601200111020011030303030303E000170C010203040506746573745F6F626A65637400000000000000000000000000000000000000080202010302040108FE00C50104F020");
 
-		final KNXPacketConverter knxPacketConverter = new KNXPacketConverter();
+		final Converter<byte[], KNXPacket> knxPacketConverter = new CoreKNXPacketConverter();
 
 		final KNXPacket knxPacket = knxPacketConverter.convert(data);
 

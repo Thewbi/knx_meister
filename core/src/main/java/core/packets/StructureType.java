@@ -35,7 +35,7 @@ public enum StructureType {
 
 	private static final int HPAI_CONTROL_ENDPOINT_UDP_CODE = 0x01;
 
-	private static final int HPAI_DATA_ENDPOINT_UDP_CODE = 0x02;
+//	private static final int HPAI_DATA_ENDPOINT_UDP_CODE = 0x02;
 
 	private static final int DEVICE_MGMT_CONNECTION_CODE = 0x03;
 

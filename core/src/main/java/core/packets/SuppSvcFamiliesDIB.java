@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import core.common.Utils;
 
@@ -12,7 +14,28 @@ import core.common.Utils;
  */
 public class SuppSvcFamiliesDIB extends DescriptionInformationBlock {
 
+	private static final Logger LOG = LogManager.getLogger(SuppSvcFamiliesDIB.class);
+
 	private final List<ProtocolDescriptor> protocolDescriptors = new ArrayList<>();
+
+	public SuppSvcFamiliesDIB() {
+
+	}
+
+	public SuppSvcFamiliesDIB(final SuppSvcFamiliesDIB other) {
+		setLength(other.getLength());
+
+		if (CollectionUtils.isNotEmpty(other.getProtocolDescriptors())) {
+			for (final ProtocolDescriptor protocolDescriptor : other.getProtocolDescriptors()) {
+				protocolDescriptors.add(protocolDescriptor.clone());
+			}
+		}
+	}
+
+	@Override
+	public SuppSvcFamiliesDIB clone() {
+		return new SuppSvcFamiliesDIB(this);
+	}
 
 	@Override
 	public DescriptionInformationBlockType getType() {
@@ -31,13 +54,12 @@ public class SuppSvcFamiliesDIB extends DescriptionInformationBlock {
 		while (tempLength > 0) {
 
 			final int serviceFamilyCode = source[tempIndex++] & 0xFF;
-//			System.out.println("ServiceFamily: " + ServiceFamily.fromInt(serviceFamilyCode).name());
+			LOG.trace("ServiceFamily: " + ServiceFamily.fromInt(serviceFamilyCode).name());
 
-//			System.out.println(
-//					"ServiceFamily Version: " + Utils.bytesToUnsignedShort((byte) 0x00, source[tempIndex++], true));
+			LOG.trace("ServiceFamily Version: " + Utils.bytesToUnsignedShort((byte) 0x00, source[tempIndex++], true));
 
 			final int version = source[tempIndex++] & 0xFF;
-//			System.out.println("ServiceFamily Version: " + Utils.integerToString(version));
+			LOG.trace("ServiceFamily Version: " + Utils.integerToString(version));
 			tempLength -= 2;
 
 			final ProtocolDescriptor protocoDescriptor = new ProtocolDescriptor();

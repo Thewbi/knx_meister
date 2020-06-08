@@ -84,13 +84,10 @@ public class MulticastListenerReaderThread implements Runnable {
 					LOG.error(e.getMessage(), e);
 					throw new IOException(e);
 				}
+
 				if (knxPacket == null) {
 					continue;
 				}
-
-//				// DEBUG
-//				final String prefix = "<<< Multicast: " + knxPacket.getHeader().getServiceIdentifier().name();
-//				LOG.trace(prefix);
 
 				// retrieve the connection
 				final Connection connection = connectionManager.retrieveConnection(knxPacket, multicastSocket);

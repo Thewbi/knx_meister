@@ -10,6 +10,9 @@ public abstract class DescriptionInformationBlock {
 
 	public abstract byte[] getBytes();
 
+	@Override
+	public abstract DescriptionInformationBlock clone();
+
 	public int getLength() {
 		return length;
 	}

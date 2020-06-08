@@ -66,58 +66,22 @@ public final class NetworkUtils {
 		socket.close();
 	}
 
-//	public static void multicast(final byte[] payload) throws IOException {
-//		final MulticastSocket socket = new MulticastSocket(3671);
-//		final InetAddress group = InetAddress.getByName("224.0.23.12");
-//		socket.joinGroup(group);
-//		socket.setSoTimeout(5000);
-//		while (true) {
-//			final DatagramPacket packet = new DatagramPacket(payload, payload.length);
-//			socket.receive(packet);
-//			final String received = new String(packet.getData(), 0, packet.getLength());
-//			if ("end".equals(received)) {
-//				break;
-//			}
-//		}
-//		socket.leaveGroup(group);
-//		socket.close();
-//	}
-
 	public static void sendMulticast(final byte[] payload) throws IOException {
 
-//		final DatagramSocket socket = new DatagramSocket();
-
-//		final MulticastSocket socket = new MulticastSocket(3671);
 		final MulticastSocket socket = new MulticastSocket();
 		socket.setReuseAddress(true);
 		socket.setSoTimeout(5000);
-//		socket.bind(new InetSocketAddress("192.168.2.1", 40000));
 
 		// ipconfig /all
 		final Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
 		for (final NetworkInterface netint : Collections.list(nets)) {
 			displayInterfaceInformation(netint);
 		}
-		final NetworkInterface nic = NetworkInterface.getByName(ADAPTER_NAME);
-//		System.out.println("eth0: " + nic + " MAC: " + Utils.integerToStringNoPrefix(nic.getHardwareAddress()));
-
 		socket.joinGroup(new InetSocketAddress("224.0.23.12", 3671), NetworkInterface.getByName(ADAPTER_NAME));
-
-//		socket.connect(address, 65000);
-//		final int port = socket.getPort();
-//		System.out.println(port);
-//		socket.setReuseAddress(true);
-//		socket.setSoTimeout(5000);
-//		socket.joinGroup(groupInetAddress);
 
 		final InetAddress groupInetAddress = InetAddress.getByName("224.0.23.12");
 		final DatagramPacket packet = new DatagramPacket(payload, payload.length, groupInetAddress, 3671);
 		socket.send(packet);
-
-//		final byte[] receiveBuffer = new byte[1024];
-//
-//		final DatagramPacket incomingDatagramPacket = new DatagramPacket(receiveBuffer, receiveBuffer.length);
-//		socket.receive(incomingDatagramPacket);
 
 		socket.close();
 	}
@@ -144,7 +108,6 @@ public final class NetworkUtils {
 				if (nextElement instanceof Inet4Address) {
 
 					final Inet4Address inet4Address = (Inet4Address) nextElement;
-//					System.out.println(inet4Address.getAddress());
 
 					if (Arrays.equals(inet4Address.getAddress(), ip)) {
 						return networkInterface;

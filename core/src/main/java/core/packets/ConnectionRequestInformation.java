@@ -11,6 +11,22 @@ public class ConnectionRequestInformation extends Structure {
 
 	private int reserved;
 
+	public ConnectionRequestInformation() {
+
+	}
+
+	public ConnectionRequestInformation(final ConnectionRequestInformation other) {
+		setLength(other.getLength());
+		setStructureType(other.getStructureType());
+		knxLayer = other.knxLayer;
+		reserved = other.reserved;
+	}
+
+	@Override
+	public Structure clone() {
+		return new ConnectionRequestInformation(this);
+	}
+
 	@Override
 	public byte[] getPayloadBytes() {
 		final byte[] payload = new byte[2];

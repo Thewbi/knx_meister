@@ -6,12 +6,17 @@ import java.net.InetAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import core.api.device.Device;
 import core.api.pipeline.Pipeline;
+import core.common.KNXPacketConverter;
 import core.communication.ConnectionManager;
 import core.communication.Controller;
 import core.communication.DefaultConnectionManager;
 import core.communication.MulticastListenerReaderThread;
-import core.conversion.KNXPacketConverter;
+import core.conversion.CoreKNXPacketConverter;
+import core.conversion.DeviceManagementKNXPacketConverter;
+import core.devices.DefaultDevice;
+import core.packets.KNXPacket;
 import core.pipeline.DefaultPipeline;
 import core.pipeline.InwardConverterPipelineStep;
 import core.pipeline.InwardOutputPipelineStep;
@@ -19,11 +24,21 @@ import core.pipeline.IpFilterPipelineStep;
 import core.pipeline.OutwardConverterPipelineStep;
 import core.pipeline.OutwardOutputPipelineStep;
 
+/**
+ * Wireshark filters
+ *
+ * <pre>
+ * On loopback
+ * udp and ( (ip.src == 192.168.0.1/16) or ( ip.dst == 192.168.0.0/16) )
+ *
+ * On WLAN:
+ * udp and ( (ip.src == 192.168.0.241/32) or ( ip.dst == 192.168.0.241/32) )
+ * </pre>
+ *
+ */
 public class Main {
 
-	private static final String POINT_TO_POINT_READER_IP_ADDRESS = "127.0.0.1";
-
-	private static final Logger LOG = LogManager.getLogger("Main");
+	private static final Logger LOG = LogManager.getLogger(Main.class);
 
 	public static void main(final String[] args) throws IOException {
 
@@ -38,16 +53,23 @@ public class Main {
 
 		final OutwardOutputPipelineStep outwardOutputPipelineStep = new OutwardOutputPipelineStep();
 		outwardOutputPipelineStep.setPrefix("MULTICAST");
+
 		final OutwardConverterPipelineStep outwardConverterPipelineStep = new OutwardConverterPipelineStep();
 
 		final Pipeline<Object, Object> outputPipeline = new DefaultPipeline();
-//		outputPipeline.addStep(outwardOutputPipelineStep);
+		outputPipeline.addStep(outwardOutputPipelineStep);
 		outputPipeline.addStep(outwardConverterPipelineStep);
 
 		final ConnectionManager connectionManager = new DefaultConnectionManager();
 		connectionManager.setOutputPipeline(outputPipeline);
 
-		final Controller controller = createKNXController();
+		final KNXPacketConverter<byte[], KNXPacket> coreKNXPacketConverter = new CoreKNXPacketConverter();
+		final KNXPacketConverter<byte[], KNXPacket> deviceManagementKNXPacketConverter = new DeviceManagementKNXPacketConverter();
+
+		final Device device = new DefaultDevice();
+
+		final Controller controller = new Controller();
+		controller.setDevice(device);
 		controller.setConnectionManager(connectionManager);
 
 //		// reader for point to point connections
@@ -56,18 +78,19 @@ public class Main {
 //		readerThread.setDatagramPacketCallback(controller);
 //		new Thread(readerThread).start();
 
-		final KNXPacketConverter knxPacketConverter = new KNXPacketConverter();
-
 		final InwardConverterPipelineStep inwardConverterPipelineStep = new InwardConverterPipelineStep();
-		inwardConverterPipelineStep.setKnxPacketConverter(knxPacketConverter);
+		inwardConverterPipelineStep.getConverters().add(coreKNXPacketConverter);
+		inwardConverterPipelineStep.getConverters().add(deviceManagementKNXPacketConverter);
+
 		final IpFilterPipelineStep ipFilterPipelineStep = new IpFilterPipelineStep();
+
 		final InwardOutputPipelineStep inwardOutputPipelineStep = new InwardOutputPipelineStep();
-		outwardOutputPipelineStep.setPrefix("MULTICAST");
+		inwardOutputPipelineStep.setPrefix("MULTICAST");
 
 		final Pipeline<Object, Object> inputPipeline = new DefaultPipeline();
 		inputPipeline.addStep(inwardConverterPipelineStep);
 		inputPipeline.addStep(ipFilterPipelineStep);
-//		inputPipeline.addStep(inwardOutputPipelineStep);
+		inputPipeline.addStep(inwardOutputPipelineStep);
 
 		// reader for multicast messages
 		final MulticastListenerReaderThread multicastListenerThread = new MulticastListenerReaderThread(
@@ -95,13 +118,4 @@ public class Main {
 		}
 	}
 
-	private static Controller createKNXController() throws IOException {
-
-		final KNXPacketConverter knxPacketConverter = new KNXPacketConverter();
-
-		final Controller controller = new Controller();
-		controller.setKnxPacketConverter(knxPacketConverter);
-
-		return controller;
-	}
 }

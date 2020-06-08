@@ -5,9 +5,24 @@ import java.util.TreeMap;
 
 import org.apache.commons.collections4.MapUtils;
 
+/**
+ * <ol>
+ * <li/>Make sure the new object has a copy constructor and a clone() method
+ * <li/>Make sure the byte serialization of your new object works. getBytes()
+ * method.
+ * <li/>Update the copy constructor and clone() of the KNXPacket, so your new
+ * object is copied
+ * <li/>Update the CoreKNXPacketConverter and DeviceManagementKNXPacketConverter
+ * so that your new object is parsed from the incoming byte array
+ * <li/>Update the KNXPacket.toBytes() method so that the new object gets
+ * serialized correctly
+ * </ol>
+ */
 public class KNXPacket {
 
-	private final Header header = new Header();
+	private Header header = new Header();
+
+	private ConnectionHeader connectionHeader;
 
 	private final Map<StructureType, Structure> structureMap = new TreeMap<>();
 
@@ -19,7 +34,59 @@ public class KNXPacket {
 
 	private ConnectionResponseDataBlock connectionResponseDataBlock;
 
+	private CemiPropReadRequest cemiPropReadRequest;
+
+	public KNXPacket() {
+
+	}
+
+	public KNXPacket(final KNXPacket knxPacket) {
+
+		// header
+		header = new Header(knxPacket.getHeader());
+
+		// connection header
+		if (knxPacket.connectionHeader != null) {
+			connectionHeader = new ConnectionHeader(knxPacket.connectionHeader);
+		}
+
+		if (MapUtils.isNotEmpty(knxPacket.structureMap)) {
+
+			for (final Structure structure : knxPacket.structureMap.values()) {
+
+				final Structure clonedStructure = structure.clone();
+				structureMap.put(clonedStructure.getStructureType(), clonedStructure);
+			}
+		}
+
+		if (MapUtils.isNotEmpty(knxPacket.dibMap)) {
+
+			for (final DescriptionInformationBlock descriptionInformationBlock : knxPacket.dibMap.values()) {
+
+				final DescriptionInformationBlock clonedDescriptionInformationBlock = descriptionInformationBlock
+						.clone();
+				dibMap.put(clonedDescriptionInformationBlock.getType(), clonedDescriptionInformationBlock);
+			}
+		}
+
+		communicationChannelId = knxPacket.communicationChannelId;
+		connectionStatus = knxPacket.connectionStatus;
+
+		if (knxPacket.getConnectionResponseDataBlock() != null) {
+			connectionResponseDataBlock = new ConnectionResponseDataBlock(knxPacket.getConnectionResponseDataBlock());
+		}
+		if (knxPacket.getCemiPropReadRequest() != null) {
+			cemiPropReadRequest = new CemiPropReadRequest(knxPacket.getCemiPropReadRequest());
+		}
+	}
+
 	public byte[] getBytes() {
+
+		// connectionHeader
+		byte[] connectionHeaderBuffer = null;
+		if (getConnectionHeader() != null) {
+			connectionHeaderBuffer = getConnectionHeader().getBytes();
+		}
 
 		// HPAI structure
 		byte[] hpaiControlEndpoingStructureBuffer = null;
@@ -35,6 +102,12 @@ public class KNXPacket {
 		byte[] crdBuffer = null;
 		if (getConnectionResponseDataBlock() != null) {
 			crdBuffer = getConnectionResponseDataBlock().getBytes();
+		}
+
+		// cemiPropReadRequest
+		byte[] cemiPropReadRequestBuffer = null;
+		if (getCemiPropReadRequest() != null) {
+			cemiPropReadRequestBuffer = getCemiPropReadRequest().getBytes();
 		}
 
 		// compute total length
@@ -53,6 +126,8 @@ public class KNXPacket {
 			totalLength += hpaiDataEndpoingStructureBuffer.length;
 		}
 		totalLength += crdBuffer == null ? 0 : crdBuffer.length;
+		totalLength += cemiPropReadRequestBuffer == null ? 0 : cemiPropReadRequestBuffer.length;
+		totalLength += connectionHeaderBuffer == null ? 0 : connectionHeaderBuffer.length;
 		for (final DescriptionInformationBlock dib : dibMap.values()) {
 			totalLength += dib.getLength();
 		}
@@ -67,6 +142,12 @@ public class KNXPacket {
 		// copy header into payload
 		System.arraycopy(header.getBytes(), 0, payload, index, header.getLength());
 		index += header.getLength();
+
+		// copy connectionHeader into payload
+		if (connectionHeaderBuffer != null) {
+			System.arraycopy(connectionHeaderBuffer, 0, payload, index, connectionHeaderBuffer.length);
+			index += connectionHeaderBuffer.length;
+		}
 
 		// connection response
 		if (this.getCommunicationChannelId() >= 0x00) {
@@ -92,6 +173,10 @@ public class KNXPacket {
 		if (crdBuffer != null) {
 			System.arraycopy(crdBuffer, 0, payload, index, crdBuffer.length);
 			index += crdBuffer.length;
+		}
+		if (cemiPropReadRequestBuffer != null) {
+			System.arraycopy(cemiPropReadRequestBuffer, 0, payload, index, cemiPropReadRequestBuffer.length);
+			index += cemiPropReadRequestBuffer.length;
 		}
 
 		// copy all DIB
@@ -180,6 +265,22 @@ public class KNXPacket {
 
 	public void setConnectionStatus(final ConnectionStatus connectionStatus) {
 		this.connectionStatus = connectionStatus;
+	}
+
+	public CemiPropReadRequest getCemiPropReadRequest() {
+		return cemiPropReadRequest;
+	}
+
+	public void setCemiPropReadRequest(final CemiPropReadRequest cemiPropReadRequest) {
+		this.cemiPropReadRequest = cemiPropReadRequest;
+	}
+
+	public ConnectionHeader getConnectionHeader() {
+		return connectionHeader;
+	}
+
+	public void setConnectionHeader(final ConnectionHeader connectionHeader) {
+		this.connectionHeader = connectionHeader;
 	}
 
 }

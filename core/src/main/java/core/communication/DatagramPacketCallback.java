@@ -5,7 +5,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.UnknownHostException;
 
-import core.conversion.KNXPacketConverter;
 import core.packets.KNXPacket;
 
 public interface DatagramPacketCallback {
@@ -16,6 +15,6 @@ public interface DatagramPacketCallback {
 	void knxPacket(Connection connection, DatagramSocket socket, DatagramPacket datagramPacket, KNXPacket knxPacket,
 			String label) throws UnknownHostException, IOException;
 
-	void setKnxPacketConverter(KNXPacketConverter knxPacketConverter);
+//	void setCoreKNXPacketConverter(Converter<byte[], KNXPacket> knxPacketConverter);
 
 }

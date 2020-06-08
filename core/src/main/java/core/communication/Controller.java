@@ -16,7 +16,9 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import core.api.device.Device;
 import core.common.NetworkUtils;
+import core.packets.ConnectionHeader;
 import core.packets.ConnectionRequestInformation;
 import core.packets.ConnectionResponseDataBlock;
 import core.packets.ConnectionStatus;
@@ -60,6 +62,8 @@ public class Controller extends BaseDatagramPacketCallback {
 	private final Map<String, HPAIStructure> deviceMap = new HashMap<>();
 
 	private ConnectionManager connectionManager;
+
+	private Device device;
 
 	public Controller() throws SocketException, UnknownHostException {
 		localInetAddress = InetAddress.getLocalHost().getHostAddress();
@@ -172,6 +176,34 @@ public class Controller extends BaseDatagramPacketCallback {
 
 		case TUNNEL_REQUEST:
 			throw new RuntimeException("Not implemented!");
+
+		case DEVICE_CONFIGURATION_REQUEST:
+
+			final short propertyKey = knxPacket.getCemiPropReadRequest().getPropertyId();
+			final short propertyValue = device.getProperties().get(propertyKey);
+
+			final byte[] responseData = new byte[2];
+			responseData[0] = (byte) ((propertyValue >> 8) & 0xFF);
+			responseData[1] = (byte) (propertyValue & 0xFF);
+
+			// send the current configuration value back to the sender
+			final KNXPacket deviceConfigurationRequestAnswer = new KNXPacket(knxPacket);
+			// change the message code from 0xfc to 0xfb
+			deviceConfigurationRequestAnswer.getCemiPropReadRequest().setMessageCode((short) 0xfb);
+			deviceConfigurationRequestAnswer.getCemiPropReadRequest().setResponseData(responseData);
+			connection.sendResponse(deviceConfigurationRequestAnswer, datagramPacket.getSocketAddress());
+
+			// send acknowledge
+			final KNXPacket knxPacketAck = new KNXPacket();
+			knxPacketAck.getHeader().setServiceIdentifier(ServiceIdentifier.DEVICE_CONFIGURATION_ACK);
+
+			knxPacketAck.setConnectionHeader(new ConnectionHeader());
+			knxPacketAck.getConnectionHeader().setChannel(knxPacket.getConnectionHeader().getChannel());
+			knxPacketAck.getConnectionHeader().setSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter());
+			// status OK
+			knxPacketAck.getConnectionHeader().setReserved(0x00);
+			connection.sendResponse(knxPacketAck, datagramPacket.getSocketAddress());
+			break;
 
 		default:
 			LOG.warn("Ignoring: " + knxPacket.getHeader().getServiceIdentifier().name());
@@ -489,6 +521,19 @@ public class Controller extends BaseDatagramPacketCallback {
 
 	public void setConnectionManager(final ConnectionManager connectionManager) {
 		this.connectionManager = connectionManager;
+	}
+
+	@Override
+	protected Logger getLogger() {
+		return LOG;
+	}
+
+	public Device getDevice() {
+		return device;
+	}
+
+	public void setDevice(final Device device) {
+		this.device = device;
 	}
 
 }

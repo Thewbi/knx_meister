@@ -8,9 +8,20 @@ public class Header {
 
 	private byte protocolVersion = 0x10;
 
-	private ServiceIdentifier serviceIdentifier;
+	private ServiceIdentifier serviceIdentifier = ServiceIdentifier.UNKNOWN;
 
 	private int totalLength;
+
+	public Header() {
+
+	}
+
+	public Header(final Header header) {
+		length = header.length;
+		protocolVersion = header.protocolVersion;
+		serviceIdentifier = header.serviceIdentifier;
+		totalLength = header.totalLength;
+	}
 
 	public byte[] getBytes() {
 

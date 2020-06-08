@@ -11,7 +11,22 @@ public class MfrDataDIB extends DescriptionInformationBlock {
 
 	private int manufacturerId;
 
-	private byte[] optionalData;
+	private byte[] optionalData = new byte[4];
+
+	public MfrDataDIB() {
+		optionalData = new byte[] { (byte) 0x01, (byte) 0x04, (byte) 0xF0, (byte) 0x20 };
+	}
+
+	public MfrDataDIB(final MfrDataDIB other) {
+		setLength(other.getLength());
+		manufacturerId = other.manufacturerId;
+		optionalData = other.optionalData.clone();
+	}
+
+	@Override
+	public DescriptionInformationBlock clone() {
+		return new MfrDataDIB(this);
+	}
 
 	@Override
 	public DescriptionInformationBlockType getType() {
@@ -23,21 +38,8 @@ public class MfrDataDIB extends DescriptionInformationBlock {
 
 		int tempIndex = index;
 
-//		// length
-//		final int length = source[tempIndex++] & 0xFF;
-//		setLength(length);
-//
-//		// type
-//		final int mfrType = source[tempIndex++];
-//		if (mfrType != DescriptionInformationBlockType.MFR_DATA.getValue()) {
-//			throw new RuntimeException("Invalid type!");
-//		}
-
 		// manufacturer id (Weinzierl = 197d)
 		manufacturerId = Utils.bytesToUnsignedShort(source[tempIndex++], source[tempIndex++], true);
-
-		// todo optional data
-		optionalData = new byte[4];
 	}
 
 	@Override
@@ -53,10 +55,11 @@ public class MfrDataDIB extends DescriptionInformationBlock {
 		bytes[2] = (byte) ((manufacturerId >> 8) & 0xFF);
 		bytes[3] = (byte) (manufacturerId & 0xFF);
 
-		bytes[4] = (byte) 0x01;
-		bytes[5] = (byte) 0x04;
-		bytes[6] = (byte) 0xF0;
-		bytes[7] = (byte) 0x20;
+		// optional data????
+		bytes[4] = optionalData[0];
+		bytes[5] = optionalData[1];
+		bytes[6] = optionalData[2];
+		bytes[7] = optionalData[3];
 
 		return bytes;
 	}

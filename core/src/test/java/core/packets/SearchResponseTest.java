@@ -4,7 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import core.conversion.KNXPacketConverter;
+import core.common.Converter;
+import core.conversion.CoreKNXPacketConverter;
 
 public class SearchResponseTest {
 
@@ -19,7 +20,7 @@ public class SearchResponseTest {
 				0x00, 0x08, 0x02, 0x02, 0x01, 0x03, 0x02, 0x04, 0x01, 0x08, (byte) 0xfe, 0x00, (byte) 0xc5, 0x01, 0x04,
 				(byte) 0xf0, 0x20 };
 
-		final KNXPacketConverter knxPacketConverter = new KNXPacketConverter();
+		final Converter<byte[], KNXPacket> knxPacketConverter = new CoreKNXPacketConverter();
 
 		final KNXPacket knxPacket = knxPacketConverter.convert(source);
 

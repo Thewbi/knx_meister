@@ -21,6 +21,15 @@ public class ConnectionResponseDataBlock {
 	/** 8.8.6 CONNECT_RESPONSE example */
 	private int deviceAddress;
 
+	public ConnectionResponseDataBlock() {
+	}
+
+	public ConnectionResponseDataBlock(final ConnectionResponseDataBlock connectionResponseDataBlock) {
+		length = connectionResponseDataBlock.length;
+		connectionType = connectionResponseDataBlock.connectionType;
+		deviceAddress = connectionResponseDataBlock.deviceAddress;
+	}
+
 	public byte[] getBytes() {
 
 		length = deviceAddress > 0 ? 4 : 2;
