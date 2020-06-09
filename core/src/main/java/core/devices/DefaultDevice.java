@@ -4,10 +4,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import core.api.device.Device;
+import core.packets.DeviceStatus;
 
 public class DefaultDevice implements Device {
 
+	private int hostPhysicalAddress;
+
+	private int physicalAddress;
+
 	private final Map<Short, Short> properties = new ConcurrentHashMap<>();
+
+	private DeviceStatus deviceStatus = DeviceStatus.NORMAL_MODE;
 
 	public DefaultDevice() {
 		properties.put((short) 56, (short) 0x0037);
@@ -25,6 +32,34 @@ public class DefaultDevice implements Device {
 	@Override
 	public Map<Short, Short> getProperties() {
 		return properties;
+	}
+
+	@Override
+	public int getHostPhysicalAddress() {
+		return hostPhysicalAddress;
+	}
+
+	@Override
+	public void setHostPhysicalAddress(final int hostPhysicalAddress) {
+		this.hostPhysicalAddress = hostPhysicalAddress;
+	}
+
+	@Override
+	public DeviceStatus getDeviceStatus() {
+		return deviceStatus;
+	}
+
+	@Override
+	public void setDeviceStatus(final DeviceStatus deviceStatus) {
+		this.deviceStatus = deviceStatus;
+	}
+
+	public int getPhysicalAddress() {
+		return physicalAddress;
+	}
+
+	public void setPhysicalAddress(final int physicalAddress) {
+		this.physicalAddress = physicalAddress;
 	}
 
 }

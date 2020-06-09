@@ -22,20 +22,34 @@ public class DefaultConnectionManager implements ConnectionManager {
 
 	private Pipeline<Object, Object> outputPipeline;
 
+	/**
+	 * Connection via the knxPacket.getCommunicationChannelId() property.
+	 */
 	@Override
 	public Connection retrieveConnection(final KNXPacket knxPacket, final DatagramSocket datagramSocket) {
 
 		final int communicationChannelId = knxPacket.getCommunicationChannelId();
 
+		// if the packet has a specific communicationChannelId, try to find that
+		// connection
 		if (communicationChannelId > 0) {
 			return connectionMap.get(communicationChannelId);
 		}
 
+		// if the packet has no communicationChannelId, return the basic 0 connection,
+		// if that connection exists already
 		if (connectionMap.containsKey(0)) {
 			return connectionMap.get(0);
 		}
 
+		// create a new connection and return it. Because connectionIdAtomicInteger
+		// starts with 0, this will create the basic 0 connection
 		return createNewConnection(datagramSocket, connectionIdAtomicInteger.getAndIncrement(), ConnectionType.UNKNOWN);
+	}
+
+	@Override
+	public Connection retrieveConnection(final int communicationChannelId) {
+		return connectionMap.get(communicationChannelId);
 	}
 
 	@Override

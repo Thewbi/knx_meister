@@ -24,7 +24,7 @@ public class OutwardConverterPipelineStep implements PipelineStep<Object, Object
 
 		final byte[] bytes = knxPacket.getBytes();
 
-		LOG.info(Utils.integerToStringNoPrefix(bytes));
+		LOG.trace(Utils.integerToStringNoPrefix(bytes));
 
 		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length, socketAddress);
 

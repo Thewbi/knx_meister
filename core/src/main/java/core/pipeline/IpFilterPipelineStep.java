@@ -17,12 +17,15 @@ public class IpFilterPipelineStep implements PipelineStep<Object, Object> {
 	private static final Logger LOG = LogManager.getLogger(IpFilterPipelineStep.class);
 
 	@Override
-	public Object execute(final Object source) throws Exception {
-		if (source == null) {
+	public Object execute(final Object dataAsObject) throws Exception {
+
+		if (dataAsObject == null) {
 			return null;
 		}
 
-		final KNXPacket knxPacket = (KNXPacket) source;
+		final Object[] data = (Object[]) dataAsObject;
+
+		final KNXPacket knxPacket = (KNXPacket) data[1];
 		final HPAIStructure hpaiStructure = (HPAIStructure) knxPacket.getStructureMap()
 				.get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
 		if (hpaiStructure != null && hpaiStructure.getIpAddressAsObject() != null
@@ -31,7 +34,7 @@ public class IpFilterPipelineStep implements PipelineStep<Object, Object> {
 			return null;
 		}
 
-		return source;
+		return dataAsObject;
 	}
 
 }

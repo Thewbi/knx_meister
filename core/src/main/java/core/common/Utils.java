@@ -89,4 +89,16 @@ public final class Utils {
 		return dateTimeFormatter.format(now);
 	}
 
+	public static String integerToKNXAddress(final int individualAddress) {
+
+		final int upperByte = ((individualAddress >> 8) & 0xFF);
+
+		final int areaAddress = (upperByte & 0xF0) >> 4;
+		final int lineAddress = upperByte & 0x0F;
+
+		final int lowerByte = ((individualAddress) & 0xFF);
+
+		return areaAddress + "." + lineAddress + "." + lowerByte;
+	}
+
 }

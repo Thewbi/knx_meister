@@ -25,7 +25,6 @@ import core.packets.ConnectionStatus;
 import core.packets.ConnectionType;
 import core.packets.DescriptionInformationBlockType;
 import core.packets.DeviceInformationDIB;
-import core.packets.DeviceStatus;
 import core.packets.HPAIStructure;
 import core.packets.KNXLayer;
 import core.packets.KNXMedium;
@@ -39,8 +38,6 @@ import core.packets.StructureType;
 import core.packets.SuppSvcFamiliesDIB;
 
 public class Controller extends BaseDatagramPacketCallback {
-
-	private static final int DEVICE_ADDRESS = 0x0A11;
 
 	// public static final int POINT_TO_POINT_PORT = 65000;
 	public static final int POINT_TO_POINT_PORT = 3671;
@@ -175,7 +172,57 @@ public class Controller extends BaseDatagramPacketCallback {
 			break;
 
 		case TUNNEL_REQUEST:
-			throw new RuntimeException("Not implemented!");
+//			final Connection tunnelConnection = connectionManager
+//					.retrieveConnection(knxPacket.getConnectionHeader().getChannel());
+
+			// send acknowledge
+			final KNXPacket tunnelResponse = sendTunnelResponse(knxPacket, socket3671, datagramPacket);
+//			tunnelConnection.sendResponse(tunnelResponse, datagramPacket.getSocketAddress());
+			knxPacket.getConnection().sendResponse(tunnelResponse, datagramPacket.getSocketAddress());
+
+			// Send a acknowledge
+			final KNXPacket acknowledgeKNXPacket = new KNXPacket(knxPacket);
+
+			final int sequenceCounter = knxPacket.getConnection().getSequenceCounter();
+			// increment by 2
+			acknowledgeKNXPacket.getConnectionHeader().setSequenceCounter(sequenceCounter + 2);
+//			acknowledgeKNXPacket.getConnectionHeader().setSequenceCounter(sequenceCounter + 1);
+			acknowledgeKNXPacket.getCemiTunnelRequest().setMessageCode(0x2e);
+			acknowledgeKNXPacket.getCemiTunnelRequest().setSourceKNXAddress(device.getPhysicalAddress());
+//			acknowledgeKNXPacket.getCemiTunnelRequest().setSourceKNXAddress(0x1112);
+			acknowledgeKNXPacket.getCemiTunnelRequest().setDestKNXAddress(0);
+			acknowledgeKNXPacket.getCemiTunnelRequest().setCtrl1(0x91);
+			acknowledgeKNXPacket.getCemiTunnelRequest().setLength(1);
+			acknowledgeKNXPacket.getCemiTunnelRequest().setApci(0x0100);
+
+			knxPacket.getConnection().sendResponse(acknowledgeKNXPacket, datagramPacket.getSocketAddress());
+
+			// TODO ask the application layer service if the packet makes send and if so
+			// send a confirmation
+
+//			final KNXPacket indicationKNXPacket = new KNXPacket();
+//			indicationKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);
+//
+//			indicationKNXPacket.setConnectionHeader(new ConnectionHeader());
+//			indicationKNXPacket.getConnectionHeader().setChannel(knxPacket.getConnectionHeader().getChannel());
+//			indicationKNXPacket.getConnectionHeader()
+//					.setSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter() + 3);
+//			// set reserved to 0x00
+//			indicationKNXPacket.getConnectionHeader().setReserved(0x00);
+//
+//			final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
+//			cemiTunnelRequest.setMessageCode(0x29); // ind (= response in network layer terms)
+//			cemiTunnelRequest.setAdditionalInfoLength(0);
+//			cemiTunnelRequest.setCtrl1(0xB0);
+//			cemiTunnelRequest.setCtrl2(0xE0);
+//			cemiTunnelRequest.setSourceKNXAddress(device.getPhysicalAddress());
+//			cemiTunnelRequest.setDestKNXAddress(0);
+//			cemiTunnelRequest.setLength(1);
+//			cemiTunnelRequest.setApci(0x0140); // IndAddrResp
+//			indicationKNXPacket.setCemiTunnelRequest(cemiTunnelRequest);
+//			knxPacket.getConnection().sendResponse(indicationKNXPacket, datagramPacket.getSocketAddress());
+
+			break;
 
 		case DEVICE_CONFIGURATION_REQUEST:
 
@@ -209,6 +256,21 @@ public class Controller extends BaseDatagramPacketCallback {
 			LOG.warn("Ignoring: " + knxPacket.getHeader().getServiceIdentifier().name());
 			break;
 		}
+	}
+
+	private KNXPacket sendTunnelResponse(final KNXPacket knxPacket, final DatagramSocket socket3671,
+			final DatagramPacket datagramPacket) {
+
+		final KNXPacket outKNXPacket = new KNXPacket();
+		outKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
+
+		outKNXPacket.setConnectionHeader(new ConnectionHeader());
+		outKNXPacket.getConnectionHeader().setChannel(knxPacket.getConnectionHeader().getChannel());
+		outKNXPacket.getConnectionHeader().setSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter());
+		// status OK
+		outKNXPacket.getConnectionHeader().setReserved(0x00);
+
+		return outKNXPacket;
 	}
 
 	private KNXPacket sendConnectionRequest(final DatagramSocket socket, final DatagramPacket originalDatagramPacket,
@@ -302,7 +364,7 @@ public class Controller extends BaseDatagramPacketCallback {
 			final ConnectionResponseDataBlock connectionResponseDataBlock = new ConnectionResponseDataBlock();
 			connectionResponseDataBlock.setConnectionType(connectionType);
 			if (connectionType != ConnectionType.DEVICE_MGMT_CONNECTION) {
-				connectionResponseDataBlock.setDeviceAddress(DEVICE_ADDRESS);
+				connectionResponseDataBlock.setDeviceAddress(device.getHostPhysicalAddress());
 			}
 
 			knxPacket.setConnectionResponseDataBlock(connectionResponseDataBlock);
@@ -440,13 +502,9 @@ public class Controller extends BaseDatagramPacketCallback {
 	private DeviceInformationDIB retrieveDeviceInformationDIB() {
 
 		final DeviceInformationDIB deviceInformationDIB = new DeviceInformationDIB();
-
-		deviceInformationDIB.setDeviceStatus(DeviceStatus.NORMAL_MODE);
-
-		deviceInformationDIB.setIndividualAddress(DEVICE_ADDRESS);
-
+		deviceInformationDIB.setDeviceStatus(device.getDeviceStatus());
+		deviceInformationDIB.setIndividualAddress(device.getHostPhysicalAddress());
 		deviceInformationDIB.setMedium(KNXMedium.TP1);
-
 		deviceInformationDIB.setProjectInstallationIdentifier(0);
 
 		// serial number

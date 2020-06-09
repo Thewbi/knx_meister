@@ -16,6 +16,8 @@ public class CemiPropReadRequest {
 
 	private byte[] responseData;
 
+	private int length = 7;
+
 	public CemiPropReadRequest() {
 	}
 
@@ -47,6 +49,8 @@ public class CemiPropReadRequest {
 		// range (2 byte)
 		range = Utils.bytesToUnsignedShort(source[startIndex + 5], source[startIndex + 6], true);
 
+		// TODO if this is optional, make sure this method works correctly for packets
+		// that do not have those bytes
 		responseData = new byte[2];
 		responseData[0] = source[startIndex + 7];
 		responseData[1] = source[startIndex + 8];
@@ -54,7 +58,7 @@ public class CemiPropReadRequest {
 
 	public byte[] getBytes() {
 
-		int length = 7;
+		length = 7;
 
 		// add length for optional response data
 		if (responseData != null) {
@@ -132,6 +136,14 @@ public class CemiPropReadRequest {
 
 	public void setResponseData(final byte[] responseData) {
 		this.responseData = responseData;
+	}
+
+	public int getLength() {
+		return length;
+	}
+
+	public void setLength(final int length) {
+		this.length = length;
 	}
 
 }

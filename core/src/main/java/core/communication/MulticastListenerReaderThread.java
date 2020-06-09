@@ -27,7 +27,7 @@ public class MulticastListenerReaderThread implements Runnable {
 
 	private Pipeline<Object, Object> inputPipeline;
 
-	private ConnectionManager connectionManager;
+//	private ConnectionManager connectionManager;
 
 	/**
 	 * ctor
@@ -72,27 +72,52 @@ public class MulticastListenerReaderThread implements Runnable {
 			while (running) {
 
 				final byte[] buf = new byte[1024];
-				final DatagramPacket packet = new DatagramPacket(buf, buf.length);
-				multicastSocket.receive(packet);
+				final DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length);
+				multicastSocket.receive(datagramPacket);
 
 				// use the pipeline to convert the input from the socket to a KNXPacket that the
 				// system can use
 				KNXPacket knxPacket = null;
 				try {
-					knxPacket = (KNXPacket) inputPipeline.execute(packet);
+
+					Object[] data = new Object[2];
+					data[0] = multicastSocket;
+					data[1] = datagramPacket;
+
+					data = (Object[]) inputPipeline.execute(data);
+					if (data == null) {
+						continue;
+					}
+
+					knxPacket = (KNXPacket) data[1];
+					if (knxPacket == null) {
+						continue;
+					}
 				} catch (final Exception e) {
 					LOG.error(e.getMessage(), e);
 					throw new IOException(e);
 				}
 
-				if (knxPacket == null) {
-					continue;
+				// retrieve the connection
+				if (knxPacket.getConnection() == null) {
+					final int communicationChannelId = knxPacket.getCommunicationChannelId();
+					LOG.warn("Connection with communicationChannelId = {} is not known! No response is sent!",
+							communicationChannelId);
+				} else {
+					datagramPacketCallback.knxPacket(knxPacket.getConnection(), multicastSocket, datagramPacket,
+							knxPacket, "Multicast");
 				}
 
-				// retrieve the connection
-				final Connection connection = connectionManager.retrieveConnection(knxPacket, multicastSocket);
-
-				datagramPacketCallback.knxPacket(connection, multicastSocket, packet, knxPacket, "Multicast");
+//				// retrieve the connection
+//				final Connection connection = connectionManager.retrieveConnection(knxPacket, multicastSocket);
+//				if (connection == null) {
+//					final int communicationChannelId = knxPacket.getCommunicationChannelId();
+//					LOG.warn("Connection with communicationChannelId = {} is not known! No response is sent!",
+//							communicationChannelId);
+//				} else {
+//					datagramPacketCallback.knxPacket(connection, multicastSocket, datagramPacket, knxPacket,
+//							"Multicast");
+//				}
 			}
 		}
 	}
@@ -114,8 +139,8 @@ public class MulticastListenerReaderThread implements Runnable {
 		this.inputPipeline = inputPipeline;
 	}
 
-	public void setConnectionManager(final ConnectionManager connectionManager) {
-		this.connectionManager = connectionManager;
-	}
+//	public void setConnectionManager(final ConnectionManager connectionManager) {
+//		this.connectionManager = connectionManager;
+//	}
 
 }

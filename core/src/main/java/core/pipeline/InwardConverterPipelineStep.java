@@ -21,25 +21,30 @@ public class InwardConverterPipelineStep implements PipelineStep<Object, Object>
 	private final Header header = new Header();
 
 	@Override
-	public Object execute(final Object datagramPacketAsObject) {
+	public Object execute(final Object dataAsObject) {
 
-		if (datagramPacketAsObject == null) {
+		if (dataAsObject == null) {
 			return null;
 		}
 
-		final DatagramPacket datagramPacket = (DatagramPacket) datagramPacketAsObject;
+		final Object[] data = (Object[]) dataAsObject;
+		final DatagramPacket datagramPacket = (DatagramPacket) data[1];
 
 		// retrieve KNX header
 		header.fromBytes(datagramPacket.getData(), 0);
 
 		for (final KNXPacketConverter<byte[], KNXPacket> converter : converters) {
 
-			LOG.info(header.getServiceIdentifier().name());
+			LOG.trace(header.getServiceIdentifier().name());
 
 			if (converter.accept(header)) {
-				return converter.convert(datagramPacket.getData());
+				data[1] = converter.convert(datagramPacket.getData());
+				return data;
 			}
 		}
+
+//		throw new RuntimeException("No converter accepts {}" + header.getServiceIdentifier().name());
+		LOG.warn("No converter accepts {}", header.getServiceIdentifier().name());
 
 		return null;
 	}

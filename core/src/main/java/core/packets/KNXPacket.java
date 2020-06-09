@@ -5,6 +5,8 @@ import java.util.TreeMap;
 
 import org.apache.commons.collections4.MapUtils;
 
+import core.communication.Connection;
+
 /**
  * <ol>
  * <li/>Make sure the new object has a copy constructor and a clone() method
@@ -35,6 +37,10 @@ public class KNXPacket {
 	private ConnectionResponseDataBlock connectionResponseDataBlock;
 
 	private CemiPropReadRequest cemiPropReadRequest;
+
+	private CemiTunnelRequest cemiTunnelRequest;
+
+	private Connection connection;
 
 	public KNXPacket() {
 
@@ -78,6 +84,9 @@ public class KNXPacket {
 		if (knxPacket.getCemiPropReadRequest() != null) {
 			cemiPropReadRequest = new CemiPropReadRequest(knxPacket.getCemiPropReadRequest());
 		}
+		if (knxPacket.getCemiTunnelRequest() != null) {
+			cemiTunnelRequest = new CemiTunnelRequest(knxPacket.getCemiTunnelRequest());
+		}
 	}
 
 	public byte[] getBytes() {
@@ -109,6 +118,11 @@ public class KNXPacket {
 		if (getCemiPropReadRequest() != null) {
 			cemiPropReadRequestBuffer = getCemiPropReadRequest().getBytes();
 		}
+		// cemiTunnelRequest
+		byte[] cemiTunnelRequestBuffer = null;
+		if (getCemiTunnelRequest() != null) {
+			cemiTunnelRequestBuffer = getCemiTunnelRequest().getBytes();
+		}
 
 		// compute total length
 		int totalLength = 0;
@@ -127,6 +141,7 @@ public class KNXPacket {
 		}
 		totalLength += crdBuffer == null ? 0 : crdBuffer.length;
 		totalLength += cemiPropReadRequestBuffer == null ? 0 : cemiPropReadRequestBuffer.length;
+		totalLength += cemiTunnelRequestBuffer == null ? 0 : cemiTunnelRequestBuffer.length;
 		totalLength += connectionHeaderBuffer == null ? 0 : connectionHeaderBuffer.length;
 		for (final DescriptionInformationBlock dib : dibMap.values()) {
 			totalLength += dib.getLength();
@@ -174,9 +189,16 @@ public class KNXPacket {
 			System.arraycopy(crdBuffer, 0, payload, index, crdBuffer.length);
 			index += crdBuffer.length;
 		}
+
+		// copy cemi prop read
 		if (cemiPropReadRequestBuffer != null) {
 			System.arraycopy(cemiPropReadRequestBuffer, 0, payload, index, cemiPropReadRequestBuffer.length);
 			index += cemiPropReadRequestBuffer.length;
+		}
+		// copy cemi tunnel request
+		if (cemiTunnelRequestBuffer != null) {
+			System.arraycopy(cemiTunnelRequestBuffer, 0, payload, index, cemiTunnelRequestBuffer.length);
+			index += cemiTunnelRequestBuffer.length;
 		}
 
 		// copy all DIB
@@ -281,6 +303,22 @@ public class KNXPacket {
 
 	public void setConnectionHeader(final ConnectionHeader connectionHeader) {
 		this.connectionHeader = connectionHeader;
+	}
+
+	public Connection getConnection() {
+		return connection;
+	}
+
+	public void setConnection(final Connection connection) {
+		this.connection = connection;
+	}
+
+	public CemiTunnelRequest getCemiTunnelRequest() {
+		return cemiTunnelRequest;
+	}
+
+	public void setCemiTunnelRequest(final CemiTunnelRequest cemiTunnelRequest) {
+		this.cemiTunnelRequest = cemiTunnelRequest;
 	}
 
 }

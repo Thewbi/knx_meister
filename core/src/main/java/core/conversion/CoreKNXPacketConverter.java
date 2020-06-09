@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.common.Utils;
+import core.packets.ConnectionHeader;
 import core.packets.ConnectionRequestInformation;
 import core.packets.DescriptionInformationBlock;
 import core.packets.HPAIStructure;
@@ -37,6 +38,9 @@ public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 		}
 
 		DescriptionInformationBlock descriptionInformationBlock = null;
+		ConnectionRequestInformation connectionRequestInformation = null;
+		HPAIStructure dataEndpointHPAIStructure = null;
+		final ConnectionHeader connectionHeader = null;
 
 		// HPAI structure - Control Endpoint
 		HPAIStructure structure = null;
@@ -113,14 +117,13 @@ public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 			index += structure.getLength();
 
 			// HPAI structure - Data Endpoint (First HPAI is the control endpoint)
-			final HPAIStructure dataEndpointHPAIStructure = (HPAIStructure) byteArrayToStructureConverter
-					.convert(source, index);
+			dataEndpointHPAIStructure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
 			knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataEndpointHPAIStructure);
 			index += dataEndpointHPAIStructure.getLength();
 
 			// Connection Request Information (CRI)
-			final ConnectionRequestInformation connectionRequestInformation = (ConnectionRequestInformation) byteArrayToStructureConverter
-					.convert(source, index);
+			connectionRequestInformation = (ConnectionRequestInformation) byteArrayToStructureConverter.convert(source,
+					index);
 			knxPacket.getStructureMap().put(connectionRequestInformation.getStructureType(),
 					connectionRequestInformation);
 			index += connectionRequestInformation.getLength();
@@ -159,9 +162,6 @@ public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 			index += structure.getLength();
 			break;
 
-		case TUNNEL_REQUEST:
-			throw new RuntimeException("Not implemented!");
-
 		default:
 			throw new RuntimeException("Unknown type: " + header.getServiceIdentifier());
 		}
@@ -185,7 +185,6 @@ public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 		case CONNECT_RESPONSE:
 		case CONNECTIONSTATE_REQUEST:
 		case DISCONNECT_REQUEST:
-		case TUNNEL_REQUEST:
 			return true;
 
 		default:

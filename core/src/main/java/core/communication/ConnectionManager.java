@@ -8,7 +8,12 @@ import core.packets.KNXPacket;
 
 public interface ConnectionManager {
 
+	/**
+	 * Connection via the knxPacket.getCommunicationChannelId() property.
+	 */
 	Connection retrieveConnection(KNXPacket knxPacket, DatagramSocket datagramSocket);
+
+	Connection retrieveConnection(int communicationChannelId);
 
 	Connection createNewConnection(DatagramSocket datagramSocket, ConnectionType connectionType);
 

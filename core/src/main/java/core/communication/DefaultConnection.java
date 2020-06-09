@@ -19,6 +19,8 @@ public class DefaultConnection implements Connection {
 
 	private int id;
 
+	private int sequenceCounter = -1;
+
 	private DatagramSocket datagramSocket;
 
 	private ConnectionType connectionType;
@@ -79,6 +81,16 @@ public class DefaultConnection implements Connection {
 
 	public void setOutputPipeline(final Pipeline<Object, Object> outputPipeline) {
 		this.outputPipeline = outputPipeline;
+	}
+
+	@Override
+	public int getSequenceCounter() {
+		return sequenceCounter;
+	}
+
+	@Override
+	public void setSequenceCounter(final int sequenceCounter) {
+		this.sequenceCounter = sequenceCounter;
 	}
 
 }
