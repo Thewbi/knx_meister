@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 
 import core.api.device.Device;
 import core.common.NetworkUtils;
+import core.packets.CemiTunnelRequest;
 import core.packets.ConnectionHeader;
 import core.packets.ConnectionRequestInformation;
 import core.packets.ConnectionResponseDataBlock;
@@ -175,17 +176,20 @@ public class Controller extends BaseDatagramPacketCallback {
 //			final Connection tunnelConnection = connectionManager
 //					.retrieveConnection(knxPacket.getConnectionHeader().getChannel());
 
+			if (knxPacket.getCemiTunnelRequest().getApci() == 0x4300) {
+				throw new RuntimeException("Unknown message");
+			}
+
 			// send acknowledge
 			final KNXPacket tunnelResponse = sendTunnelResponse(knxPacket, socket3671, datagramPacket);
-//			tunnelConnection.sendResponse(tunnelResponse, datagramPacket.getSocketAddress());
 			knxPacket.getConnection().sendResponse(tunnelResponse, datagramPacket.getSocketAddress());
 
 			// Send a acknowledge
 			final KNXPacket acknowledgeKNXPacket = new KNXPacket(knxPacket);
 
 			final int sequenceCounter = knxPacket.getConnection().getSequenceCounter();
-			// increment by 2
-			acknowledgeKNXPacket.getConnectionHeader().setSequenceCounter(sequenceCounter + 2);
+			acknowledgeKNXPacket.getConnectionHeader().setSequenceCounter(sequenceCounter);
+//			acknowledgeKNXPacket.getConnectionHeader().setSequenceCounter(sequenceCounter + 2);
 //			acknowledgeKNXPacket.getConnectionHeader().setSequenceCounter(sequenceCounter + 1);
 			acknowledgeKNXPacket.getCemiTunnelRequest().setMessageCode(0x2e);
 			acknowledgeKNXPacket.getCemiTunnelRequest().setSourceKNXAddress(device.getPhysicalAddress());
@@ -193,34 +197,35 @@ public class Controller extends BaseDatagramPacketCallback {
 			acknowledgeKNXPacket.getCemiTunnelRequest().setDestKNXAddress(0);
 			acknowledgeKNXPacket.getCemiTunnelRequest().setCtrl1(0x91);
 			acknowledgeKNXPacket.getCemiTunnelRequest().setLength(1);
-			acknowledgeKNXPacket.getCemiTunnelRequest().setApci(0x0100);
+			acknowledgeKNXPacket.getCemiTunnelRequest().setApci(0x0100); // <------- FIX for different application
+																			// services!
 
 			knxPacket.getConnection().sendResponse(acknowledgeKNXPacket, datagramPacket.getSocketAddress());
 
 			// TODO ask the application layer service if the packet makes send and if so
 			// send a confirmation
 
-//			final KNXPacket indicationKNXPacket = new KNXPacket();
-//			indicationKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);
-//
-//			indicationKNXPacket.setConnectionHeader(new ConnectionHeader());
-//			indicationKNXPacket.getConnectionHeader().setChannel(knxPacket.getConnectionHeader().getChannel());
-//			indicationKNXPacket.getConnectionHeader()
-//					.setSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter() + 3);
-//			// set reserved to 0x00
-//			indicationKNXPacket.getConnectionHeader().setReserved(0x00);
-//
-//			final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
-//			cemiTunnelRequest.setMessageCode(0x29); // ind (= response in network layer terms)
-//			cemiTunnelRequest.setAdditionalInfoLength(0);
-//			cemiTunnelRequest.setCtrl1(0xB0);
-//			cemiTunnelRequest.setCtrl2(0xE0);
-//			cemiTunnelRequest.setSourceKNXAddress(device.getPhysicalAddress());
-//			cemiTunnelRequest.setDestKNXAddress(0);
-//			cemiTunnelRequest.setLength(1);
-//			cemiTunnelRequest.setApci(0x0140); // IndAddrResp
-//			indicationKNXPacket.setCemiTunnelRequest(cemiTunnelRequest);
-//			knxPacket.getConnection().sendResponse(indicationKNXPacket, datagramPacket.getSocketAddress());
+			final KNXPacket indicationKNXPacket = new KNXPacket();
+			indicationKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);
+
+			indicationKNXPacket.setConnectionHeader(new ConnectionHeader());
+			indicationKNXPacket.getConnectionHeader().setChannel(knxPacket.getConnectionHeader().getChannel());
+			indicationKNXPacket.getConnectionHeader()
+					.setSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter() + 1);
+			// set reserved to 0x00
+			indicationKNXPacket.getConnectionHeader().setReserved(0x00);
+
+			final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
+			cemiTunnelRequest.setMessageCode(0x29); // ind (= response in network layer terms)
+			cemiTunnelRequest.setAdditionalInfoLength(0);
+			cemiTunnelRequest.setCtrl1(0xB0);
+			cemiTunnelRequest.setCtrl2(0xE0);
+			cemiTunnelRequest.setSourceKNXAddress(device.getPhysicalAddress());
+			cemiTunnelRequest.setDestKNXAddress(0);
+			cemiTunnelRequest.setLength(1);
+			cemiTunnelRequest.setApci(0x0140); // IndAddrResp
+			indicationKNXPacket.setCemiTunnelRequest(cemiTunnelRequest);
+			knxPacket.getConnection().sendResponse(indicationKNXPacket, datagramPacket.getSocketAddress());
 
 			break;
 

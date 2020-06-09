@@ -46,6 +46,9 @@ public class TunnelKNXPacketConverter extends BaseKNXPacketConverter {
 			knxPacket.setCemiTunnelRequest(cemiTunnelRequest);
 			break;
 
+		case TUNNEL_RESPONSE:
+			break;
+
 		default:
 			throw new RuntimeException("Unknown type: " + header.getServiceIdentifier());
 		}
