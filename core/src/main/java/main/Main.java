@@ -11,9 +11,13 @@ import core.api.device.Device;
 import core.api.pipeline.Pipeline;
 import core.common.KNXPacketConverter;
 import core.communication.ConnectionManager;
-import core.communication.Controller;
 import core.communication.DefaultConnectionManager;
 import core.communication.MulticastListenerReaderThread;
+import core.communication.controller.BaseController;
+import core.communication.controller.CoreController;
+import core.communication.controller.DeviceManagementController;
+import core.communication.controller.ServerCoreController;
+import core.communication.controller.TunnelingController;
 import core.conversion.CoreKNXPacketConverter;
 import core.conversion.DeviceManagementKNXPacketConverter;
 import core.conversion.TunnelKNXPacketConverter;
@@ -34,16 +38,18 @@ import core.pipeline.OutwardOutputPipelineStep;
  *
  * <pre>
  * On loopback
- * udp and ( (ip.src == 192.168.0.1/16) or ( ip.dst == 192.168.0.0/16) )
- * udp and ( (ip.src == 192.168.0.1/16) or ( ip.dst == 192.168.0.0/16) or ( ip.dst == 224.0.23.12/32) )
+ * udp and ( (ip.src == 192.168.0.1/16) or (ip.dst == 192.168.0.0/16) )
+ * udp and ( (ip.src == 192.168.0.1/16) or (ip.dst == 192.168.0.0/16) or (ip.dst == 224.0.23.12/32) )
  *
  * On WLAN: (Weinzierl without multicast traffic)
- * udp and ( (ip.src == 192.168.0.241/32) or ( ip.dst == 192.168.0.241/32) )
+ * udp and ( (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32) )
  *
  * On WLAN: (Weinzierl including multicast traffic)
- * udp and ( (ip.src == 192.168.0.241/32) or ( ip.dst == 192.168.0.241/32) or ( ip.dst == 224.0.23.12/32) )
- * </pre>
+ * udp and ( (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32) or (ip.dst == 224.0.23.12/32) )
  *
+ * udp and ( (ip.src == 192.168.0.234/32) or (ip.dst == 192.168.0.234/32) )
+ * udp and ( (ip.src == 192.168.0.234/32) or (ip.dst == 192.168.0.234/32) or (ip.dst == 224.0.23.12/32) )
+ * </pre>
  */
 public class Main {
 
@@ -93,10 +99,6 @@ public class Main {
 		device.setPhysicalAddress(DEVICE_ADDRESS);
 		device.setDeviceStatus(DeviceStatus.PROGRAMMING_MODE);
 
-		final Controller controller = new Controller();
-		controller.setDevice(device);
-		controller.setConnectionManager(connectionManager);
-
 //		// reader for point to point connections
 //		final PointToPointReaderThread readerThread = new PointToPointReaderThread(POINT_TO_POINT_READER_IP_ADDRESS,
 //				Controller.POINT_TO_POINT_PORT);
@@ -130,10 +132,29 @@ public class Main {
 		inwardPipeline.addStep(inwardConnectionPipelineStep);
 		inwardPipeline.addStep(inwardOutputPipelineStep);
 
+		final CoreController coreController = new CoreController();
+		coreController.setDevice(device);
+		coreController.setConnectionManager(connectionManager);
+
+		final ServerCoreController serverCoreController = new ServerCoreController();
+		serverCoreController.setDevice(device);
+		serverCoreController.setConnectionManager(connectionManager);
+
+		final DeviceManagementController deviceManagementController = new DeviceManagementController();
+		deviceManagementController.setDevice(device);
+		deviceManagementController.setConnectionManager(connectionManager);
+
+		final TunnelingController tunnelingController = new TunnelingController();
+		tunnelingController.setDevice(device);
+		tunnelingController.setConnectionManager(connectionManager);
+
 		// reader for multicast messages
 		final MulticastListenerReaderThread multicastListenerThread = new MulticastListenerReaderThread(
-				Controller.POINT_TO_POINT_PORT);
-		multicastListenerThread.setDatagramPacketCallback(controller);
+				BaseController.KNX_PORT_DEFAULT);
+		multicastListenerThread.getDatagramPacketCallbacks().add(coreController);
+		multicastListenerThread.getDatagramPacketCallbacks().add(serverCoreController);
+		multicastListenerThread.getDatagramPacketCallbacks().add(deviceManagementController);
+		multicastListenerThread.getDatagramPacketCallbacks().add(tunnelingController);
 		multicastListenerThread.setInputPipeline(inwardPipeline);
 //		multicastListenerThread.setConnectionManager(connectionManager);
 		new Thread(multicastListenerThread).start();

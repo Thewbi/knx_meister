@@ -15,6 +15,8 @@ public interface DatagramPacketCallback {
 	void knxPacket(Connection connection, DatagramSocket socket, DatagramPacket datagramPacket, KNXPacket knxPacket,
 			String label) throws UnknownHostException, IOException;
 
-//	void setCoreKNXPacketConverter(Converter<byte[], KNXPacket> knxPacketConverter);
+	boolean accepts(DatagramPacket datagramPacket);
+
+	boolean accepts(KNXPacket knxPacket);
 
 }

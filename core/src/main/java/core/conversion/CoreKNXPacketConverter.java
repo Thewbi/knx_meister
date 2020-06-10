@@ -4,7 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.common.Utils;
-import core.packets.ConnectionHeader;
 import core.packets.ConnectionRequestInformation;
 import core.packets.DescriptionInformationBlock;
 import core.packets.HPAIStructure;
@@ -40,7 +39,6 @@ public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 		DescriptionInformationBlock descriptionInformationBlock = null;
 		ConnectionRequestInformation connectionRequestInformation = null;
 		HPAIStructure dataEndpointHPAIStructure = null;
-		final ConnectionHeader connectionHeader = null;
 
 		// HPAI structure - Control Endpoint
 		HPAIStructure structure = null;
