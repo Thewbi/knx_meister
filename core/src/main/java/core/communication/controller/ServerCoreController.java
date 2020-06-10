@@ -22,6 +22,13 @@ import core.packets.KNXPacket;
 import core.packets.ServiceIdentifier;
 import core.packets.StructureType;
 
+/**
+ * Sends out messages to clients. Implements the server part of the KNX Core
+ * protocol.
+ *
+ * @author U5353
+ *
+ */
 public class ServerCoreController extends BaseController {
 
 	private static final Logger LOG = LogManager.getLogger(ServerCoreController.class);

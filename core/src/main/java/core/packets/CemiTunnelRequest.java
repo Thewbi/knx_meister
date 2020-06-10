@@ -33,6 +33,10 @@ public class CemiTunnelRequest {
 	/** (2 Byte) */
 	private int apci;
 
+	private byte[] payloadBytes;
+
+	private int payloadLength;
+
 	/**
 	 * ctor
 	 */
@@ -53,35 +57,69 @@ public class CemiTunnelRequest {
 		destKNXAddress = cemiTunnelRequest.destKNXAddress;
 		length = cemiTunnelRequest.length;
 		apci = cemiTunnelRequest.apci;
+		if (cemiTunnelRequest.getPayloadBytes() != null) {
+			payloadBytes = cemiTunnelRequest.getPayloadBytes().clone();
+		}
+		payloadLength = cemiTunnelRequest.payloadLength;
 	}
 
 	public void fromBytes(final byte[] source, final int startIndex) {
 
+		cemiTunnelRequestLength = 0;
+
 		// messageCode (1 byte)
 		messageCode = (short) ((source[startIndex + 0]) & 0xFF);
+		cemiTunnelRequestLength++;
 
 		// additionalInfoLength (1 byte)
 		additionalInfoLength = (short) ((source[startIndex + 1]) & 0xFF);
+		cemiTunnelRequestLength++;
 
 		// TODO: if additionalInfoLength is greater then 0, where is the additional data
 		// stored???
 
 		ctrl1 = ((source[startIndex + 2]) & 0xFF);
+		cemiTunnelRequestLength++;
+
 		ctrl2 = ((source[startIndex + 3]) & 0xFF);
+		cemiTunnelRequestLength++;
 
 		sourceKNXAddress = Utils.bytesToUnsignedShort(source[startIndex + 4], source[startIndex + 5], true);
+		cemiTunnelRequestLength += 2;
+
 		destKNXAddress = Utils.bytesToUnsignedShort(source[startIndex + 6], source[startIndex + 7], true);
+		cemiTunnelRequestLength += 2;
 
 		length = ((source[startIndex + 8]) & 0xFF);
+		cemiTunnelRequestLength++;
 
-		apci = Utils.bytesToUnsignedShort(source[startIndex + 9], source[startIndex + 10], true);
+		if (length > 0) {
+
+			apci = Utils.bytesToUnsignedShort(source[startIndex + 9], source[startIndex + 10], true);
+			cemiTunnelRequestLength += 2;
+
+			// How to detect payload bytes?????????????
+			// maybe via header total length?
+			payloadLength = length - 1;
+			if (payloadLength > 0) {
+				payloadBytes = new byte[payloadLength];
+
+				System.arraycopy(source, startIndex + 11, payloadBytes, 0, payloadLength);
+
+				cemiTunnelRequestLength += payloadLength;
+			}
+		}
 	}
 
 	public byte[] getBytes() {
 
 		int index = 0;
 
-		final byte[] payload = new byte[cemiTunnelRequestLength];
+		payloadLength = 0;
+		if (apci > 0 && payloadBytes != null) {
+			payloadLength = payloadBytes.length;
+		}
+		final byte[] payload = new byte[cemiTunnelRequestLength + payloadLength];
 
 		payload[index++] = (byte) (messageCode & 0xFF);
 
@@ -99,8 +137,15 @@ public class CemiTunnelRequest {
 
 		payload[index++] = (byte) (length & 0xFF);
 
-		payload[index++] = (byte) (((apci) >> 8) & 0xFF);
-		payload[index++] = (byte) (apci & 0xFF);
+		if (apci > 0) {
+
+			payload[index++] = (byte) (((apci) >> 8) & 0xFF);
+			payload[index++] = (byte) (apci & 0xFF);
+
+			if (payloadBytes != null) {
+				System.arraycopy(payloadBytes, 0, payload, index, payloadLength);
+			}
+		}
 
 		return payload;
 	}
@@ -175,6 +220,14 @@ public class CemiTunnelRequest {
 
 	public void setApci(final int apci) {
 		this.apci = apci;
+	}
+
+	public byte[] getPayloadBytes() {
+		return payloadBytes;
+	}
+
+	public void setPayloadBytes(final byte[] payloadBytes) {
+		this.payloadBytes = payloadBytes;
 	}
 
 }

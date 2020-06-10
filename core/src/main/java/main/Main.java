@@ -44,11 +44,20 @@ import core.pipeline.OutwardOutputPipelineStep;
  * On WLAN: (Weinzierl without multicast traffic)
  * udp and ( (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32) )
  *
+ * On WLAN without discovery traffic
+ * udp and ( (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32) ) and (not frame contains 06:10:02:02) and (not frame contains 06:10:02:01) and (not frame contains 06:10:02:0b)
+ *
  * On WLAN: (Weinzierl including multicast traffic)
  * udp and ( (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32) or (ip.dst == 224.0.23.12/32) )
  *
  * udp and ( (ip.src == 192.168.0.234/32) or (ip.dst == 192.168.0.234/32) )
  * udp and ( (ip.src == 192.168.0.234/32) or (ip.dst == 192.168.0.234/32) or (ip.dst == 224.0.23.12/32) )
+ *
+ * Without discovery traffic:
+ * udp and ( (ip.src == 192.168.0.1/16) or (ip.dst == 192.168.0.0/16) ) and (not frame contains 06:10:02:02) and (not frame contains 06:10:02:01) and (not frame contains 06:10:02:0b)
+ *
+ * Without discovery traffic and own computer name:
+ * udp and ( (ip.src == 192.168.0.1/16) or (ip.dst == 192.168.0.0/16) ) and (not frame contains 06:10:02:02) and (not frame contains 06:10:02:01) and (not frame contains 06:10:02:0b) and (not frame contains "DE7487M")
  * </pre>
  */
 public class Main {

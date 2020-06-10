@@ -321,4 +321,22 @@ public class KNXPacket {
 		this.cemiTunnelRequest = cemiTunnelRequest;
 	}
 
+	public ConnectionType getConnectionType() {
+
+		final Structure tunnelingStructure = getStructureMap().get(StructureType.TUNNELING_CONNECTION);
+		final Structure deviceManagementStructure = getStructureMap().get(StructureType.DEVICE_MGMT_CONNECTION);
+
+		if ((tunnelingStructure != null) || (cemiPropReadRequest != null) || (cemiTunnelRequest != null)) {
+			return ConnectionType.TUNNEL_CONNECTION;
+		}
+
+		if (deviceManagementStructure != null) {
+			return ConnectionType.DEVICE_MGMT_CONNECTION;
+		}
+
+//		throw new RuntimeException("Cannot retrieve a connection type!");
+
+		return ConnectionType.UNKNOWN;
+	}
+
 }

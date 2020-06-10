@@ -57,7 +57,7 @@ public class DefaultConnectionManager implements ConnectionManager {
 		return createNewConnection(datagramSocket, connectionIdAtomicInteger.getAndIncrement(), connectionType);
 	}
 
-	private Connection createNewConnection(final DatagramSocket datagramSocket, final int id,
+	public Connection createNewConnection(final DatagramSocket datagramSocket, final int id,
 			final ConnectionType connectionType) {
 
 		LOG.info("Creating new connnection with id {}", id);

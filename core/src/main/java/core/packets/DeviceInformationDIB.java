@@ -104,21 +104,15 @@ public class DeviceInformationDIB extends DescriptionInformationBlock {
 
 		System.arraycopy(source, index, deviceSerialNumber, 0, deviceSerialNumber.length);
 		index += deviceSerialNumber.length;
-//		System.out.println(Utils.integerToStringNoPrefix(deviceSerialNumber));
 
 		System.arraycopy(source, index, deviceRoutingMulticastAddress, 0, deviceRoutingMulticastAddress.length);
 		index += deviceRoutingMulticastAddress.length;
-//		System.out.println(Utils.integerToStringDecimalNoPrefix(deviceRoutingMulticastAddress));
 
 		System.arraycopy(source, index, deviceMacAddress, 0, deviceMacAddress.length);
 		index += deviceMacAddress.length;
-//		System.out.println(Utils.integerToStringNoPrefix(deviceMacAddress));
 
 		System.arraycopy(source, index, deviceFriendlyName, 0, deviceFriendlyName.length);
 		index += deviceFriendlyName.length;
-//		System.out.println(new String(deviceFriendlyName));
-
-//		System.out.println("done");
 	}
 
 	@Override

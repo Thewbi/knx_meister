@@ -27,7 +27,6 @@ import core.packets.MfrDataDIB;
 import core.packets.ProtocolDescriptor;
 import core.packets.ServiceFamily;
 import core.packets.ServiceIdentifier;
-import core.packets.Structure;
 import core.packets.StructureType;
 import core.packets.SuppSvcFamiliesDIB;
 
@@ -97,35 +96,39 @@ public class CoreController extends BaseController {
 			break;
 
 		case CONNECT_REQUEST:
-			final Structure tunnelingStructure = knxPacket.getStructureMap().get(StructureType.TUNNELING_CONNECTION);
-			final Structure deviceManagementStructure = knxPacket.getStructureMap()
-					.get(StructureType.DEVICE_MGMT_CONNECTION);
-
-			if ((tunnelingStructure == null) && (deviceManagementStructure == null)) {
-				throw new RuntimeException("Cannot retrieve a connection structure!");
-			}
-
-			ConnectionType connectionType = ConnectionType.TUNNEL_CONNECTION;
-			if (deviceManagementStructure != null) {
-				connectionType = ConnectionType.DEVICE_MGMT_CONNECTION;
-			}
-
-			final Connection newConnection = getConnectionManager().createNewConnection(datagramSocket, connectionType);
+			final Connection newConnection = getConnectionManager().createNewConnection(datagramSocket,
+					knxPacket.getConnectionType());
 
 			hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
 			final InetAddress controlInetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
 			final int controlPort = hpaiStructure.getPort() & 0xFFFF;
 
 			final KNXPacket sendConnectionResponse = sendConnectionResponse(datagramSocket, datagramPacket,
-					controlInetAddress, controlPort, connectionType);
+					controlInetAddress, controlPort, knxPacket.getConnectionType());
 			newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
 			break;
 
 		case CONNECTIONSTATE_REQUEST:
+
 			final KNXPacket sendConnectionStateResponse = sendConnectionStateResponse(datagramSocket, datagramPacket,
 					knxPacket, inetAddress, port);
 
-			connection.sendResponse(sendConnectionStateResponse, datagramPacket.getSocketAddress());
+			final HPAIStructure controlEndpointHPAIStructure = (HPAIStructure) knxPacket.getStructureMap()
+					.get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
+//
+//			final byte[] payload = sendConnectionStateResponse.getBytes();
+//			final DatagramPacket ddatagramPacket = new DatagramPacket(payload, payload.length,
+//					controlEndpointHPAIStructure.getIpAddressAsObject(), controlEndpointHPAIStructure.getPort());
+//
+//			final DatagramSocket controlDatagramSocket = new DatagramSocket();
+//			controlDatagramSocket.send(ddatagramPacket);
+
+			final InetSocketAddress socketAddr = new InetSocketAddress(
+					controlEndpointHPAIStructure.getIpAddressAsObject(), controlEndpointHPAIStructure.getPort());
+
+			// connection.sendResponse(sendConnectionStateResponse,
+			// datagramPacket.getSocketAddress());
+			connection.sendResponse(sendConnectionStateResponse, socketAddr);
 			break;
 
 		case DISCONNECT_REQUEST:
@@ -263,7 +266,6 @@ public class CoreController extends BaseController {
 
 		// header
 		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECTIONSTATE_RESPONSE);
-
 		knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
 		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
 

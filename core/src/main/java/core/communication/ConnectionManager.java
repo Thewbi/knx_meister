@@ -17,6 +17,8 @@ public interface ConnectionManager {
 
 	Connection createNewConnection(DatagramSocket datagramSocket, ConnectionType connectionType);
 
+	Connection createNewConnection(DatagramSocket datagramSocket, int id, ConnectionType connectionType);
+
 	void closeConnection(int id);
 
 	void setOutputPipeline(Pipeline<Object, Object> outputPipeline);

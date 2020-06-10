@@ -13,7 +13,7 @@ public class HPAIStructure extends Structure {
 
 	private byte[] ipAddress = new byte[4];
 
-	private short port;
+	private int port;
 
 	public HPAIStructure() {
 		setStructureType(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
@@ -54,7 +54,7 @@ public class HPAIStructure extends Structure {
 		ipAddress[1] = bytes[startIndex + 1];
 		ipAddress[2] = bytes[startIndex + 2];
 		ipAddress[3] = bytes[startIndex + 3];
-		port = (short) Utils.bytesToUnsignedShort(bytes[startIndex + 4], bytes[startIndex + 5], true);
+		port = Utils.bytesToUnsignedShort(bytes[startIndex + 4], bytes[startIndex + 5], true);
 	}
 
 	@Override
@@ -81,11 +81,11 @@ public class HPAIStructure extends Structure {
 		this.ipAddress = ipAddress;
 	}
 
-	public short getPort() {
+	public int getPort() {
 		return port;
 	}
 
-	public void setPort(final short port) {
+	public void setPort(final int port) {
 		this.port = port;
 	}
 

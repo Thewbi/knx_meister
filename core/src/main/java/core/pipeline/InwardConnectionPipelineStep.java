@@ -36,15 +36,23 @@ public class InwardConnectionPipelineStep implements PipelineStep<Object, Object
 		// try to retrieve the connection via the connection header
 		if (knxPacket.getConnectionHeader() != null) {
 			connection = connectionManager.retrieveConnection(knxPacket.getConnectionHeader().getChannel());
+			if (connection == null) {
+				connection = connectionManager.createNewConnection(datagramSocket, knxPacket.getConnectionType());
+			}
 		}
 
-		// try to retrieve the connection via the
+		final int communicationChannelId = knxPacket.getCommunicationChannelId();
+
+		// try to retrieve the connection via the communicationChannelId
 		if (connection == null) {
 			connection = connectionManager.retrieveConnection(knxPacket, datagramSocket);
+			if (connection == null && communicationChannelId > 0) {
+				connection = connectionManager.createNewConnection(datagramSocket, communicationChannelId,
+						knxPacket.getConnectionType());
+			}
 		}
 
 		if (connection == null) {
-			final int communicationChannelId = knxPacket.getCommunicationChannelId();
 			LOG.warn("Connection with communicationChannelId = {} is not known! No response is sent!",
 					communicationChannelId);
 		} else {

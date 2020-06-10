@@ -45,6 +45,10 @@ public class DefaultConnection implements Connection {
 			LOG.error(e.getMessage(), e);
 			throw new IOException(e);
 		}
+
+		// datagramSocket.getInetAddress().getHostAddress() +
+		LOG.info("Connection {} is sending packet over socketAddress {}", id, socketAddress);
+
 		datagramSocket.send(datagramPacket);
 	}
 

@@ -101,4 +101,14 @@ public final class Utils {
 		return areaAddress + "." + lineAddress + "." + lowerByte;
 	}
 
+	public static byte[] shortToByteArray(final short data) {
+
+		int index = 0;
+		final byte[] result = new byte[2];
+		result[index++] = (byte) (data >> 8);
+		result[index++] = (byte) (data & 0xFF);
+
+		return result;
+	}
+
 }
