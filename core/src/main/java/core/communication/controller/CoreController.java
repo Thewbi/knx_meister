@@ -14,8 +14,6 @@ import org.apache.logging.log4j.Logger;
 
 import core.communication.Connection;
 import core.packets.ConnectionRequestInformation;
-import core.packets.ConnectionResponseDataBlock;
-import core.packets.ConnectionStatus;
 import core.packets.ConnectionType;
 import core.packets.DescriptionInformationBlockType;
 import core.packets.DeviceInformationDIB;
@@ -51,8 +49,9 @@ public class CoreController extends BaseController {
 		HPAIStructure hpaiStructure = null;
 		InetAddress inetAddress = null;
 		int port = -1;
-
 		DeviceInformationDIB deviceInformationDIB = null;
+		Connection packetConnection = null;
+		int communicationChannelId = 0;
 
 		switch (knxPacket.getHeader().getServiceIdentifier()) {
 
@@ -96,6 +95,12 @@ public class CoreController extends BaseController {
 			break;
 
 		case CONNECT_REQUEST:
+			// if the connect request contains a CRI Tunneling Connection, this connection
+			// should be handled by the tunneling controller
+			if (knxPacket.getStructureMap().containsKey(StructureType.TUNNELING_CONNECTION)) {
+				break;
+			}
+
 			final Connection newConnection = getConnectionManager().createNewConnection(datagramSocket,
 					knxPacket.getConnectionType());
 
@@ -105,33 +110,38 @@ public class CoreController extends BaseController {
 
 			final KNXPacket sendConnectionResponse = sendConnectionResponse(datagramSocket, datagramPacket,
 					controlInetAddress, controlPort, knxPacket.getConnectionType());
+			sendConnectionResponse.setCommunicationChannelId(newConnection.getId());
 			newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
 			break;
 
 		case CONNECTIONSTATE_REQUEST:
+			// make sure this is not a tunneling connection
+			communicationChannelId = knxPacket.getCommunicationChannelId();
+			packetConnection = getConnectionManager().retrieveConnection(communicationChannelId);
+			if (packetConnection.getConnectionType() == ConnectionType.TUNNEL_CONNECTION) {
+				return;
+			}
 
 			final KNXPacket sendConnectionStateResponse = sendConnectionStateResponse(datagramSocket, datagramPacket,
 					knxPacket, inetAddress, port);
 
 			final HPAIStructure controlEndpointHPAIStructure = (HPAIStructure) knxPacket.getStructureMap()
 					.get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
-//
-//			final byte[] payload = sendConnectionStateResponse.getBytes();
-//			final DatagramPacket ddatagramPacket = new DatagramPacket(payload, payload.length,
-//					controlEndpointHPAIStructure.getIpAddressAsObject(), controlEndpointHPAIStructure.getPort());
-//
-//			final DatagramSocket controlDatagramSocket = new DatagramSocket();
-//			controlDatagramSocket.send(ddatagramPacket);
 
 			final InetSocketAddress socketAddr = new InetSocketAddress(
 					controlEndpointHPAIStructure.getIpAddressAsObject(), controlEndpointHPAIStructure.getPort());
 
-			// connection.sendResponse(sendConnectionStateResponse,
-			// datagramPacket.getSocketAddress());
 			connection.sendResponse(sendConnectionStateResponse, socketAddr);
 			break;
 
 		case DISCONNECT_REQUEST:
+			// make sure this is not a tunneling connection
+			communicationChannelId = knxPacket.getCommunicationChannelId();
+			packetConnection = getConnectionManager().retrieveConnection(communicationChannelId);
+			if (packetConnection == null || packetConnection.getConnectionType() == ConnectionType.TUNNEL_CONNECTION) {
+				return;
+			}
+
 			getConnectionManager().closeConnection(knxPacket.getCommunicationChannelId());
 
 			final KNXPacket sendDisconnetResponse = sendDisconnetResponse(datagramSocket, datagramPacket, knxPacket,
@@ -245,33 +255,6 @@ public class CoreController extends BaseController {
 		return knxPacket;
 	}
 
-	private KNXPacket sendDisconnetResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
-			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
-
-		final KNXPacket knxPacket = new KNXPacket();
-
-		// header
-		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.DISCONNECT_RESPONSE);
-
-		knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
-		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
-
-		return knxPacket;
-	}
-
-	private KNXPacket sendConnectionStateResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
-			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
-
-		final KNXPacket knxPacket = new KNXPacket();
-
-		// header
-		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECTIONSTATE_RESPONSE);
-		knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
-		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
-
-		return knxPacket;
-	}
-
 	/**
 	 * device info DescriptionInformationBlock (DIB)
 	 */
@@ -342,54 +325,6 @@ public class CoreController extends BaseController {
 		protocoDescriptor.setVersion(1);
 
 		return suppSvcFamiliesDIB;
-	}
-
-	/**
-	 * 7.8.2 CONNECT_RESPONSE Example: 8.8.6 CONNECT_RESPONSE
-	 *
-	 * @param socket3671     the DatagramSocket that the reader thread is bound to
-	 *                       on port 3671 and which messages are received from.
-	 * @param datagramPacket
-	 *
-	 * @param inetAddress    the IP address of the KNX Clients control endpoint
-	 *                       (send in the control HPAI).
-	 * @param port
-	 * @throws IOException
-	 */
-	private KNXPacket sendConnectionResponse(final DatagramSocket socket3671, final DatagramPacket datagramPacket,
-			final InetAddress inetAddress, final int port, final ConnectionType connectionType) throws IOException {
-
-		final KNXPacket knxPacket = new KNXPacket();
-
-		// header
-		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_RESPONSE);
-
-		knxPacket.setCommunicationChannelId(incrementChannelNumber());
-		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
-
-		final boolean addHPAIStructure = true;
-		if (addHPAIStructure) {
-
-			// HPAI structure
-			final HPAIStructure hpaiStructure = new HPAIStructure();
-			hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-			hpaiStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
-			knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
-		}
-
-		final boolean addconnectionResponseDataBlock = true;
-		if (addconnectionResponseDataBlock) {
-			// CRD - Connection Response Data Block
-			final ConnectionResponseDataBlock connectionResponseDataBlock = new ConnectionResponseDataBlock();
-			connectionResponseDataBlock.setConnectionType(connectionType);
-			if (connectionType != ConnectionType.DEVICE_MGMT_CONNECTION) {
-				connectionResponseDataBlock.setDeviceAddress(getDevice().getHostPhysicalAddress());
-			}
-
-			knxPacket.setConnectionResponseDataBlock(connectionResponseDataBlock);
-		}
-
-		return knxPacket;
 	}
 
 	@Override

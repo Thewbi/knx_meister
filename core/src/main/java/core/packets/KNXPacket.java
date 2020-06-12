@@ -26,13 +26,11 @@ public class KNXPacket {
 
 	private ConnectionHeader connectionHeader;
 
+	private int communicationChannelId = -1;
+
 	private final Map<StructureType, Structure> structureMap = new TreeMap<>();
 
 	private final Map<DescriptionInformationBlockType, DescriptionInformationBlock> dibMap = new TreeMap<>();
-
-	private int communicationChannelId = -1;
-
-	private ConnectionStatus connectionStatus = ConnectionStatus.UNSET;
 
 	private ConnectionResponseDataBlock connectionResponseDataBlock;
 
@@ -41,6 +39,8 @@ public class KNXPacket {
 	private CemiTunnelRequest cemiTunnelRequest;
 
 	private Connection connection;
+
+	private ConnectionStatus connectionStatus = ConnectionStatus.UNSET;
 
 	public KNXPacket() {
 
@@ -213,6 +213,32 @@ public class KNXPacket {
 		return payload;
 	}
 
+	public ConnectionType getConnectionType() {
+
+		final Structure tunnelingStructure = getStructureMap().get(StructureType.TUNNELING_CONNECTION);
+		final Structure deviceManagementStructure = getStructureMap().get(StructureType.DEVICE_MGMT_CONNECTION);
+
+		if ((tunnelingStructure != null) || (cemiPropReadRequest != null) || (cemiTunnelRequest != null)) {
+			return ConnectionType.TUNNEL_CONNECTION;
+		}
+
+		if (deviceManagementStructure != null) {
+			return ConnectionType.DEVICE_MGMT_CONNECTION;
+		}
+
+//		throw new RuntimeException("Cannot retrieve a connection type!");
+
+		return ConnectionType.UNKNOWN;
+	}
+
+	public void clearExceptHeaders() {
+		structureMap.clear();
+		dibMap.clear();
+		connectionResponseDataBlock = null;
+		cemiPropReadRequest = null;
+		cemiTunnelRequest = null;
+	}
+
 	@Override
 	public String toString() {
 
@@ -319,24 +345,6 @@ public class KNXPacket {
 
 	public void setCemiTunnelRequest(final CemiTunnelRequest cemiTunnelRequest) {
 		this.cemiTunnelRequest = cemiTunnelRequest;
-	}
-
-	public ConnectionType getConnectionType() {
-
-		final Structure tunnelingStructure = getStructureMap().get(StructureType.TUNNELING_CONNECTION);
-		final Structure deviceManagementStructure = getStructureMap().get(StructureType.DEVICE_MGMT_CONNECTION);
-
-		if ((tunnelingStructure != null) || (cemiPropReadRequest != null) || (cemiTunnelRequest != null)) {
-			return ConnectionType.TUNNEL_CONNECTION;
-		}
-
-		if (deviceManagementStructure != null) {
-			return ConnectionType.DEVICE_MGMT_CONNECTION;
-		}
-
-//		throw new RuntimeException("Cannot retrieve a connection type!");
-
-		return ConnectionType.UNKNOWN;
 	}
 
 }

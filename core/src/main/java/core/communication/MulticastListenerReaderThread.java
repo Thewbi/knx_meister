@@ -156,6 +156,8 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	public void knxPacket(final Connection connection, final DatagramSocket socket, final DatagramPacket datagramPacket,
 			final KNXPacket knxPacket, final String label) throws UnknownHostException, IOException {
 
+		boolean packetAcceptedAtLeastOnce = false;
+
 		if (CollectionUtils.isEmpty(datagramPacketCallbacks)) {
 			throw new RuntimeException("No listeners registered! System is malconfigured!");
 		}
@@ -163,12 +165,20 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 		for (final DatagramPacketCallback datagramPacketCallback : datagramPacketCallbacks) {
 
 			if (datagramPacketCallback.accepts(knxPacket)) {
+
+				packetAcceptedAtLeastOnce = true;
+
 				datagramPacketCallback.knxPacket(connection, socket, datagramPacket, knxPacket, label);
-				return;
+
+				// either only ask the first accepting controller or as all accepting
+				// controllers
+//				return;
 			}
 		}
 
-		throw new RuntimeException("No listener accepts the KNX packet" + knxPacket);
+		if (!packetAcceptedAtLeastOnce) {
+			throw new RuntimeException("No listener accepts the KNX packet" + knxPacket);
+		}
 	}
 
 	@Override

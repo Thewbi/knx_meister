@@ -3,6 +3,7 @@ package core.api.device;
 import java.util.Map;
 
 import core.packets.DeviceStatus;
+import core.packets.PropertyId;
 
 public interface Device {
 
@@ -19,5 +20,9 @@ public interface Device {
 	void setDeviceStatus(DeviceStatus deviceStatus);
 
 	DeviceStatus getDeviceStatus();
+
+	boolean hasPropertyValue(PropertyId propertyId);
+
+	short getPropertyValue(final PropertyId propertyId);
 
 }

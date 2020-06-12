@@ -4,7 +4,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.packets.CemiPropReadRequest;
+import core.packets.CemiTunnelRequest;
 import core.packets.ConnectionHeader;
+import core.packets.DeviceManagement;
 import core.packets.Header;
 import core.packets.KNXPacket;
 
@@ -38,23 +40,36 @@ public class DeviceManagementKNXPacketConverter extends BaseKNXPacketConverter {
 		switch (header.getServiceIdentifier()) {
 
 		// Device Management Specification- 4.2.6 DEVICE_CONFIGURATION_REQUEST
+		// 0x0310
 		case DEVICE_CONFIGURATION_REQUEST:
-//			// communication channel
-//			knxPacket.setCommunicationChannelId(source[index++]);
-//
-//			// skip reserved byte
-//			index++;
 
-			final CemiPropReadRequest cemiPropReadRequest = new CemiPropReadRequest();
-			cemiPropReadRequest.fromBytes(source, index);
-			index += cemiPropReadRequest.getLength();
-			knxPacket.setCemiPropReadRequest(cemiPropReadRequest);
+			final int messageCode = (source[index] & 0xFF);
+
+			switch (messageCode) {
+
+			case DeviceManagement.M_PROP_READ_REQ_VALUE:
+				final CemiPropReadRequest cemiPropReadRequest = new CemiPropReadRequest();
+				cemiPropReadRequest.fromBytes(source, index);
+				index += cemiPropReadRequest.getLength();
+				knxPacket.setCemiPropReadRequest(cemiPropReadRequest);
+				break;
+
+			case DeviceManagement.T_DATA_CONNECTED_REQ_VALUE:
+				final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
+				cemiTunnelRequest.fromBytes(source, index);
+				index += cemiTunnelRequest.getLength();
+				knxPacket.setCemiTunnelRequest(cemiTunnelRequest);
+				break;
+
+			default:
+				throw new RuntimeException("Unknown messageCode=" + messageCode);
+			}
+
 			break;
 
 		default:
 			throw new RuntimeException("Unknown type: " + header.getServiceIdentifier());
 		}
-
 	}
 
 	@Override
@@ -62,6 +77,7 @@ public class DeviceManagementKNXPacketConverter extends BaseKNXPacketConverter {
 		switch (header.getServiceIdentifier()) {
 
 		// Device Management Specification- 4.2.6 DEVICE_CONFIGURATION_REQUEST
+		// 0x0310
 		case DEVICE_CONFIGURATION_REQUEST:
 			return true;
 

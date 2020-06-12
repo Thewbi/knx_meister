@@ -57,10 +57,22 @@ public class DefaultConnectionManager implements ConnectionManager {
 		return createNewConnection(datagramSocket, connectionIdAtomicInteger.getAndIncrement(), connectionType);
 	}
 
+	@Override
 	public Connection createNewConnection(final DatagramSocket datagramSocket, final int id,
 			final ConnectionType connectionType) {
 
-		LOG.info("Creating new connnection with id {}", id);
+		// when the application is closed and restarted, the connection map is empty and
+		// the connectionIdAtomicInteger is initialized to 0. Meanwhile the
+		// communication partner might still keep the connections alive. That means a
+		// restarted application might be confronted with a connection id larger then
+		// the connectionidAtomicInteger value.
+		//
+		// In this case, increment the connectionidAtomicInteger until it has caught up.
+		while (connectionIdAtomicInteger.get() <= id) {
+			connectionIdAtomicInteger.getAndIncrement();
+		}
+
+		LOG.info("Creating new connection " + connectionType + " with id {}", id);
 
 		final DefaultConnection connection = new DefaultConnection();
 		connection.setId(id);

@@ -14,6 +14,12 @@ public final class Utils {
 		// no instances of this class
 	}
 
+	/**
+	 * Converts an integer to a string which is the value in hex format.
+	 *
+	 * @param value
+	 * @return
+	 */
 	public static String integerToString(final int value) {
 		return "0x" + String.format("%1$02X", value).toUpperCase(Locale.getDefault());
 	}
@@ -92,13 +98,25 @@ public final class Utils {
 	public static String integerToKNXAddress(final int individualAddress) {
 
 		final int upperByte = ((individualAddress >> 8) & 0xFF);
-
 		final int areaAddress = (upperByte & 0xF0) >> 4;
 		final int lineAddress = upperByte & 0x0F;
 
-		final int lowerByte = ((individualAddress) & 0xFF);
+		final int deviceAddress = ((individualAddress) & 0xFF);
 
-		return areaAddress + "." + lineAddress + "." + lowerByte;
+		return areaAddress + "." + lineAddress + "." + deviceAddress;
+	}
+
+	public static int knxAddressToInteger(final String addressAsString) {
+
+		final String[] split = StringUtils.split(addressAsString, "./");
+
+		final int areaAddress = Integer.parseInt(split[0]);
+
+		final int lineAddress = Integer.parseInt(split[1]);
+
+		final int deviceAddress = Integer.parseInt(split[2]);
+
+		return (areaAddress << 12) + (lineAddress << 8) + deviceAddress;
 	}
 
 	public static byte[] shortToByteArray(final short data) {

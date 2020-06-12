@@ -44,6 +44,9 @@ import core.pipeline.OutwardOutputPipelineStep;
  * On WLAN: (Weinzierl without multicast traffic)
  * udp and ( (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32) )
  *
+ * On WLAN nur KNX/IP multicast
+ * udp and ( (ip.src == 224.0.23.12/32) or (ip.dst == 224.0.23.12/32) )
+ *
  * On WLAN without discovery traffic
  * udp and ( (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32) ) and (not frame contains 06:10:02:02) and (not frame contains 06:10:02:01) and (not frame contains 06:10:02:0b)
  *
@@ -64,7 +67,12 @@ public class Main {
 
 	/** Host physical address in ETS5, 0x1A11 == 1.10.17 */
 	// private static final int DEVICE_ADDRESS = 0x1A11;
-	private static final int DEVICE_ADDRESS = 0x1111;
+
+	// 1.1.17
+//	private static final int DEVICE_ADDRESS = 0x1111;
+
+	// 1.1.101
+	private static final int DEVICE_ADDRESS = 0x1165;
 
 	private static final Logger LOG = LogManager.getLogger(Main.class);
 
@@ -93,7 +101,7 @@ public class Main {
 		final OutwardConverterPipelineStep outwardConverterPipelineStep = new OutwardConverterPipelineStep();
 
 		final Pipeline<Object, Object> outwardPipeline = new DefaultPipeline();
-		outwardPipeline.addStep(outwardOutputPipelineStep);
+//		outwardPipeline.addStep(outwardOutputPipelineStep);
 		outwardPipeline.addStep(outwardConverterPipelineStep);
 
 		final ConnectionManager connectionManager = new DefaultConnectionManager();
@@ -139,7 +147,7 @@ public class Main {
 		inwardPipeline.addStep(inwardConverterPipelineStep);
 		inwardPipeline.addStep(inwardIpFilterPipelineStep);
 		inwardPipeline.addStep(inwardConnectionPipelineStep);
-		inwardPipeline.addStep(inwardOutputPipelineStep);
+//		inwardPipeline.addStep(inwardOutputPipelineStep);
 
 		final CoreController coreController = new CoreController();
 		coreController.setDevice(device);

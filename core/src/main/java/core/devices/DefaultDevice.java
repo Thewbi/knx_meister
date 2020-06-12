@@ -20,19 +20,22 @@ public class DefaultDevice implements Device {
 	public DefaultDevice() {
 		properties.put((short) PropertyId.PID_IP_CAPABILITIES.getValue(), (short) 0x0037);
 		properties.put((short) PropertyId.PID_DEVICE_DESCRIPTOR.getValue(), (short) 0x07B0);
-
-		// key 83
-//		responseData[0] = (byte) 0x07;
-//		responseData[1] = (byte) 0xB0;
-
-		// key 56
-//		responseData[0] = (byte) 0x00;
-//		responseData[1] = (byte) 0x37;
+//		properties.put((short) PropertyId.PID_ADDITIONAL_INDIVIDUAL_ADDRESSES.getValue(), (short) 0x07B0);
 	}
 
 	@Override
 	public Map<Short, Short> getProperties() {
 		return properties;
+	}
+
+	@Override
+	public boolean hasPropertyValue(final PropertyId propertyId) {
+		return properties.containsKey((short) propertyId.getValue());
+	}
+
+	@Override
+	public short getPropertyValue(final PropertyId propertyId) {
+		return properties.get((short) propertyId.getValue());
 	}
 
 	@Override
