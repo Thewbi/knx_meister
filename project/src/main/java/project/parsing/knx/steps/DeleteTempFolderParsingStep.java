@@ -24,5 +24,4 @@ public class DeleteTempFolderParsingStep implements ParsingStep<KNXProjectParsin
 
 		FileUtils.deleteDirectory(context.getTempDirectory().toFile());
 	}
-
 }

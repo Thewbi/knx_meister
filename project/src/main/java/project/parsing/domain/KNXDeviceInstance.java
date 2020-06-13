@@ -5,6 +5,8 @@ import java.util.List;
 
 public class KNXDeviceInstance {
 
+	private String id;
+
 	private String address;
 
 	private final List<KNXComObject> comObjects = new ArrayList<>();
@@ -19,6 +21,14 @@ public class KNXDeviceInstance {
 
 	public List<KNXComObject> getComObjects() {
 		return comObjects;
+	}
+
+	public String getId() {
+		return id;
+	}
+
+	public void setId(final String id) {
+		this.id = id;
 	}
 
 }

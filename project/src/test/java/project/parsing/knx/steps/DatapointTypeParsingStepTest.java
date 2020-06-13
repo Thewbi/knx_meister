@@ -9,7 +9,7 @@ import project.parsing.ProjectParser;
 import project.parsing.knx.KNXProjectParser;
 import project.parsing.knx.KNXProjectParsingContext;
 
-public class GroupAddressParsingStepTest {
+public class DatapointTypeParsingStepTest {
 
 	private final File projectFile = new File("src/test/resources/KNX IP BAOS 777.knxproj");
 
@@ -20,6 +20,7 @@ public class GroupAddressParsingStepTest {
 		final ReadProjectParsingStep readProjectParsingStep = new ReadProjectParsingStep();
 		final ReadProjectInstallationsParsingStep readProjectInstallationsParsingStep = new ReadProjectInstallationsParsingStep();
 		final GroupAddressParsingStep groupAddressParsingStep = new GroupAddressParsingStep();
+		final DatapointTypeParsingStep datapointTypeParsingStep = new DatapointTypeParsingStep();
 		final DeleteTempFolderParsingStep deleteTempFolderParsingStep = new DeleteTempFolderParsingStep();
 		final OutputParsingStep outputParsingStep = new OutputParsingStep();
 
@@ -28,10 +29,10 @@ public class GroupAddressParsingStepTest {
 		parser.getParsingSteps().add(readProjectParsingStep);
 		parser.getParsingSteps().add(readProjectInstallationsParsingStep);
 		parser.getParsingSteps().add(groupAddressParsingStep);
+		parser.getParsingSteps().add(datapointTypeParsingStep);
 		parser.getParsingSteps().add(deleteTempFolderParsingStep);
 		parser.getParsingSteps().add(outputParsingStep);
 
 		parser.parse(projectFile);
 	}
-
 }

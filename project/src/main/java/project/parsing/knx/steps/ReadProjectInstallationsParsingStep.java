@@ -57,22 +57,6 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 			final NodeList groupRangesNodeList = document.getElementsByTagName("GroupRanges");
 			final Element groupRangesElement = (Element) groupRangesNodeList.item(0);
 
-//			int groupAddressLevels = 0;
-//			switch (knxProject.getGroupAddressStyle()) {
-//			case TWOLEVEL:
-//				groupAddressLevels = 2;
-//				break;
-//			case THREELEVEL:
-//				groupAddressLevels = 3;
-//				break;
-//			default:
-//				throw new RuntimeException(
-//						"KNXGroupAddressStyle " + knxProject.getGroupAddressStyle() + " not supported!");
-//			}
-//
-//			final List<String> addressComponents = new ArrayList<>();
-//			final List<KNXGroupAddress> knxGroupAddresses = new ArrayList<>();
-
 			final KNXGroupAddress knxGroupAddress = new KNXGroupAddress();
 
 			for (int i = 0; i < groupRangesElement.getChildNodes().getLength(); i++) {
@@ -86,6 +70,8 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 			knxGroupAddress.assignAddresses();
 
 			knxGroupAddress.dump();
+
+			context.setKnxGroupAddress(knxGroupAddress);
 
 		} catch (final ParserConfigurationException | SAXException e) {
 			LOG.error(e.getMessage(), e);
@@ -138,6 +124,7 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 		final List<KNXComObject> comObjects = retrieveCOMObjects(deviceInstanceElement);
 
 		final KNXDeviceInstance knxDeviceInstance = new KNXDeviceInstance();
+		knxDeviceInstance.setId(deviceInstanceElement.getAttribute("Id"));
 		knxDeviceInstance.setAddress(address);
 		knxDeviceInstance.getComObjects().addAll(comObjects);
 
@@ -185,8 +172,13 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 
 		final Element element = (Element) node;
 
+		final String refIdAttribute = element.getAttribute("RefId");
+		final String[] refIdAttributeSplit = refIdAttribute.split("_");
+		final String numberAsString = refIdAttributeSplit[0].split("-")[1];
+
 		final KNXComObject comObject = new KNXComObject();
 		comObject.setId(element.getAttribute("RefId"));
+		comObject.setNumber(Integer.parseInt(numberAsString));
 		comObject.setText(element.getAttribute("Text"));
 		if (element.hasAttribute("Links")) {
 			comObject.setGroupAddressLink(element.getAttribute("Links"));

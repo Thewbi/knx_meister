@@ -6,9 +6,13 @@ public class KNXComObject {
 
 	private String text;
 
+	private int number;
+
 	private boolean groupObject;
 
 	private String groupAddressLink;
+
+	private KNXGroupAddress knxGroupAddress;
 
 	public String getId() {
 		return id;
@@ -40,6 +44,22 @@ public class KNXComObject {
 
 	public void setGroupAddressLink(final String groupAddressLink) {
 		this.groupAddressLink = groupAddressLink;
+	}
+
+	public KNXGroupAddress getKnxGroupAddress() {
+		return knxGroupAddress;
+	}
+
+	public void setKnxGroupAddress(final KNXGroupAddress knxGroupAddress) {
+		this.knxGroupAddress = knxGroupAddress;
+	}
+
+	public int getNumber() {
+		return number;
+	}
+
+	public void setNumber(final int number) {
+		this.number = number;
 	}
 
 }
