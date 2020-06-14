@@ -20,6 +20,9 @@ public class GroupAddressParsingStep implements ParsingStep<KNXProjectParsingCon
 	@SuppressWarnings("unused")
 	private static final Logger LOG = LogManager.getLogger(GroupAddressParsingStep.class);
 
+	/**
+	 * retrieve the group address and set it into the communication object
+	 */
 	@Override
 	public void process(final KNXProjectParsingContext context) throws IOException {
 
@@ -32,11 +35,13 @@ public class GroupAddressParsingStep implements ParsingStep<KNXProjectParsingCon
 		final KNXProject knxProject = context.getKnxProject();
 		for (final KNXDeviceInstance knxDeviceInstance : knxProject.getDeviceInstances()) {
 
-			for (final KNXComObject knxComObject : knxDeviceInstance.getComObjects()) {
+			for (final KNXComObject knxComObject : knxDeviceInstance.getComObjects().values()) {
 
 				if (StringUtils.isBlank(knxComObject.getGroupAddressLink())) {
 					continue;
 				}
+
+				// retrieve the group address and set it into the communication object
 				final KNXGroupAddress linkedKnxGroupAddress = linkMap.get(knxComObject.getGroupAddressLink());
 				knxComObject.setKnxGroupAddress(linkedKnxGroupAddress);
 			}

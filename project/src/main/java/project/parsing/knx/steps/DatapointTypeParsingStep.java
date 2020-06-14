@@ -9,6 +9,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -62,10 +63,12 @@ public class DatapointTypeParsingStep implements ParsingStep<KNXProjectParsingCo
 			final Element datapointTypeElement = (Element) datapointTypeNode;
 			String id = datapointTypeElement.getAttribute("Id");
 			String text = datapointTypeElement.getAttribute("Text");
+			final String name = datapointTypeElement.getAttribute("Name");
 
 			final KNXDatapointType knxDatapointType = new KNXDatapointType();
 			knxDatapointType.setId(id);
 			knxDatapointType.setText(text);
+			knxDatapointType.setName(name);
 
 			final Node datapointSubtypesNode = datapointTypeElement.getChildNodes().item(1);
 
@@ -80,15 +83,55 @@ public class DatapointTypeParsingStep implements ParsingStep<KNXProjectParsingCo
 
 				id = datapointSubtypeElement.getAttribute("Id");
 				text = datapointSubtypeElement.getAttribute("Text");
+				final String number = datapointSubtypeElement.getAttribute("Number");
+				final String format = retrieveFormat(context, datapointSubtypeElement);
 
 				final KNXDatapointSubtype knxDatapointSubtype = new KNXDatapointSubtype();
 				knxDatapointSubtype.setKnxDatapointType(knxDatapointType);
 				knxDatapointSubtype.setId(id);
 				knxDatapointSubtype.setText(text);
+				knxDatapointSubtype.setNumber(number);
+				knxDatapointSubtype.setFormat(format);
 
-				context.getDatapointSubtypeMap().put(id, knxDatapointSubtype);
+				context.getKnxProject().getDatapointSubtypeMap().put(id, knxDatapointSubtype);
 			}
 		}
+	}
+
+	private String retrieveFormat(final KNXProjectParsingContext context, final Element datapointSubtypeElement) {
+
+		final Element formatElement = (Element) datapointSubtypeElement.getChildNodes().item(1);
+		final Element formatDescriptorElement = (Element) formatElement.getChildNodes().item(1);
+		final String width = formatDescriptorElement.getAttribute("Width");
+
+		final String formatNodeName = formatDescriptorElement.getNodeName();
+
+		String result = "";
+
+		if (StringUtils.equalsIgnoreCase(formatNodeName, "RefType")) {
+
+			final String refId = formatDescriptorElement.getAttribute("RefId");
+
+			if (!context.getFormatRefMap().containsKey(refId)) {
+				throw new RuntimeException("Unkonwn reference " + refId);
+			}
+
+			result = context.getFormatRefMap().get(refId);
+
+		} else {
+
+			final String id = formatDescriptorElement.getAttribute("Id");
+
+			if (StringUtils.isNotBlank(width)) {
+				result = formatNodeName + width;
+			} else {
+				result = formatNodeName;
+			}
+
+			context.getFormatRefMap().put(id, result);
+		}
+
+		return result;
 	}
 
 	private void processLanguages(final KNXProjectParsingContext context, final Document document) {
@@ -109,7 +152,7 @@ public class DatapointTypeParsingStep implements ParsingStep<KNXProjectParsingCo
 			final String identifierAttribute = languageElement.getAttribute("Identifier");
 
 			final Map<String, String> languageMap = new HashMap<>();
-			context.getLanguageStoreMap().put(identifierAttribute, languageMap);
+			context.getKnxProject().getLanguageStoreMap().put(identifierAttribute, languageMap);
 
 			for (int j = 0; j < languagesElement.getChildNodes().getLength(); j++) {
 

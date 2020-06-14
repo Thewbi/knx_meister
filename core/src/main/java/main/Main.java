@@ -1,5 +1,6 @@
 package main;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Locale;
@@ -21,6 +22,7 @@ import core.communication.controller.TunnelingController;
 import core.conversion.CoreKNXPacketConverter;
 import core.conversion.DeviceManagementKNXPacketConverter;
 import core.conversion.TunnelKNXPacketConverter;
+import core.data.sending.DefaultDataSender;
 import core.devices.DefaultDevice;
 import core.packets.DeviceStatus;
 import core.packets.KNXPacket;
@@ -32,6 +34,17 @@ import core.pipeline.InwardOutputPipelineStep;
 import core.pipeline.IpFilterPipelineStep;
 import core.pipeline.OutwardConverterPipelineStep;
 import core.pipeline.OutwardOutputPipelineStep;
+import project.parsing.ProjectParser;
+import project.parsing.domain.KNXProject;
+import project.parsing.knx.KNXProjectParser;
+import project.parsing.knx.KNXProjectParsingContext;
+import project.parsing.knx.steps.DatapointTypeParsingStep;
+import project.parsing.knx.steps.DeleteTempFolderParsingStep;
+import project.parsing.knx.steps.ExtractArchiveParsingStep;
+import project.parsing.knx.steps.GroupAddressParsingStep;
+import project.parsing.knx.steps.OutputParsingStep;
+import project.parsing.knx.steps.ReadProjectInstallationsParsingStep;
+import project.parsing.knx.steps.ReadProjectParsingStep;
 
 /**
  * Wireshark filters
@@ -116,6 +129,30 @@ public class Main {
 		device.setPhysicalAddress(DEVICE_ADDRESS);
 		device.setDeviceStatus(DeviceStatus.PROGRAMMING_MODE);
 
+		final ExtractArchiveParsingStep extractArchiveParsingStep = new ExtractArchiveParsingStep();
+		final ReadProjectParsingStep readProjectParsingStep = new ReadProjectParsingStep();
+		final ReadProjectInstallationsParsingStep readProjectInstallationsParsingStep = new ReadProjectInstallationsParsingStep();
+		final GroupAddressParsingStep groupAddressParsingStep = new GroupAddressParsingStep();
+		final DatapointTypeParsingStep datapointTypeParsingStep = new DatapointTypeParsingStep();
+		final DeleteTempFolderParsingStep deleteTempFolderParsingStep = new DeleteTempFolderParsingStep();
+		final OutputParsingStep outputParsingStep = new OutputParsingStep();
+
+		final ProjectParser<KNXProjectParsingContext> knxProjectParser = new KNXProjectParser();
+		knxProjectParser.getParsingSteps().add(extractArchiveParsingStep);
+		knxProjectParser.getParsingSteps().add(readProjectParsingStep);
+		knxProjectParser.getParsingSteps().add(readProjectInstallationsParsingStep);
+		knxProjectParser.getParsingSteps().add(groupAddressParsingStep);
+		knxProjectParser.getParsingSteps().add(datapointTypeParsingStep);
+		knxProjectParser.getParsingSteps().add(deleteTempFolderParsingStep);
+		knxProjectParser.getParsingSteps().add(outputParsingStep);
+
+		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
+		final KNXProject knxProject = knxProjectParser.parse(projectFile);
+
+		final DefaultDataSender dataSender = new DefaultDataSender();
+		dataSender.setDevice(device);
+		dataSender.setKnxProject(knxProject);
+
 //		// reader for point to point connections
 //		final PointToPointReaderThread readerThread = new PointToPointReaderThread(POINT_TO_POINT_READER_IP_ADDRESS,
 //				Controller.POINT_TO_POINT_PORT);
@@ -164,6 +201,7 @@ public class Main {
 		final TunnelingController tunnelingController = new TunnelingController();
 		tunnelingController.setDevice(device);
 		tunnelingController.setConnectionManager(connectionManager);
+		tunnelingController.setDataSender(dataSender);
 
 		// reader for multicast messages
 		final MulticastListenerReaderThread multicastListenerThread = new MulticastListenerReaderThread(

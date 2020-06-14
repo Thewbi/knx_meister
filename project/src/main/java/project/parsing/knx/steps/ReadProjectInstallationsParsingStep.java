@@ -126,7 +126,10 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 		final KNXDeviceInstance knxDeviceInstance = new KNXDeviceInstance();
 		knxDeviceInstance.setId(deviceInstanceElement.getAttribute("Id"));
 		knxDeviceInstance.setAddress(address);
-		knxDeviceInstance.getComObjects().addAll(comObjects);
+
+		for (final KNXComObject knxComObject : comObjects) {
+			knxDeviceInstance.getComObjects().put(knxComObject.getNumber(), knxComObject);
+		}
 
 		return knxDeviceInstance;
 	}

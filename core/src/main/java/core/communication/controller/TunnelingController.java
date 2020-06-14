@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import core.common.Utils;
 import core.communication.Connection;
+import core.data.sending.DataSender;
 import core.packets.CemiTunnelRequest;
 import core.packets.ConnectionHeader;
 import core.packets.ConnectionType;
@@ -28,10 +29,6 @@ public class TunnelingController extends BaseController {
 
 	private static final int PRIO_SYSTEM = 0xB0;
 
-//	private static final int DEVICE_DESCRIPTION_RESPONSE_APCI = 0x4340;
-//
-//	private static final int IND_ADDR_RESPONSE_APCI = 0x0140;
-
 	private static final int DEVICE_DESCRIPTION_READ_APCI = 0x4300;
 
 	private static final int DEVICE_READ_APCI = 0x0100;
@@ -41,6 +38,8 @@ public class TunnelingController extends BaseController {
 	private KNXPacket indicationKNXPacket;
 
 	private KNXPacket acknowledgeKNXPacket;
+
+	private DataSender dataSender;
 
 	/**
 	 * ctor
@@ -70,8 +69,6 @@ public class TunnelingController extends BaseController {
 			// if the connect request contains a CRI Tunneling Connection, this connection
 			// should be handled by the tunneling controller
 			if (!knxPacket.getStructureMap().containsKey(StructureType.TUNNELING_CONNECTION)) {
-//				final Structure tunnelingConnectionCRI = knxPacket.getStructureMap()
-//						.get(StructureType.TUNNELING_CONNECTION);
 				break;
 			}
 			final ConnectionType connectionType = knxPacket.getConnectionType();
@@ -173,6 +170,7 @@ public class TunnelingController extends BaseController {
 	}
 
 	private void startThread(final Connection connection) {
+
 		final Thread thread = new Thread(new Runnable() {
 
 			@Override
@@ -182,29 +180,7 @@ public class TunnelingController extends BaseController {
 
 					LOG.info("Sending data ...");
 
-					final KNXPacket knxPacket = new KNXPacket();
-					knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);
-
-					knxPacket.setConnectionHeader(new ConnectionHeader());
-
-					final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
-					cemiTunnelRequest.setMessageCode((short) 0x29);
-					cemiTunnelRequest.setAdditionalInfoLength(0);
-					cemiTunnelRequest.setCtrl1(0xB0);
-					cemiTunnelRequest.setCtrl2(0xE0);
-					cemiTunnelRequest.setSourceKNXAddress(getDevice().getPhysicalAddress());
-					cemiTunnelRequest.setDestKNXAddress(Utils.knxAddressToInteger("0/2/0"));
-					cemiTunnelRequest.setLength(3);
-					cemiTunnelRequest.setTpci(0x00);
-					cemiTunnelRequest.setApci(0x80);
-					cemiTunnelRequest.setPayloadBytes(new byte[] { 0x05, 0x02 });
-					knxPacket.setCemiTunnelRequest(cemiTunnelRequest);
-
-					try {
-						connection.sendData(knxPacket);
-					} catch (final IOException e) {
-						LOG.error(e.getMessage(), e);
-					}
+					dataSender.send(connection);
 
 					try {
 						Thread.sleep(2000);
@@ -214,7 +190,6 @@ public class TunnelingController extends BaseController {
 					}
 				}
 			}
-
 		});
 		thread.start();
 	}
@@ -250,7 +225,6 @@ public class TunnelingController extends BaseController {
 			knxPacket.getConnection().sendResponse(confirmKNXPacket, datagramPacket.getSocketAddress());
 
 			indicationKNXPacket = retrieveDeviceDescriptionReadAPCIIndicationPacket(knxPacket, sequenceCounter + 1);
-//			knxPacket.getConnection().sendResponse(indicationKNXPacket, datagramPacket.getSocketAddress());
 
 			acknowledgeKNXPacket = retrieveDeviceDescriptionReadAPCIAcknowledgePacket(knxPacket, sequenceCounter);
 
@@ -277,7 +251,6 @@ public class TunnelingController extends BaseController {
 			knxPacket.getConnection().sendResponse(confirmKNXPacket, datagramPacket.getSocketAddress());
 
 			indicationKNXPacket = retrieveDeviceReadAPCIIndicationPacket(knxPacket);
-//			knxPacket.getConnection().sendResponse(indicationKNXPacket, datagramPacket.getSocketAddress());
 			break;
 
 		// TUNNELING CONNECTION REQUEST
@@ -309,10 +282,8 @@ public class TunnelingController extends BaseController {
 		cemiTunnelRequest.setCtrl2(0xE0);
 		cemiTunnelRequest.setSourceKNXAddress(getDevice().getPhysicalAddress());
 		cemiTunnelRequest.setDestKNXAddress(0);
-//		cemiTunnelRequest.setLength(1);
 		cemiTunnelRequest.setTpci(0x01);
 		cemiTunnelRequest.setApci(0x40);
-//		cemiTunnelRequest.setApci(IND_ADDR_RESPONSE_APCI);
 
 		final ConnectionHeader connectionHeader = new ConnectionHeader();
 		connectionHeader.setChannel(knxPacket.getConnectionHeader().getChannel());
@@ -339,10 +310,7 @@ public class TunnelingController extends BaseController {
 		cemiTunnelRequest.setCtrl2(HOPS);
 		cemiTunnelRequest.setSourceKNXAddress(knxPacket.getCemiTunnelRequest().getDestKNXAddress());
 		cemiTunnelRequest.setDestKNXAddress(getDevice().getPhysicalAddress());
-//		cemiTunnelRequest.setLength(0);
 		cemiTunnelRequest.setTpci(0xc2);
-//		cemiTunnelRequest.setApci(DEVICE_DESCRIPTION_READ_APCI);
-//		cemiTunnelRequest.setPayloadBytes(payload);
 
 		final ConnectionHeader connectionHeader = new ConnectionHeader();
 		connectionHeader.setChannel(knxPacket.getConnectionHeader().getChannel());
@@ -374,10 +342,8 @@ public class TunnelingController extends BaseController {
 		cemiTunnelRequest.setCtrl2(0x60);
 		cemiTunnelRequest.setSourceKNXAddress(knxPacket.getCemiTunnelRequest().getDestKNXAddress());
 		cemiTunnelRequest.setDestKNXAddress(getDevice().getPhysicalAddress());
-//		cemiTunnelRequest.setLength(1);
 		cemiTunnelRequest.setTpci(0x43);
 		cemiTunnelRequest.setApci(0x40);
-//		cemiTunnelRequest.setApci(DEVICE_DESCRIPTION_RESPONSE_APCI);
 		cemiTunnelRequest.setPayloadBytes(payload);
 
 		// send the answer, that the server wanted
@@ -430,6 +396,14 @@ public class TunnelingController extends BaseController {
 	@Override
 	protected Logger getLogger() {
 		return LOG;
+	}
+
+	public DataSender getDataSender() {
+		return dataSender;
+	}
+
+	public void setDataSender(final DataSender dataSender) {
+		this.dataSender = dataSender;
 	}
 
 }

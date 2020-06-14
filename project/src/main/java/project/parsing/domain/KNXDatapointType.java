@@ -6,6 +6,8 @@ public class KNXDatapointType {
 
 	private String text;
 
+	private String name;
+
 	public String getId() {
 		return id;
 	}
@@ -20,6 +22,14 @@ public class KNXDatapointType {
 
 	public void setText(final String text) {
 		this.text = text;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(final String name) {
+		this.name = name;
 	}
 
 }

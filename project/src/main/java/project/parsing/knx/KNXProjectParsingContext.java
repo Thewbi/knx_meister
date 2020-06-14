@@ -5,23 +5,24 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-import project.parsing.domain.KNXDatapointSubtype;
 import project.parsing.domain.KNXGroupAddress;
 import project.parsing.domain.KNXProject;
 
 public class KNXProjectParsingContext {
 
+	/** the file the project was loaded from */
 	private File knxProjectFile;
 
+	/** the temporary directory where the project was extracted into */
 	private Path tempDirectory;
 
+	/** the project */
 	private KNXProject knxProject;
 
+	/** the root node of the tree of KNXGroupAddresses */
 	private KNXGroupAddress knxGroupAddress;
 
-	private final Map<String, Map<String, String>> languageStoreMap = new HashMap<>();
-
-	private final Map<String, KNXDatapointSubtype> datapointSubtypeMap = new HashMap<>();
+	private final Map<String, String> formatRefMap = new HashMap<>();
 
 	public File getKnxProjectFile() {
 		return knxProjectFile;
@@ -55,12 +56,8 @@ public class KNXProjectParsingContext {
 		this.knxGroupAddress = knxGroupAddress;
 	}
 
-	public Map<String, Map<String, String>> getLanguageStoreMap() {
-		return languageStoreMap;
-	}
-
-	public Map<String, KNXDatapointSubtype> getDatapointSubtypeMap() {
-		return datapointSubtypeMap;
+	public Map<String, String> getFormatRefMap() {
+		return formatRefMap;
 	}
 
 }

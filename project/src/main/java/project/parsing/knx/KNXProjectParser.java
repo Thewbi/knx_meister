@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import project.parsing.ProjectParser;
+import project.parsing.domain.KNXProject;
 import project.parsing.steps.ParsingStep;
 
 public class KNXProjectParser implements ProjectParser<KNXProjectParsingContext> {
@@ -19,7 +20,7 @@ public class KNXProjectParser implements ProjectParser<KNXProjectParsingContext>
 	private final List<ParsingStep<KNXProjectParsingContext>> parsingSteps = new ArrayList<>();
 
 	@Override
-	public void parse(final File file) throws IOException {
+	public KNXProject parse(final File file) throws IOException {
 
 		if (CollectionUtils.isEmpty(parsingSteps)) {
 			throw new RuntimeException("There are no parsing steps! The system is illconfigured!");
@@ -35,6 +36,8 @@ public class KNXProjectParser implements ProjectParser<KNXProjectParsingContext>
 				LOG.error(e.getMessage(), e);
 			}
 		}
+
+		return context.getKnxProject();
 	}
 
 	@Override
