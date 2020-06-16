@@ -10,6 +10,7 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,13 +18,21 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Objects;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public final class NetworkUtils {
+
+	private static final Logger LOG = LogManager.getLogger(NetworkUtils.class);
 
 	public static final String KNX_MULTICAST_IP = "224.0.23.12";
 
 	private static final String ADAPTER_NAME = "eth5";
 
-	public static final String LOCAL_IP = "172.18.60.118";
+	private static String hostAddress;
+
+//	public static final String LOCAL_IP = "172.18.60.118";
 //	public static final String LOCAL_IP = "0.0.0.0";
 
 	private NetworkUtils() {
@@ -161,6 +170,23 @@ public final class NetworkUtils {
 		}
 
 		return stringBuilder.toString();
+	}
+
+	public static String retrieveLocalIP() throws UnknownHostException, SocketException {
+
+		if (StringUtils.isNotBlank(hostAddress)) {
+			return hostAddress;
+		}
+
+		try (final DatagramSocket socket = new DatagramSocket()) {
+
+			socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+			hostAddress = socket.getLocalAddress().getHostAddress();
+
+			LOG.info("Local hostname is: " + hostAddress);
+
+			return hostAddress;
+		}
 	}
 
 }

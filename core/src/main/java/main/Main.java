@@ -52,8 +52,8 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
  *
  * <pre>
  * On loopback
- * udp and ( (ip.src == 192.168.0.1/16) or (ip.dst == 192.168.0.0/16) )
- * udp and ( (ip.src == 192.168.0.1/16) or (ip.dst == 192.168.0.0/16) or (ip.dst == 224.0.23.12/32) )
+ * udp and ( (ip.src == 192.168.0.0/16) or (ip.dst == 192.168.0.0/16) )
+ * udp and ( (ip.src == 192.168.0.0/16) or (ip.dst == 192.168.0.0/16) or (ip.dst == 224.0.23.12/32) )
  *
  * On WLAN: (Weinzierl without multicast traffic)
  * udp and ( (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32) )
@@ -71,10 +71,10 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
  * udp and ( (ip.src == 192.168.0.234/32) or (ip.dst == 192.168.0.234/32) or (ip.dst == 224.0.23.12/32) )
  *
  * Without discovery traffic:
- * udp and ( (ip.src == 192.168.0.1/16) or (ip.dst == 192.168.0.0/16) ) and (not frame contains 06:10:02:02) and (not frame contains 06:10:02:01) and (not frame contains 06:10:02:0b)
+ * udp and ( (ip.src == 192.168.0.0/16) or (ip.dst == 192.168.0.0/16) ) and (not frame contains 06:10:02:02) and (not frame contains 06:10:02:01) and (not frame contains 06:10:02:0b)
  *
  * Without discovery traffic and own computer name:
- * udp and ( (ip.src == 192.168.0.1/16) or (ip.dst == 192.168.0.0/16) ) and (not frame contains 06:10:02:02) and (not frame contains 06:10:02:01) and (not frame contains 06:10:02:0b) and (not frame contains "DE7487M")
+ * udp and ( (ip.src == 192.168.0.0/16) or (ip.dst == 192.168.0.0/16) ) and (not frame contains 06:10:02:02) and (not frame contains 06:10:02:01) and (not frame contains 06:10:02:0b) and (not frame contains "DE7487M")
  * </pre>
  */
 public class Main {
@@ -188,20 +188,20 @@ public class Main {
 		inwardPipeline.addStep(inwardConnectionPipelineStep);
 //		inwardPipeline.addStep(inwardOutputPipelineStep);
 
-		final CoreController coreController = new CoreController(NetworkUtils.LOCAL_IP);
+		final CoreController coreController = new CoreController(NetworkUtils.retrieveLocalIP());
 		coreController.setDevice(device);
 		coreController.setConnectionManager(connectionManager);
 
-		final ServerCoreController serverCoreController = new ServerCoreController(NetworkUtils.LOCAL_IP);
+		final ServerCoreController serverCoreController = new ServerCoreController(NetworkUtils.retrieveLocalIP());
 		serverCoreController.setDevice(device);
 		serverCoreController.setConnectionManager(connectionManager);
 
 		final DeviceManagementController deviceManagementController = new DeviceManagementController(
-				NetworkUtils.LOCAL_IP);
+				NetworkUtils.retrieveLocalIP());
 		deviceManagementController.setDevice(device);
 		deviceManagementController.setConnectionManager(connectionManager);
 
-		final TunnelingController tunnelingController = new TunnelingController(NetworkUtils.LOCAL_IP);
+		final TunnelingController tunnelingController = new TunnelingController(NetworkUtils.retrieveLocalIP());
 		tunnelingController.setDevice(device);
 		tunnelingController.setConnectionManager(connectionManager);
 		tunnelingController.setDataSender(dataSender);

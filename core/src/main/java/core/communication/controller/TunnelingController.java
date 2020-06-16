@@ -176,6 +176,33 @@ public class TunnelingController extends BaseController {
 			@Override
 			public void run() {
 
+				try {
+					// in order to be compatible with the ETS5 Bus-Monitor, the tunnel requests can
+					// only be send
+					// to the ETS5 Bus-Monitor after the Bus-Monitor did ask for the ConnectionState
+					// and that
+					// request was answered with the answer OK.
+					//
+					// The sequence is:
+					// 1. The Bus-Monitor establishes a tunneling connection with the device.
+					// 2. The device returns the ID of the tunneling connection.
+					// 3. The Bus-Monitor requests the ConnectionState of the tunneling connection
+					// using the ID from step 2.
+					// 4. The device answers with OK (the tunneling connection is in an OK state).
+					// 5. The device now can use the tunneling connection to send data to the
+					// Bus-Monitor in the form
+					// of tunneling requests
+					//
+					// If the thread does not sleep but sends a tunneling request immediately, the
+					// Bus-Monitor receives the tunneling request before it has performed the
+					// Connection State check. If any requests arrives before the connection state
+					// check, the Bus-Monitor will disconnect the tunneling connection immediately.
+					LOG.info("Sleeping 5000 ...");
+					Thread.sleep(5000);
+				} catch (final InterruptedException e) {
+					LOG.error(e.getMessage(), e);
+				}
+
 				while (true) {
 
 					LOG.info("Sending data ...");

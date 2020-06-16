@@ -74,7 +74,7 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	private void runMultiCastListener(final DatagramPacketCallback datagramPacketCallback)
 			throws IOException, SocketException, UnknownHostException {
 
-		final InetSocketAddress inetSocketAddress = new InetSocketAddress(NetworkUtils.LOCAL_IP, bindPort);
+		final InetSocketAddress inetSocketAddress = new InetSocketAddress(NetworkUtils.retrieveLocalIP(), bindPort);
 		try (MulticastSocket multicastSocket = new MulticastSocket(inetSocketAddress)) {
 
 			multicastSocket.setReuseAddress(true);
