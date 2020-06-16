@@ -99,6 +99,7 @@ public class Main {
 		System.setProperty("java.net.preferIPv4Stack", "true");
 
 		final InetAddress inetAddress = InetAddress.getLocalHost();
+
 		LOG.info("IP of my system is := " + inetAddress.getHostAddress());
 
 		final OutwardOutputPipelineStep outwardOutputPipelineStep = new OutwardOutputPipelineStep();

@@ -98,6 +98,33 @@ public class DefaultConnection implements Connection {
 	}
 
 	@Override
+	public void sendData(final KNXPacket knxPacket) throws IOException {
+
+		sequenceCounter++;
+		knxPacket.getConnectionHeader().setSequenceCounter(sequenceCounter);
+		knxPacket.getConnectionHeader().setChannel((short) id);
+
+		final InetSocketAddress inetSocketAddress = new InetSocketAddress(getDataEndpoint().getIpAddressAsObject(),
+				getDataEndpoint().getPort());
+
+		DatagramPacket datagramPacket;
+		try {
+			final Object[] objectArray = new Object[2];
+			objectArray[0] = knxPacket;
+			objectArray[1] = inetSocketAddress;
+
+			datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
+		} catch (final Exception e) {
+			LOG.error(e.getMessage(), e);
+			throw new IOException(e);
+		}
+
+		LOG.trace("Connection {} is sending packet over socketAddress {}", id, inetSocketAddress);
+
+		datagramSocket.send(datagramPacket);
+	}
+
+	@Override
 	public int getId() {
 		return id;
 	}
@@ -158,33 +185,6 @@ public class DefaultConnection implements Connection {
 	@Override
 	public void setDataEndpoint(final HPAIStructure dataEndpoint) {
 		this.dataEndpoint = dataEndpoint;
-	}
-
-	@Override
-	public void sendData(final KNXPacket knxPacket) throws IOException {
-
-		sequenceCounter++;
-		knxPacket.getConnectionHeader().setSequenceCounter(sequenceCounter);
-		knxPacket.getConnectionHeader().setChannel((short) id);
-
-		final InetSocketAddress inetSocketAddress = new InetSocketAddress(getDataEndpoint().getIpAddressAsObject(),
-				getDataEndpoint().getPort());
-
-		DatagramPacket datagramPacket;
-		try {
-			final Object[] objectArray = new Object[2];
-			objectArray[0] = knxPacket;
-			objectArray[1] = inetSocketAddress;
-
-			datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
-		} catch (final Exception e) {
-			LOG.error(e.getMessage(), e);
-			throw new IOException(e);
-		}
-
-		LOG.trace("Connection {} is sending packet over socketAddress {}", id, inetSocketAddress);
-
-		datagramSocket.send(datagramPacket);
 	}
 
 }

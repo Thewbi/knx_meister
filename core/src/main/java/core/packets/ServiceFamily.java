@@ -8,7 +8,9 @@ public enum ServiceFamily {
 
 	KNXNET_IP_TUNNELLING(0x04),
 
-	KNXNET_IP_ROUTING(0x05);
+	KNXNET_IP_ROUTING(0x05),
+
+	KNXNET_OBJSVR_CONNECTION(0x08);
 
 	private final int id;
 
@@ -30,6 +32,9 @@ public enum ServiceFamily {
 
 		case 0x05:
 			return KNXNET_IP_ROUTING;
+
+		case 0x08:
+			return KNXNET_OBJSVR_CONNECTION;
 
 		default:
 			throw new RuntimeException("Unkown id " + id);
