@@ -39,8 +39,8 @@ public class ServerCoreController extends BaseController {
 	 * @throws SocketException
 	 * @throws UnknownHostException
 	 */
-	public ServerCoreController() throws SocketException, UnknownHostException {
-		super();
+	public ServerCoreController(final String localInetAddress) throws SocketException, UnknownHostException {
+		super(localInetAddress);
 	}
 
 	@Override

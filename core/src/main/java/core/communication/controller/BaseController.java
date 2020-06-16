@@ -41,16 +41,15 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 
 	private final String localInetAddress;
 
-//	private int channelNumber = 0x01;
-
 	private final Map<String, HPAIStructure> deviceMap = new HashMap<>();
 
 	private ConnectionManager connectionManager;
 
 	private Device device;
 
-	public BaseController() throws SocketException, UnknownHostException {
-		localInetAddress = InetAddress.getLocalHost().getHostAddress();
+	public BaseController(final String localInetAddress) throws SocketException, UnknownHostException {
+//		localInetAddress = InetAddress.getLocalHost().getHostAddress();
+		this.localInetAddress = localInetAddress;
 	}
 
 	/**
@@ -73,7 +72,6 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 		// header
 		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_RESPONSE);
 
-//		knxPacket.setCommunicationChannelId(incrementChannelNumber());
 		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
 
 		final boolean addHPAIStructure = true;
@@ -128,11 +126,6 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 		return knxPacket;
 	}
 
-//	protected int incrementChannelNumber() {
-//		channelNumber++;
-//		return channelNumber;
-//	}
-
 	public void setConnectionManager(final ConnectionManager connectionManager) {
 		this.connectionManager = connectionManager;
 	}
@@ -156,9 +149,5 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 	public String getLocalInetAddress() {
 		return localInetAddress;
 	}
-
-//	public int getChannelNumber() {
-//		return channelNumber;
-//	}
 
 }

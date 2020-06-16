@@ -19,7 +19,12 @@ import java.util.Objects;
 
 public final class NetworkUtils {
 
+	public static final String KNX_MULTICAST_IP = "224.0.23.12";
+
 	private static final String ADAPTER_NAME = "eth5";
+
+	public static final String LOCAL_IP = "172.18.60.118";
+//	public static final String LOCAL_IP = "0.0.0.0";
 
 	private NetworkUtils() {
 		// no instances of this class
@@ -77,9 +82,9 @@ public final class NetworkUtils {
 		for (final NetworkInterface netint : Collections.list(nets)) {
 			displayInterfaceInformation(netint);
 		}
-		socket.joinGroup(new InetSocketAddress("224.0.23.12", 3671), NetworkInterface.getByName(ADAPTER_NAME));
+		socket.joinGroup(new InetSocketAddress(KNX_MULTICAST_IP, 3671), NetworkInterface.getByName(ADAPTER_NAME));
 
-		final InetAddress groupInetAddress = InetAddress.getByName("224.0.23.12");
+		final InetAddress groupInetAddress = InetAddress.getByName(KNX_MULTICAST_IP);
 		final DatagramPacket packet = new DatagramPacket(payload, payload.length, groupInetAddress, 3671);
 		socket.send(packet);
 

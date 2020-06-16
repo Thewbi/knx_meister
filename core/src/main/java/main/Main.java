@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import core.api.device.Device;
 import core.api.pipeline.Pipeline;
 import core.common.KNXPacketConverter;
+import core.common.NetworkUtils;
 import core.communication.ConnectionManager;
 import core.communication.DefaultConnectionManager;
 import core.communication.MulticastListenerReaderThread;
@@ -186,19 +187,20 @@ public class Main {
 		inwardPipeline.addStep(inwardConnectionPipelineStep);
 //		inwardPipeline.addStep(inwardOutputPipelineStep);
 
-		final CoreController coreController = new CoreController();
+		final CoreController coreController = new CoreController(NetworkUtils.LOCAL_IP);
 		coreController.setDevice(device);
 		coreController.setConnectionManager(connectionManager);
 
-		final ServerCoreController serverCoreController = new ServerCoreController();
+		final ServerCoreController serverCoreController = new ServerCoreController(NetworkUtils.LOCAL_IP);
 		serverCoreController.setDevice(device);
 		serverCoreController.setConnectionManager(connectionManager);
 
-		final DeviceManagementController deviceManagementController = new DeviceManagementController();
+		final DeviceManagementController deviceManagementController = new DeviceManagementController(
+				NetworkUtils.LOCAL_IP);
 		deviceManagementController.setDevice(device);
 		deviceManagementController.setConnectionManager(connectionManager);
 
-		final TunnelingController tunnelingController = new TunnelingController();
+		final TunnelingController tunnelingController = new TunnelingController(NetworkUtils.LOCAL_IP);
 		tunnelingController.setDevice(device);
 		tunnelingController.setConnectionManager(connectionManager);
 		tunnelingController.setDataSender(dataSender);

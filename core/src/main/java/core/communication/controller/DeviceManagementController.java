@@ -43,8 +43,8 @@ public class DeviceManagementController extends BaseController {
 	 * @throws SocketException
 	 * @throws UnknownHostException
 	 */
-	public DeviceManagementController() throws SocketException, UnknownHostException {
-		super();
+	public DeviceManagementController(final String localInetAddress) throws SocketException, UnknownHostException {
+		super(localInetAddress);
 	}
 
 	@Override
@@ -77,14 +77,14 @@ public class DeviceManagementController extends BaseController {
 
 				// @formatter:off
 				// this section is for
-				//59	3.902163	192.168.0.108	192.168.0.241	KNXnet/IP	59	ConfigReq #01:0 M_PropRead.req OT=0 P=83
-				//60	3.905799	192.168.0.241	192.168.0.108	KNXnet/IP	61	ConfigReq #01:0 M_PropRead.con OT=0 P=83 $07B0
-				//61	3.905799	192.168.0.241	192.168.0.108	KNXnet/IP	60	ConfigAck #01:0 OK
-				//62	3.906024	192.168.0.108	192.168.0.241	KNXnet/IP	52	ConfigAck #01:0 OK
-				//63	3.908150	192.168.0.108	192.168.0.241	KNXnet/IP	59	ConfigReq #01:1 M_PropRead.req OT=0 P=56
-				//64	3.911340	192.168.0.241	192.168.0.108	KNXnet/IP	61	ConfigReq #01:1 M_PropRead.con OT=0 P=56 $0037
-				//65	3.911340	192.168.0.241	192.168.0.108	KNXnet/IP	60	ConfigAck #01:1 OK
-				//66	3.911560	192.168.0.108	192.168.0.241	KNXnet/IP	52	ConfigAck #01:1 OK
+				// 59 3.902163 192.168.0.108 192.168.0.241 KNXnet/IP 59 ConfigReq #01:0 M_PropRead.req OT=0 P=83
+				// 60 3.905799 192.168.0.241 192.168.0.108 KNXnet/IP 61 ConfigReq #01:0 M_PropRead.con OT=0 P=83 $07B0
+				// 61 3.905799 192.168.0.241 192.168.0.108 KNXnet/IP 60 ConfigAck #01:0 OK
+				// 62 3.906024 192.168.0.108 192.168.0.241 KNXnet/IP 52 ConfigAck #01:0 OK
+				// 63 3.908150 192.168.0.108 192.168.0.241 KNXnet/IP 59 ConfigReq #01:1 M_PropRead.req OT=0 P=56
+				// 64 3.911340 192.168.0.241 192.168.0.108 KNXnet/IP 61 ConfigReq #01:1 M_PropRead.con OT=0 P=56 $0037
+				// 65 3.911340 192.168.0.241 192.168.0.108 KNXnet/IP 60 ConfigAck #01:1 OK
+				// 66 3.911560 192.168.0.108 192.168.0.241 KNXnet/IP 52 ConfigAck #01:1 OK
 				// @formatter:on
 
 				final short propertyKey = cemiPropReadRequest.getPropertyId();
@@ -129,10 +129,10 @@ public class DeviceManagementController extends BaseController {
 				case APCI_DEVICE_DESCR_READ:
 
 					// @formatter:off
-					// 67	3.917579	192.168.0.108	192.168.0.241	KNXnet/IP	63	ConfigReq #01:2 T_Data_Connected.req DevDescrRead
-					// 68	3.920656	192.168.0.241	192.168.0.108	KNXnet/IP	60	ConfigAck #01:2 OK
-					// 69	3.927963	192.168.0.241	192.168.0.108	KNXnet/IP	65	ConfigReq #01:2 T_Data_Connected.ind DevDescrResp $07B0
-					// 70	3.928335	192.168.0.108	192.168.0.241	KNXnet/IP	52	ConfigAck #01:2 OK
+					// 67 3.917579 192.168.0.108 192.168.0.241 KNXnet/IP 63 ConfigReq #01:2 T_Data_Connected.req DevDescrRead
+					// 68 3.920656 192.168.0.241 192.168.0.108 KNXnet/IP 60 ConfigAck #01:2 OK
+					// 69 3.927963 192.168.0.241 192.168.0.108 KNXnet/IP 65 ConfigReq #01:2 T_Data_Connected.ind DevDescrResp $07B0
+					// 70 3.928335 192.168.0.108 192.168.0.241 KNXnet/IP 52 ConfigAck #01:2 OK
 					// @formatter:on
 
 					// send acknowledge
@@ -171,10 +171,10 @@ public class DeviceManagementController extends BaseController {
 				case APCI_AUTH_REQUEST:
 
 					// @formatter:off
-					// 75	3.956929	192.168.0.108	192.168.0.241	KNXnet/IP	68	ConfigReq #01:4 T_Data_Connected.req AuthReq $FFFFFFFF
-					// 76	3.959605	192.168.0.241	192.168.0.108	KNXnet/IP	60	ConfigAck #01:4 OK
-					// 77	3.968437	192.168.0.241	192.168.0.108	KNXnet/IP	64	ConfigReq #01:4 T_Data_Connected.ind AuthResp L=0
-					// 78	3.968867	192.168.0.108	192.168.0.241	KNXnet/IP	52	ConfigAck #01:4 OK
+					// 75 3.956929 192.168.0.108 192.168.0.241 KNXnet/IP 68 ConfigReq #01:4 T_Data_Connected.req AuthReq $FFFFFFFF
+					// 76 3.959605 192.168.0.241 192.168.0.108 KNXnet/IP 60 ConfigAck #01:4 OK
+					// 77 3.968437 192.168.0.241 192.168.0.108 KNXnet/IP 64 ConfigReq #01:4 T_Data_Connected.ind AuthResp L=0
+					// 78 3.968867 192.168.0.108 192.168.0.241 KNXnet/IP 52 ConfigAck #01:4 OK
 					// @formatter:on
 
 					// send acknowledge
@@ -205,10 +205,10 @@ public class DeviceManagementController extends BaseController {
 				case APCI_PROP_DESCR_READ:
 
 					// @formatter:off
-					// 79	3.977310	192.168.0.108	192.168.0.241	KNXnet/IP	66	ConfigReq #01:5 T_Data_Connected.req PropDescrRead OX=2 P=23
-					// 80	3.980471	192.168.0.241	192.168.0.108	KNXnet/IP	60	ConfigAck #01:5 OK
-					// 81	3.987842	192.168.0.241	192.168.0.108	KNXnet/IP	70	ConfigReq #01:5 T_Data_Connected.ind PropDescrResp OX=2 P=23 PX=0 T=20 N=909 R=3 W=2
-					// 82	3.988235	192.168.0.108	192.168.0.241	KNXnet/IP	52	ConfigAck #01:5 OK
+					// 79 3.977310 192.168.0.108 192.168.0.241 KNXnet/IP 66 ConfigReq #01:5 T_Data_Connected.req PropDescrRead OX=2 P=23
+					// 80 3.980471 192.168.0.241 192.168.0.108 KNXnet/IP 60 ConfigAck #01:5 OK
+					// 81 3.987842 192.168.0.241 192.168.0.108 KNXnet/IP 70 ConfigReq #01:5 T_Data_Connected.ind PropDescrResp OX=2 P=23 PX=0 T=20 N=909 R=3 W=2
+					// 82 3.988235 192.168.0.108 192.168.0.241 KNXnet/IP 52 ConfigAck #01:5 OK
 					// @formatter:on
 
 					// send acknowledge
@@ -254,7 +254,6 @@ public class DeviceManagementController extends BaseController {
 			getLogger().warn("Ignoring: " + knxPacket.getHeader().getServiceIdentifier().name());
 			break;
 		}
-
 	}
 
 	@Override

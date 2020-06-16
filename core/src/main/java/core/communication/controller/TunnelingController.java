@@ -47,8 +47,8 @@ public class TunnelingController extends BaseController {
 	 * @throws SocketException
 	 * @throws UnknownHostException
 	 */
-	public TunnelingController() throws SocketException, UnknownHostException {
-		super();
+	public TunnelingController(final String localInetAddress) throws SocketException, UnknownHostException {
+		super(localInetAddress);
 	}
 
 	@Override

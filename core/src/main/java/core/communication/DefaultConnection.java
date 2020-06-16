@@ -60,8 +60,7 @@ public class DefaultConnection implements Connection {
 			throw new IOException(e);
 		}
 
-		// datagramSocket.getInetAddress().getHostAddress() +
-		LOG.trace("Connection {} is sending packet over socketAddress {}", id, socketAddress);
+		LOG.info("Connection {} is sending packet over socketAddress {}", id, socketAddress);
 
 		datagramSocket.send(datagramPacket);
 	}
@@ -167,9 +166,6 @@ public class DefaultConnection implements Connection {
 		sequenceCounter++;
 		knxPacket.getConnectionHeader().setSequenceCounter(sequenceCounter);
 		knxPacket.getConnectionHeader().setChannel((short) id);
-
-//		final InetSocketAddress inetSocketAddress = new InetSocketAddress(datagramSocket.getInetAddress(),
-//				datagramSocket.getPort());
 
 		final InetSocketAddress inetSocketAddress = new InetSocketAddress(getDataEndpoint().getIpAddressAsObject(),
 				getDataEndpoint().getPort());

@@ -38,8 +38,8 @@ public class CoreController extends BaseController {
 	 * @throws SocketException
 	 * @throws UnknownHostException
 	 */
-	public CoreController() throws SocketException, UnknownHostException {
-		super();
+	public CoreController(final String localInetAddress) throws SocketException, UnknownHostException {
+		super(localInetAddress);
 	}
 
 	@Override

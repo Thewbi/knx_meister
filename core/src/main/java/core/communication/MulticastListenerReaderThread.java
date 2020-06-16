@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
@@ -15,11 +16,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.api.pipeline.Pipeline;
+import core.common.NetworkUtils;
 import core.packets.KNXPacket;
 
 public class MulticastListenerReaderThread implements Runnable, DatagramPacketCallback {
-
-	private static final String KNX_MULTICAST_IP = "224.0.23.12";
 
 	private static final Logger LOG = LogManager.getLogger(MulticastListenerReaderThread.class);
 
@@ -74,14 +74,15 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	private void runMultiCastListener(final DatagramPacketCallback datagramPacketCallback)
 			throws IOException, SocketException, UnknownHostException {
 
-		try (MulticastSocket multicastSocket = new MulticastSocket(bindPort)) {
+		final InetSocketAddress inetSocketAddress = new InetSocketAddress(NetworkUtils.LOCAL_IP, bindPort);
+		try (MulticastSocket multicastSocket = new MulticastSocket(inetSocketAddress)) {
 
 			multicastSocket.setReuseAddress(true);
 
-			final InetAddress inetAddress = InetAddress.getByName(KNX_MULTICAST_IP);
+			final InetAddress inetAddress = InetAddress.getByName(NetworkUtils.KNX_MULTICAST_IP);
 			multicastSocket.joinGroup(inetAddress);
 
-			LOG.info("Multicast listener on " + KNX_MULTICAST_IP + " started.");
+			LOG.info("Multicast listener on " + NetworkUtils.KNX_MULTICAST_IP + " started.");
 
 			while (running) {
 
@@ -114,12 +115,16 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 
 				// retrieve the connection
 				if (knxPacket.getConnection() == null) {
+
 					final int communicationChannelId = knxPacket.getCommunicationChannelId();
 					LOG.warn("Connection with communicationChannelId = {} is not known! No response is sent!",
 							communicationChannelId);
+
 				} else {
+
 					datagramPacketCallback.knxPacket(knxPacket.getConnection(), multicastSocket, datagramPacket,
 							knxPacket, "Multicast");
+
 				}
 			}
 		}
@@ -167,12 +172,7 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 			if (datagramPacketCallback.accepts(knxPacket)) {
 
 				packetAcceptedAtLeastOnce = true;
-
 				datagramPacketCallback.knxPacket(connection, socket, datagramPacket, knxPacket, label);
-
-				// either only ask the first accepting controller or as all accepting
-				// controllers
-//				return;
 			}
 		}
 
