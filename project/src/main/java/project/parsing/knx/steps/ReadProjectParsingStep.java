@@ -22,11 +22,22 @@ import project.parsing.knx.KNXGroupAddressStyle;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
 
+/**
+ * Reads project
+ * <ul>
+ * <li />id
+ * <li />name
+ * <li />group address style
+ * </ul>
+ */
 public class ReadProjectParsingStep implements ParsingStep<KNXProjectParsingContext> {
 
 	private static final String GROUP_ADDRESS_STYLE_ATTRIBUTE = "GroupAddressStyle";
+
 	private static final String NAME_ATTRIBUTE = "Name";
+
 	private static final String ID_ATTRIBUTE = "Id";
+
 	private static final Logger LOG = LogManager.getLogger(ReadProjectParsingStep.class);
 
 	@Override

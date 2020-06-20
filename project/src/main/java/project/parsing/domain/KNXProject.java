@@ -21,6 +21,8 @@ public class KNXProject {
 
 	private final Map<String, KNXDatapointSubtype> datapointSubtypeMap = new HashMap<>();
 
+	private final Map<String, KNXManufacturer> manufacturerMap = new HashMap<>();
+
 	public String getId() {
 		return id;
 	}
@@ -55,6 +57,10 @@ public class KNXProject {
 
 	public Map<String, KNXDatapointSubtype> getDatapointSubtypeMap() {
 		return datapointSubtypeMap;
+	}
+
+	public Map<String, KNXManufacturer> getManufacturerMap() {
+		return manufacturerMap;
 	}
 
 }

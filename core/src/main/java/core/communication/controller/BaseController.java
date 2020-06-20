@@ -28,7 +28,7 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 
 	public static final short REQUEST_PRIMITIVE = 0x11;
 
-	// ??? what is the correct value????????
+	/** ??? what is the correct value???????? */
 	public static final short RESPONSE_PRIMITIVE = 0xFF;
 
 	public static final int KNX_PORT_DEFAULT = 3671;
@@ -48,7 +48,6 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 	private Device device;
 
 	public BaseController(final String localInetAddress) throws SocketException, UnknownHostException {
-//		localInetAddress = InetAddress.getLocalHost().getHostAddress();
 		this.localInetAddress = localInetAddress;
 	}
 

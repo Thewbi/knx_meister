@@ -15,14 +15,20 @@ import project.parsing.domain.KNXProject;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
 
+/**
+ * retrieve the group address and set it into the communication object. <br />
+ * <br />
+ * The group addresses themselves are parsed in the
+ * ReadProjectInstallationsParsingStep. <br />
+ * <br />
+ * The connection between a ComObject and it's group address is established via
+ * the group address link stored in the ComObject.
+ */
 public class GroupAddressParsingStep implements ParsingStep<KNXProjectParsingContext> {
 
 	@SuppressWarnings("unused")
 	private static final Logger LOG = LogManager.getLogger(GroupAddressParsingStep.class);
 
-	/**
-	 * retrieve the group address and set it into the communication object
-	 */
 	@Override
 	public void process(final KNXProjectParsingContext context) throws IOException {
 

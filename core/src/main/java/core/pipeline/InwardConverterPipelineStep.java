@@ -43,7 +43,6 @@ public class InwardConverterPipelineStep implements PipelineStep<Object, Object>
 			}
 		}
 
-//		throw new RuntimeException("No converter accepts {}" + header.getServiceIdentifier().name());
 		LOG.warn("No converter accepts {}", header.getServiceIdentifier().name());
 
 		return null;

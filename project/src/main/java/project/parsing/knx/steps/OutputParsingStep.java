@@ -8,6 +8,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,6 +38,12 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 
 			LOG.info("KNXDeviceInstance: " + knxDeviceInstance.getId() + " " + knxDeviceInstance.getAddress());
 
+			LOG.info("ManufacturerId: " + knxDeviceInstance.getManufacturerId() + " ("
+					+ context.getKnxProject().getManufacturerMap().get(knxDeviceInstance.getManufacturerId()).getName()
+					+ ")");
+			LOG.info("HardwareId: " + knxDeviceInstance.getHardwareId());
+			LOG.info("ProductId: " + knxDeviceInstance.getProductId());
+
 			final Collection<KNXComObject> values = knxDeviceInstance.getComObjects().values();
 			final List<KNXComObject> valueList = new ArrayList<KNXComObject>(values);
 
@@ -53,12 +60,26 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 					continue;
 				}
 
+				final StringBuilder stringBuilder = new StringBuilder();
+
+				if (knxComObject.isGroupObject()) {
+					stringBuilder.append("[GroupObject] ");
+				}
+
 				// number and text
-				String data = knxComObject.getNumber() + " " + knxComObject.getText();
+				stringBuilder.append(knxComObject.getNumber());
+
+				if (StringUtils.isNotBlank(knxComObject.getText())) {
+					stringBuilder.append(" ").append(knxComObject.getText());
+				}
+
+				// hardware information
+				stringBuilder.append(" ").append(knxComObject.getHardwareName()).append(" ")
+						.append(knxComObject.getHardwareText());
 
 				// group address
 				if (knxComObject.getKnxGroupAddress() != null) {
-					data += " " + knxComObject.getKnxGroupAddress().getGroupAddress();
+					stringBuilder.append(" ").append(knxComObject.getKnxGroupAddress().getGroupAddress());
 				}
 
 				// data point type
@@ -75,11 +96,12 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 					final String datapointTranslated = languageMap.get(knxDatapointType.getId());
 					final String datapointSubtypeTranslated = languageMap.get(knxDatapointSubtype.getId());
 
-					data += " " + knxDatapointType.getName() + " " + knxDatapointSubtype.getNumber() + " "
-							+ datapointTranslated + ", " + datapointSubtypeTranslated;
+					stringBuilder.append(" ").append(knxDatapointType.getName()).append(" ")
+							.append(knxDatapointSubtype.getNumber()).append(" ").append(datapointTranslated)
+							.append(", ").append(datapointSubtypeTranslated);
 				}
 
-				LOG.info(data);
+				LOG.info(stringBuilder.toString());
 			}
 		}
 	}

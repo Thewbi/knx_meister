@@ -14,6 +14,10 @@ public class KNXComObject {
 
 	private KNXGroupAddress knxGroupAddress;
 
+	private String hardwareName;
+
+	private String hardwareText;
+
 	public String getId() {
 		return id;
 	}
@@ -60,6 +64,22 @@ public class KNXComObject {
 
 	public void setNumber(final int number) {
 		this.number = number;
+	}
+
+	public String getHardwareName() {
+		return hardwareName;
+	}
+
+	public void setHardwareName(final String hardwareName) {
+		this.hardwareName = hardwareName;
+	}
+
+	public String getHardwareText() {
+		return hardwareText;
+	}
+
+	public void setHardwareText(final String hardwareText) {
+		this.hardwareText = hardwareText;
 	}
 
 }
