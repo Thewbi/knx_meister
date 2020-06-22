@@ -56,6 +56,7 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
  * <pre>
  * On loopback
  * udp and ( (ip.src == 192.168.0.0/16) or (ip.dst == 192.168.0.0/16) )
+ * udp and ( (ip.src == 192.168.0.24/32) or (ip.dst == 192.168.0.24/32) )
  * udp and ( (ip.src == 192.168.0.0/16) or (ip.dst == 192.168.0.0/16) or (ip.dst == 224.0.23.12/32) )
  *
  * On WLAN: (Weinzierl without multicast traffic)
@@ -89,7 +90,17 @@ public class Main {
 //	private static final int DEVICE_ADDRESS = 0x1111;
 
 	// 1.1.101
-	private static final int DEVICE_ADDRESS = 0x1165;
+//	private static final int DEVICE_ADDRESS = 0x1165;
+
+	// 1.1.1
+//	private static final int DEVICE_ADDRESS = 0x0111;
+
+	// 1.1.255
+//	private static final int DEVICE_ADDRESS = 0xFF11;
+	private static final int DEVICE_ADDRESS = 0x11FF;
+
+	// 1.1.11
+//	private static final int DEVICE_ADDRESS = 0x0B11;
 
 	private static final Logger LOG = LogManager.getLogger(Main.class);
 
@@ -129,9 +140,15 @@ public class Main {
 		final KNXPacketConverter<byte[], KNXPacket> tunnelKNXPacketConverter = new TunnelKNXPacketConverter();
 
 		final Device device = new DefaultDevice();
-		device.setHostPhysicalAddress(DEVICE_ADDRESS);
-		device.setPhysicalAddress(DEVICE_ADDRESS);
-		device.setDeviceStatus(DeviceStatus.PROGRAMMING_MODE);
+		device.setHostPhysicalAddress(0x0A11); // 1.1.10
+//		device.setHostPhysicalAddress(0xFF11);
+//		device.setHostPhysicalAddress(0x11FF);
+//		device.setPhysicalAddress(DEVICE_ADDRESS);
+//		device.setPhysicalAddress(0x0A11);
+		device.setPhysicalAddress(0xFF11); // 1.1.255
+//		device.setPhysicalAddress(0x11FF);
+//		device.setDeviceStatus(DeviceStatus.PROGRAMMING_MODE);
+		device.setDeviceStatus(DeviceStatus.NORMAL_MODE);
 
 		final ExtractArchiveParsingStep extractArchiveParsingStep = new ExtractArchiveParsingStep();
 		final ReadProjectParsingStep readProjectParsingStep = new ReadProjectParsingStep();
@@ -203,6 +220,7 @@ public class Main {
 		final ServerCoreController serverCoreController = new ServerCoreController(NetworkUtils.retrieveLocalIP());
 		serverCoreController.setDevice(device);
 		serverCoreController.setConnectionManager(connectionManager);
+		serverCoreController.setDataSender(dataSender);
 
 		final DeviceManagementController deviceManagementController = new DeviceManagementController(
 				NetworkUtils.retrieveLocalIP());
@@ -226,8 +244,27 @@ public class Main {
 
 		new Thread(multicastListenerThread).start();
 
-		// TODO: have a scheduled thread that repeatedly sends search requests
-//		controller.sendSearchRequest();
+//		new Thread(new Runnable() {
+//
+//			@Override
+//			public void run() {
+//				try {
+//					serverCoreController.sendSearchRequest();
+//				} catch (final IOException e) {
+//					LOG.error(e.getMessage(), e);
+//				}
+//
+//				try {
+//					Thread.sleep(10000);
+//				} catch (final InterruptedException e) {
+//					LOG.error(e.getMessage(), e);
+//				}
+//			}
+//
+//		}).start();
+
+		// the Bosch IoT Gateway does not even send an response this request
+//		serverCoreController.sendTunnelConnectionRequest(multicastListenerThread.getMulticastSocket());
 	}
 
 	@SuppressWarnings("unused")
@@ -237,7 +274,6 @@ public class Main {
 		final InetAddress inetAddress = InetAddress.getByName(address);
 
 		if (inetAddress.isReachable(50000)) {
-			System.out.println("Host is reachable");
 			LOG.info("Host is reachable");
 		} else {
 			LOG.info("Host is not reachable");

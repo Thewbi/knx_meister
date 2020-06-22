@@ -5,6 +5,8 @@ import org.apache.logging.log4j.Logger;
 
 import core.common.Utils;
 import core.packets.ConnectionRequestInformation;
+import core.packets.ConnectionResponseDataBlock;
+import core.packets.ConnectionStatus;
 import core.packets.DescriptionInformationBlock;
 import core.packets.HPAIStructure;
 import core.packets.Header;
@@ -66,7 +68,7 @@ public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 
 			// device info DescriptionInformationBlock (DIB)
 			descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
-			System.out.println("Parsing device info DIB from : "
+			LOG.trace("Parsing device info DIB from : "
 					+ Utils.integerToStringNoPrefix(source, index, descriptionInformationBlock.getLength()));
 			index += descriptionInformationBlock.getLength();
 			knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
@@ -131,7 +133,27 @@ public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 			break;
 
 		case CONNECT_RESPONSE:
-			throw new RuntimeException("Cannot convert connect response!");
+
+			final int communicationChannelId = source[index];
+			LOG.info("communicationChannelId: " + communicationChannelId);
+			knxPacket.setCommunicationChannelId(communicationChannelId);
+			index++;
+
+			final ConnectionStatus connectionStatus = ConnectionStatus.fromInt(source[index]);
+			LOG.info("connectionStatus: " + connectionStatus);
+			knxPacket.setConnectionStatus(connectionStatus);
+			index++;
+
+			// HPAI structure - Data Endpoint (First HPAI is the control endpoint)
+			dataEndpointHPAIStructure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
+			knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataEndpointHPAIStructure);
+			index += dataEndpointHPAIStructure.getLength();
+
+			final ConnectionResponseDataBlock connectionResponseDataBlock = new ConnectionResponseDataBlock();
+			connectionResponseDataBlock.fromBytes(source, index);
+			index += connectionResponseDataBlock.getLength();
+
+			break;
 
 		case CONNECTIONSTATE_REQUEST:
 

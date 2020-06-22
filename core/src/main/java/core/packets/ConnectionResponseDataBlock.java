@@ -46,6 +46,12 @@ public class ConnectionResponseDataBlock {
 		return bytes;
 	}
 
+	public void fromBytes(final byte[] bytes, final int startIndex) {
+		length = bytes[startIndex] & 0xFF;
+		connectionType = ConnectionType.fromInt(bytes[startIndex + 1] & 0xFF);
+		deviceAddress = Utils.bytesToUnsignedShort(bytes[startIndex + 2], bytes[startIndex + 3], false);
+	}
+
 	@Override
 	public String toString() {
 

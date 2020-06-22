@@ -2,6 +2,8 @@ package core.conversion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 import core.common.Converter;
@@ -12,6 +14,8 @@ import core.packets.ServiceIdentifier;
 import core.packets.StructureType;
 
 public class KNXPacketConverterTest {
+
+	private static final Logger LOG = LogManager.getLogger(KNXPacketConverterTest.class);
 
 	@Test
 	public void testConvert() {
@@ -64,7 +68,6 @@ public class KNXPacketConverterTest {
 
 		final KNXPacket knxPacket = knxPacketConverter.convert(data);
 
-		System.out.println(knxPacket);
-
+		LOG.info(knxPacket);
 	}
 }

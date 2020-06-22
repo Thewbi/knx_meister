@@ -26,9 +26,7 @@ public class OutwardConverterPipelineStep implements PipelineStep<Object, Object
 
 		LOG.trace(Utils.integerToStringNoPrefix(bytes));
 
-		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length, socketAddress);
-
-		return outDatagramPacket;
+		return new DatagramPacket(bytes, bytes.length, socketAddress);
 	}
 
 }

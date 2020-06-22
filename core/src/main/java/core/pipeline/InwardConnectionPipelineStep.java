@@ -28,9 +28,6 @@ public class InwardConnectionPipelineStep implements PipelineStep<Object, Object
 		final DatagramSocket datagramSocket = (DatagramSocket) data[0];
 		final KNXPacket knxPacket = (KNXPacket) data[1];
 
-		// retrieve the connection
-//		final Connection connection = connectionManager.retrieveConnection(knxPacket, datagramSocket);
-
 		Connection connection = null;
 
 		// try to retrieve the connection via the connection header
@@ -60,7 +57,7 @@ public class InwardConnectionPipelineStep implements PipelineStep<Object, Object
 			// set the counter so that a response including a valid sequence number can be
 			// send as a response to a packet
 			if (knxPacket.getConnectionHeader() != null) {
-				connection.setSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter());
+				connection.setReceiveSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter());
 			}
 			knxPacket.setConnection(connection);
 		}

@@ -25,4 +25,9 @@ public interface Device {
 
 	short getPropertyValue(final PropertyId propertyId);
 
+	// DEBUG
+	void setValue(int value);
+
+	int getValue();
+
 }

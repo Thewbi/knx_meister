@@ -4,11 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 import core.common.Utils;
 
 public class DeviceInformationDIBTest {
+
+	private static final Logger LOG = LogManager.getLogger(DeviceInformationDIBTest.class);
 
 	@Test
 	public void testGetBytes() {
@@ -17,12 +21,12 @@ public class DeviceInformationDIBTest {
 
 		final byte[] bytes = deviceInformationDIB.getBytes();
 
-		System.out.println(Utils.integerToStringNoPrefix(bytes));
+		LOG.info(Utils.integerToStringNoPrefix(bytes));
 
 		final byte[] hexStringToByteArray = Utils.hexStringToByteArray(
 				"360102001101000000c50102d84ce000170c00246d01d80a4b4e582049502042414f5320373737000000000000000000000000000000");
 
-		System.out.println(Utils.integerToStringNoPrefix(hexStringToByteArray));
+		LOG.info(Utils.integerToStringNoPrefix(hexStringToByteArray));
 
 		assertTrue(java.util.Objects.deepEquals(bytes, hexStringToByteArray));
 	}

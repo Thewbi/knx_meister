@@ -4,11 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.nio.charset.StandardCharsets;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 import core.common.Utils;
 
 public class KNXPacketTest {
+
+	private static final Logger LOG = LogManager.getLogger(KNXPacketTest.class);
 
 	@Test
 	public void testGetBytesDescriptionRequest() {
@@ -23,7 +27,7 @@ public class KNXPacketTest {
 
 		final byte[] bytes = knxPacket.getBytes();
 
-		System.out.println(Utils.integerToStringNoPrefix(bytes));
+		LOG.info(Utils.integerToStringNoPrefix(bytes));
 
 //		06 10 02 03 00 0E 08 01 01 02 03 04 04 D2
 
@@ -84,7 +88,7 @@ public class KNXPacketTest {
 
 		final byte[] bytes = knxPacket.getBytes();
 
-		System.out.println(Utils.integerToStringNoPrefix(bytes));
+		LOG.info(Utils.integerToStringNoPrefix(bytes));
 
 //		06 10 02 02 00 54 08 01 C0 A8 02 01 FD E8 36 01 20 01 11 02 00 11 03 03 03 03 03 03 E0 00 17 0C 01 02 03 04 05 06 74 65 73 74 5F 6F 62 6A 65 63 74 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 02 02 01 03 02 04 01 08 FE 00 C5 01 04 F0 20
 //		06 10 02 02 00 54 08 01 C0 BA 02 03 0E 57 36 01 02 00 11 01 00 00 00 C5 01 02 D8 4C E0 00 17 0C 00 24 6D 01 D8 0A 4B 4E 58 20 49 50 20 42 41 4F 53 20 37 37 37 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 08 02 02 01 03 02 04 01 08 FE 00 C5 01 04 F0 20

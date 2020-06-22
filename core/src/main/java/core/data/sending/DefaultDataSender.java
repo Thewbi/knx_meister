@@ -8,8 +8,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import core.api.device.Device;
+import core.common.NetworkUtils;
 import core.common.Utils;
 import core.communication.Connection;
+import core.communication.controller.BaseController;
+import core.data.serializer.BitDataSerializer;
 import core.data.serializer.DataSerializer;
 import core.data.serializer.Float16DataSerializer;
 import core.packets.CemiTunnelRequest;
@@ -34,21 +37,44 @@ public class DefaultDataSender implements DataSender {
 
 	private final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
 
+//	int currentValue = 0;
+
 	/**
 	 * ctor
 	 */
 	public DefaultDataSender() {
-		dataSerializerMap.put("Float16", new Float16DataSerializer());
+		dataSerializerMap.put(FLOAT16, new Float16DataSerializer());
+		dataSerializerMap.put(BIT, new BitDataSerializer());
 	}
 
 	@Override
 	public void send(final Connection connection) {
 
+//		final String comObjectId = "O-145_R-1849";
+//		final double value = 100.0d;
+//		sendViaComObject(connection, comObjectId, value);
+
+		final KNXGroupAddress knxGroupAddress = new KNXGroupAddress();
+//		knxGroupAddress.setGroupAddress(currentValue == 0 ? "0/3/4" : "0/3/3");
+		knxGroupAddress.setGroupAddress("0/3/4");
+//		knxGroupAddress.setGroupAddress("7/7/2");
+
+//		sendViaFormat(connection, DataSender.BIT, knxGroupAddress, 0);
+//		sendBit(connection, knxGroupAddress, currentValue);
+
+		sendBit(connection, knxGroupAddress, device.getValue());
+
+		// toggle
+//		currentValue = 1 - currentValue;
+	}
+
+	private void sendViaComObject(final Connection connection, final String comObjectId, final double value) {
+
 		// how to identify the correct device if there are several devices in the list?
 		final KNXDeviceInstance knxDeviceInstance = knxProject.getDeviceInstances().get(0);
 
 		// pick one of the communication objects by its name/id
-		final KNXComObject knxComObject = knxDeviceInstance.getComObjects().get(145);
+		final KNXComObject knxComObject = knxDeviceInstance.getComObjects().get(comObjectId);
 
 		// retrieve the group address to send the data to
 		final KNXGroupAddress knxGroupAddress = knxComObject.getKnxGroupAddress();
@@ -64,6 +90,12 @@ public class DefaultDataSender implements DataSender {
 		// from the datapoint subtype, retrieve the datapoint type
 //		final KNXDatapointType knxDatapointType = knxDatapointSubtype.getKnxDatapointType();
 		final String format = knxDatapointSubtype.getFormat();
+
+		sendViaFormat(connection, format, knxGroupAddress, value);
+	}
+
+	private void sendViaFormat(final Connection connection, final String format, final KNXGroupAddress knxGroupAddress,
+			final double value) {
 
 		// retrieve the data serializer that can convert the data into the datapoint
 		// type's format
@@ -84,8 +116,49 @@ public class DefaultDataSender implements DataSender {
 		cemiTunnelRequest.setLength(3);
 		cemiTunnelRequest.setTpci(0x00);
 		cemiTunnelRequest.setApci(0x80);
-//		cemiTunnelRequest.setPayloadBytes(new byte[] { 0x05, 0x02 });
-		cemiTunnelRequest.setPayloadBytes(dataSerializer.serializeToBytes(100.0d));
+		cemiTunnelRequest.setPayloadBytes(dataSerializer.serializeToBytes((int) value));
+
+		final KNXPacket knxPacket = new KNXPacket();
+		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);
+		knxPacket.setConnectionHeader(connectionHeader);
+		knxPacket.setCemiTunnelRequest(cemiTunnelRequest);
+
+		try {
+			connection.sendData(knxPacket);
+		} catch (final IOException e) {
+			LOG.error(e.getMessage(), e);
+		}
+	}
+
+	private void sendBit(final Connection connection, final KNXGroupAddress knxGroupAddress, final int value) {
+
+		LOG.info("Sending BIT Value: " + value);
+
+//		// retrieve the data serializer that can convert the data into the datapoint
+//		// type's format
+//		final DataSerializer<Object> dataSerializer = dataSerializerMap.get(format);
+//		if (dataSerializer == null) {
+//			throw new RuntimeException("No serializer for format \"" + format + "\" registered!");
+//		}
+
+		final ConnectionHeader connectionHeader = new ConnectionHeader();
+
+		final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
+//		cemiTunnelRequest.setMessageCode(BaseController.CONFIRM_PRIMITIVE);
+		cemiTunnelRequest.setMessageCode(BaseController.INDICATION_PRIMITIVE);
+//		cemiTunnelRequest.setMessageCode(BaseController.REQUEST_PRIMITIVE);
+		cemiTunnelRequest.setAdditionalInfoLength(0);
+		cemiTunnelRequest.setCtrl1(0xBC);
+		cemiTunnelRequest.setCtrl2(0xE0);
+		cemiTunnelRequest.setSourceKNXAddress(NetworkUtils.toNetworkOrder((short) getDevice().getPhysicalAddress()));
+//		cemiTunnelRequest.setSourceKNXAddress(0x110B);
+//		cemiTunnelRequest.setSourceKNXAddress(0x11FF);
+//		cemiTunnelRequest.setSourceKNXAddress(0x0000);
+		cemiTunnelRequest.setDestKNXAddress(Utils.knxAddressToInteger(knxGroupAddress.getGroupAddress()));
+		cemiTunnelRequest.setLength(1);
+		cemiTunnelRequest.setTpci(0x00);
+		cemiTunnelRequest.setApci(value == 0 ? 0x80 : 0x81);
+//		cemiTunnelRequest.setPayloadBytes(dataSerializer.serializeToBytes(value));
 
 		final KNXPacket knxPacket = new KNXPacket();
 		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);

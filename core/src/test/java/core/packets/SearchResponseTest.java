@@ -2,12 +2,16 @@ package core.packets;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
 import core.common.Converter;
 import core.conversion.CoreKNXPacketConverter;
 
 public class SearchResponseTest {
+
+	private static final Logger LOG = LogManager.getLogger(SearchResponseTest.class);
 
 	@Test
 	public void testSearchResponse() {
@@ -24,7 +28,7 @@ public class SearchResponseTest {
 
 		final KNXPacket knxPacket = knxPacketConverter.convert(source);
 
-		System.out.println(knxPacket);
+		LOG.info(knxPacket);
 
 		//
 		// Header

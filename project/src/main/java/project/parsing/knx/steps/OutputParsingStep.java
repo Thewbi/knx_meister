@@ -67,7 +67,7 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 				}
 
 				// number and text
-				stringBuilder.append(knxComObject.getNumber());
+				stringBuilder.append(knxComObject.getNumber()).append(" ").append(knxComObject.getId());
 
 				if (StringUtils.isNotBlank(knxComObject.getText())) {
 					stringBuilder.append(" ").append(knxComObject.getText());
@@ -98,7 +98,8 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 
 					stringBuilder.append(" ").append(knxDatapointType.getName()).append(" ")
 							.append(knxDatapointSubtype.getNumber()).append(" ").append(datapointTranslated)
-							.append(", ").append(datapointSubtypeTranslated);
+							.append(", ").append(datapointSubtypeTranslated).append(" ")
+							.append(knxDatapointSubtype.getFormat());
 				}
 
 				LOG.info(stringBuilder.toString());

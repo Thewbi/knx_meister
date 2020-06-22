@@ -6,8 +6,23 @@ import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
+/**
+ * Parsed from a ETS5 project, group addresses are contained in a tree where
+ * each parent layer stores a single digit of a group address.
+ *
+ * For a three level group address, there will be a tree of group addresses of
+ * depth of at least three.
+ *
+ * For convenience, this class has also a string member groupAddress where you
+ * can assign a group address directly. If the KNXGroupAddress instance has no
+ * parent, then this string member is used directly.
+ */
 public class KNXGroupAddress {
+
+	private static final Logger LOG = LogManager.getLogger(KNXGroupAddress.class);
 
 	private String id;
 
@@ -21,6 +36,8 @@ public class KNXGroupAddress {
 
 	private String dataPointType;
 
+	private String groupAddress;
+
 	private final List<KNXGroupAddress> knxGroupAddresses = new ArrayList<>();
 
 	private KNXGroupAddress parentKNXGroupAddress;
@@ -33,7 +50,15 @@ public class KNXGroupAddress {
 					: parentGroupAddress + "/" + addressComponent;
 		}
 
+		if (StringUtils.isNotBlank(groupAddress)) {
+			return groupAddress;
+		}
+
 		return StringUtils.EMPTY;
+	}
+
+	public void setGroupAddress(final String groupAddress) {
+		this.groupAddress = groupAddress;
 	}
 
 	public void assignAddresses() {
@@ -73,7 +98,7 @@ public class KNXGroupAddress {
 
 	public void dump() {
 
-		System.out.println(getId() + " " + getGroupAddress() + " " + getName());
+		LOG.info(getId() + " " + getGroupAddress() + " " + getName());
 
 		for (final KNXGroupAddress knxGroupAddress : knxGroupAddresses) {
 			knxGroupAddress.dump();

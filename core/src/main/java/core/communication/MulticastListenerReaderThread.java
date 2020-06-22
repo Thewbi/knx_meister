@@ -37,6 +37,8 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 
 	private Pipeline<Object, Object> inputPipeline;
 
+	private MulticastSocket multicastSocket;
+
 	/**
 	 * ctor
 	 *
@@ -75,59 +77,61 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 			throws IOException, SocketException, UnknownHostException {
 
 		final InetSocketAddress inetSocketAddress = new InetSocketAddress(NetworkUtils.retrieveLocalIP(), bindPort);
-		try (MulticastSocket multicastSocket = new MulticastSocket(inetSocketAddress)) {
 
-			multicastSocket.setReuseAddress(true);
+		multicastSocket = new MulticastSocket(inetSocketAddress);
+//		try (MulticastSocket multicastSocket = new MulticastSocket(inetSocketAddress)) {
 
-			final InetAddress inetAddress = InetAddress.getByName(NetworkUtils.KNX_MULTICAST_IP);
-			multicastSocket.joinGroup(inetAddress);
+		multicastSocket.setReuseAddress(true);
 
-			LOG.info("Multicast listener on " + NetworkUtils.KNX_MULTICAST_IP + " started.");
+		final InetAddress inetAddress = InetAddress.getByName(NetworkUtils.KNX_MULTICAST_IP);
+		multicastSocket.joinGroup(inetAddress);
 
-			while (running) {
+		LOG.info("Multicast listener on " + NetworkUtils.KNX_MULTICAST_IP + " started.");
 
-				final byte[] buf = new byte[1024];
-				final DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length);
-				multicastSocket.receive(datagramPacket);
+		while (running) {
 
-				// use the pipeline to convert the input from the socket to a KNXPacket that the
-				// system can use
-				KNXPacket knxPacket = null;
-				try {
+			final byte[] buf = new byte[1024];
+			final DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length);
+			multicastSocket.receive(datagramPacket);
 
-					Object[] data = new Object[2];
-					data[0] = multicastSocket;
-					data[1] = datagramPacket;
+			// use the pipeline to convert the input from the socket to a KNXPacket that the
+			// system can use
+			KNXPacket knxPacket = null;
+			try {
 
-					data = (Object[]) inputPipeline.execute(data);
-					if (data == null) {
-						continue;
-					}
+				Object[] data = new Object[2];
+				data[0] = multicastSocket;
+				data[1] = datagramPacket;
 
-					knxPacket = (KNXPacket) data[1];
-					if (knxPacket == null) {
-						continue;
-					}
-				} catch (final Exception e) {
-					LOG.error(e.getMessage(), e);
-					throw new IOException(e);
+				data = (Object[]) inputPipeline.execute(data);
+				if (data == null) {
+					continue;
 				}
 
-				// retrieve the connection
-				if (knxPacket.getConnection() == null) {
-
-					final int communicationChannelId = knxPacket.getCommunicationChannelId();
-					LOG.warn("Connection with communicationChannelId = {} is not known! No response is sent!",
-							communicationChannelId);
-
-				} else {
-
-					datagramPacketCallback.knxPacket(knxPacket.getConnection(), multicastSocket, datagramPacket,
-							knxPacket, "Multicast");
-
+				knxPacket = (KNXPacket) data[1];
+				if (knxPacket == null) {
+					continue;
 				}
+			} catch (final Exception e) {
+				LOG.error(e.getMessage(), e);
+				throw new IOException(e);
+			}
+
+			// retrieve the connection
+			if (knxPacket.getConnection() == null) {
+
+				final int communicationChannelId = knxPacket.getCommunicationChannelId();
+				LOG.warn("Connection with communicationChannelId = {} is not known! No response is sent!",
+						communicationChannelId);
+
+			} else {
+
+				datagramPacketCallback.knxPacket(knxPacket.getConnection(), multicastSocket, datagramPacket, knxPacket,
+						"Multicast");
+
 			}
 		}
+//		}
 	}
 
 	public List<DatagramPacketCallback> getDatagramPacketCallbacks() {
@@ -189,6 +193,10 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	@Override
 	public boolean accepts(final KNXPacket knxPacket) {
 		return true;
+	}
+
+	public MulticastSocket getMulticastSocket() {
+		return multicastSocket;
 	}
 
 }

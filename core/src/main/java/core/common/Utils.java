@@ -119,6 +119,19 @@ public final class Utils {
 		return (areaAddress << 12) + (lineAddress << 8) + deviceAddress;
 	}
 
+	public static int knxAddressToIntegerInverse(final String addressAsString) {
+
+		final String[] split = StringUtils.split(addressAsString, "./");
+
+		final int areaAddress = Integer.parseInt(split[0]);
+
+		final int lineAddress = Integer.parseInt(split[1]);
+
+		final int deviceAddress = Integer.parseInt(split[2]);
+
+		return (lineAddress << 12) + (areaAddress << 8) + deviceAddress;
+	}
+
 	public static byte[] shortToByteArray(final short data) {
 
 		int index = 0;

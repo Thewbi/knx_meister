@@ -86,7 +86,7 @@ public class CoreController extends BaseController {
 					.get(DescriptionInformationBlockType.DEVICE_INFO);
 			hpaiStructure = getDeviceMap().get(deviceInformationDIB.getDeviceSerialNumberAsString());
 
-			final KNXPacket sendConnectionRequest = sendConnectionRequest(datagramSocket, datagramPacket, knxPacket,
+			final KNXPacket sendConnectionRequest = sendConnectionRequest(datagramPacket, knxPacket,
 					hpaiStructure.getIpAddressAsObject(), hpaiStructure.getPort());
 
 			final InetSocketAddress inetSocketAddress = new InetSocketAddress(hpaiStructure.getIpAddressAsObject(),
@@ -94,6 +94,7 @@ public class CoreController extends BaseController {
 			connection.sendResponse(sendConnectionRequest, inetSocketAddress);
 			break;
 
+		// 0x0205
 		case CONNECT_REQUEST:
 			// if the connect request contains a CRI Tunneling Connection, this connection
 			// should be handled by the tunneling controller
@@ -108,10 +109,12 @@ public class CoreController extends BaseController {
 			final InetAddress controlInetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
 			final int controlPort = hpaiStructure.getPort() & 0xFFFF;
 
-			final KNXPacket sendConnectionResponse = sendConnectionResponse(datagramSocket, datagramPacket,
-					controlInetAddress, controlPort, knxPacket.getConnectionType());
+			final KNXPacket sendConnectionResponse = retrieveConnectionResponse(knxPacket.getConnectionType());
 			sendConnectionResponse.setCommunicationChannelId(newConnection.getId());
+
 			newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
+
+//			startThread(getClass().getName() + " CONNECTION_REQUEST", newConnection);
 			break;
 
 		case CONNECTIONSTATE_REQUEST:
@@ -158,10 +161,7 @@ public class CoreController extends BaseController {
 
 	private KNXPacket sendSearchResponseToAddress(final DatagramSocket socket3671, final InetAddress inetAddress,
 			final int port) throws IOException {
-
-		final KNXPacket knxPacket = retrieveSearchResponseKNXPacket();
-
-		return knxPacket;
+		return retrieveSearchResponseKNXPacket();
 	}
 
 	@SuppressWarnings("unused")
@@ -231,7 +231,7 @@ public class CoreController extends BaseController {
 		return mfrDataDIB;
 	}
 
-	private KNXPacket sendConnectionRequest(final DatagramSocket socket, final DatagramPacket originalDatagramPacket,
+	private KNXPacket sendConnectionRequest(final DatagramPacket originalDatagramPacket,
 			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
 
 		final HPAIStructure controlHPAIStructure = new HPAIStructure();

@@ -17,6 +17,8 @@ public class DefaultDevice implements Device {
 
 	private DeviceStatus deviceStatus = DeviceStatus.NORMAL_MODE;
 
+	private int value;
+
 	public DefaultDevice() {
 		properties.put((short) PropertyId.PID_IP_CAPABILITIES.getValue(), (short) 0x0037);
 		properties.put((short) PropertyId.PID_DEVICE_DESCRIPTOR.getValue(), (short) 0x07B0);
@@ -66,6 +68,16 @@ public class DefaultDevice implements Device {
 	@Override
 	public void setPhysicalAddress(final int physicalAddress) {
 		this.physicalAddress = physicalAddress;
+	}
+
+	@Override
+	public int getValue() {
+		return value;
+	}
+
+	@Override
+	public void setValue(final int value) {
+		this.value = value;
 	}
 
 }

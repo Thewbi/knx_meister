@@ -34,7 +34,7 @@ public class CemiTunnelRequest {
 	private int tpci;
 
 	/** (1 Byte) */
-	private int apci;
+	private Integer apci;
 
 	private byte[] payloadBytes;
 
@@ -106,9 +106,6 @@ public class CemiTunnelRequest {
 			apci = ((source[startIndex + 10]) & 0xFF);
 			cemiTunnelRequestLength++;
 
-//			apci = Utils.bytesToUnsignedShort(source[startIndex + 9], source[startIndex + 10], true);
-//			cemiTunnelRequestLength += 2;
-
 			// How to detect payload bytes?????????????
 			// maybe via header total length?
 			payloadLength = length - 1;
@@ -129,7 +126,7 @@ public class CemiTunnelRequest {
 		cemiTunnelRequestLength = 10;
 		length = 0;
 
-		if (apci > 0) {
+		if (apci != null) {
 			cemiTunnelRequestLength++;
 			length++;
 		}
@@ -161,9 +158,9 @@ public class CemiTunnelRequest {
 
 		payload[index++] = (byte) (tpci & 0xFF);
 
-		if (apci > 0) {
+		if (apci != null) {
 
-			payload[index++] = (byte) (apci & 0xFF);
+			payload[index++] = (byte) (apci.intValue() & 0xFF);
 
 			if (payloadBytes != null) {
 				System.arraycopy(payloadBytes, 0, payload, index, payloadLength);
@@ -237,7 +234,7 @@ public class CemiTunnelRequest {
 		this.destKNXAddress = destKNXAddress;
 	}
 
-	public int getApci() {
+	public Integer getApci() {
 		return apci;
 	}
 

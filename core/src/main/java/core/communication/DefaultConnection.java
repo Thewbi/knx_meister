@@ -29,7 +29,10 @@ public class DefaultConnection implements Connection {
 	 * of four packets all belonging to the same sequenceCounter value req+OK,
 	 * ind+OK.
 	 */
-	private int sequenceCounter = -1;
+	private int sendSequenceCounter = -1;
+
+	@SuppressWarnings("unused")
+	private int receiveSequenceCounter = -1;
 
 	private DatagramSocket datagramSocket;
 
@@ -68,8 +71,8 @@ public class DefaultConnection implements Connection {
 	@Override
 	public void sendRequest(final KNXPacket knxPacket) throws IOException {
 
-		sequenceCounter++;
-		knxPacket.getConnectionHeader().setSequenceCounter(sequenceCounter);
+		sendSequenceCounter++;
+		knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
 		knxPacket.getConnectionHeader().setChannel((short) id);
 
 		final InetSocketAddress inetSocketAddress = new InetSocketAddress(datagramSocket.getInetAddress(),
@@ -97,18 +100,54 @@ public class DefaultConnection implements Connection {
 		datagramSocket.send(datagramPacket);
 	}
 
+	/**
+	 * Sends Data to the data HPAI endpoint of the communication partner. Increments
+	 * the own sendSequenceCounter (!= receiveSequenceCounter) and uses that
+	 * sequence counter as the sequence counter for the packet.
+	 */
 	@Override
 	public void sendData(final KNXPacket knxPacket) throws IOException {
 
-		sequenceCounter++;
-		knxPacket.getConnectionHeader().setSequenceCounter(sequenceCounter);
+		// TODO: remove hardcoded
+//		final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
+//				InetAddress.getByName("192.168.0.241"), 3671);
+
+//		final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
+//				InetAddress.getByName("192.168.0.24"), 3671);
+
+		if (dataEndpoint == null) {
+			LOG.warn("DataEndpoint is null!");
+			return;
+		}
+
+		final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
+				dataEndpoint.getIpAddressAsObject(), dataEndpoint.getPort());
+
+		sendSequenceCounter++;
+		knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
 		knxPacket.getConnectionHeader().setChannel((short) id);
 
-		final InetSocketAddress inetSocketAddress = new InetSocketAddress(getDataEndpoint().getIpAddressAsObject(),
-				getDataEndpoint().getPort());
+//		final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
+//				getDataEndpoint().getIpAddressAsObject(), getDataEndpoint().getPort());
+
+		// use the pipeline to retrieve a DatagramPacket from a KNX packet
+		final DatagramPacket datagramPacket = retrieveDatagramPacket(knxPacket, destinationInetSocketAddress);
+
+		LOG.trace("Connection {} is sending packet to socketAddress {}", id, destinationInetSocketAddress);
+
+		LOG.info("SendSequenceCounter: " + sendSequenceCounter + ") Sending Data to "
+				+ destinationInetSocketAddress.getHostString() + ":" + destinationInetSocketAddress.getPort());
+
+		datagramSocket.send(datagramPacket);
+	}
+
+	private DatagramPacket retrieveDatagramPacket(final KNXPacket knxPacket, final InetSocketAddress inetSocketAddress)
+			throws IOException {
 
 		DatagramPacket datagramPacket;
 		try {
+			// parameter 0 is the KNX packet to convert into a datagram packet
+			// parameter 1 is the destination IP address to send the datagram packet to
 			final Object[] objectArray = new Object[2];
 			objectArray[0] = knxPacket;
 			objectArray[1] = inetSocketAddress;
@@ -119,9 +158,7 @@ public class DefaultConnection implements Connection {
 			throw new IOException(e);
 		}
 
-		LOG.trace("Connection {} is sending packet over socketAddress {}", id, inetSocketAddress);
-
-		datagramSocket.send(datagramPacket);
+		return datagramPacket;
 	}
 
 	@Override
@@ -158,16 +195,6 @@ public class DefaultConnection implements Connection {
 	}
 
 	@Override
-	public int getSequenceCounter() {
-		return sequenceCounter;
-	}
-
-	@Override
-	public void setSequenceCounter(final int sequenceCounter) {
-		this.sequenceCounter = sequenceCounter;
-	}
-
-	@Override
 	public HPAIStructure getControlEndpoint() {
 		return controlEndpoint;
 	}
@@ -185,6 +212,11 @@ public class DefaultConnection implements Connection {
 	@Override
 	public void setDataEndpoint(final HPAIStructure dataEndpoint) {
 		this.dataEndpoint = dataEndpoint;
+	}
+
+	@Override
+	public void setReceiveSequenceCounter(final int receiveSequenceCounter) {
+		this.receiveSequenceCounter = receiveSequenceCounter;
 	}
 
 }

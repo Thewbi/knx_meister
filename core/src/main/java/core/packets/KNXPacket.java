@@ -42,10 +42,18 @@ public class KNXPacket {
 
 	private ConnectionStatus connectionStatus = ConnectionStatus.UNSET;
 
+	/**
+	 * ctor
+	 */
 	public KNXPacket() {
 
 	}
 
+	/**
+	 * copy ctor
+	 *
+	 * @param knxPacket the knxPacket to copy into this instance.
+	 */
 	public KNXPacket(final KNXPacket knxPacket) {
 
 		// header
@@ -97,14 +105,22 @@ public class KNXPacket {
 			connectionHeaderBuffer = getConnectionHeader().getBytes();
 		}
 
-		// HPAI structure
+		// todo loop over the structureMap instead of retrieving individual structures
+		// control HPAI structure
 		byte[] hpaiControlEndpoingStructureBuffer = null;
 		if (structureMap.containsKey(StructureType.HPAI_CONTROL_ENDPOINT_UDP)) {
 			hpaiControlEndpoingStructureBuffer = structureMap.get(StructureType.HPAI_CONTROL_ENDPOINT_UDP).getBytes();
 		}
+		// data HPAI structure
 		byte[] hpaiDataEndpoingStructureBuffer = null;
 		if (structureMap.containsKey(StructureType.HPAI_DATA_ENDPOINT_UDP)) {
 			hpaiDataEndpoingStructureBuffer = structureMap.get(StructureType.HPAI_CONTROL_ENDPOINT_UDP).getBytes();
+		}
+		// connection request information structure for tunneling
+		byte[] connectionRequestInformationStructureBuffer = null;
+		if (structureMap.containsKey(StructureType.TUNNELING_CONNECTION)) {
+			connectionRequestInformationStructureBuffer = structureMap.get(StructureType.TUNNELING_CONNECTION)
+					.getBytes();
 		}
 
 		// Connection Response Datablock
@@ -138,6 +154,9 @@ public class KNXPacket {
 		}
 		if (hpaiDataEndpoingStructureBuffer != null) {
 			totalLength += hpaiDataEndpoingStructureBuffer.length;
+		}
+		if (connectionRequestInformationStructureBuffer != null) {
+			totalLength += connectionRequestInformationStructureBuffer.length;
 		}
 		totalLength += crdBuffer == null ? 0 : crdBuffer.length;
 		totalLength += cemiPropReadRequestBuffer == null ? 0 : cemiPropReadRequestBuffer.length;
@@ -182,6 +201,11 @@ public class KNXPacket {
 			System.arraycopy(hpaiDataEndpoingStructureBuffer, 0, payload, index,
 					hpaiDataEndpoingStructureBuffer.length);
 			index += hpaiDataEndpoingStructureBuffer.length;
+		}
+		if (connectionRequestInformationStructureBuffer != null) {
+			System.arraycopy(connectionRequestInformationStructureBuffer, 0, payload, index,
+					connectionRequestInformationStructureBuffer.length);
+			index += connectionRequestInformationStructureBuffer.length;
 		}
 
 		// copy CRD - connection response data

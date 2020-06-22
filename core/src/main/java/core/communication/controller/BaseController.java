@@ -11,7 +11,9 @@ import java.util.Map;
 
 import core.api.device.Device;
 import core.communication.BaseDatagramPacketCallback;
+import core.communication.Connection;
 import core.communication.ConnectionManager;
+import core.data.sending.DataSender;
 import core.packets.ConnectionResponseDataBlock;
 import core.packets.ConnectionStatus;
 import core.packets.ConnectionType;
@@ -47,6 +49,8 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 
 	private Device device;
 
+	private DataSender dataSender;
+
 	public BaseController(final String localInetAddress) throws SocketException, UnknownHostException {
 		this.localInetAddress = localInetAddress;
 	}
@@ -54,17 +58,11 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 	/**
 	 * 7.8.2 CONNECT_RESPONSE Example: 8.8.6 CONNECT_RESPONSE
 	 *
-	 * @param socket3671     the DatagramSocket that the reader thread is bound to
-	 *                       on port 3671 and which messages are received from.
-	 * @param datagramPacket
+	 * @param connectionType
 	 *
-	 * @param inetAddress    the IP address of the KNX Clients control endpoint
-	 *                       (send in the control HPAI).
-	 * @param port
 	 * @throws IOException
 	 */
-	protected KNXPacket sendConnectionResponse(final DatagramSocket socket3671, final DatagramPacket datagramPacket,
-			final InetAddress inetAddress, final int port, final ConnectionType connectionType) throws IOException {
+	protected KNXPacket retrieveConnectionResponse(final ConnectionType connectionType) throws IOException {
 
 		final KNXPacket knxPacket = new KNXPacket();
 
@@ -85,6 +83,7 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 
 		final boolean addconnectionResponseDataBlock = true;
 		if (addconnectionResponseDataBlock) {
+
 			// CRD - Connection Response Data Block
 			final ConnectionResponseDataBlock connectionResponseDataBlock = new ConnectionResponseDataBlock();
 			connectionResponseDataBlock.setConnectionType(connectionType);
@@ -125,6 +124,65 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 		return knxPacket;
 	}
 
+	protected void startThread(final String label, final Connection connection) {
+
+		getLogger().info(label + " Starting Thread");
+
+		final Thread thread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+
+				try {
+					// in order to be compatible with the ETS5 Bus-Monitor, the tunnel requests can
+					// only be send
+					// to the ETS5 Bus-Monitor after the Bus-Monitor did ask for the ConnectionState
+					// and that
+					// request was answered with the answer OK.
+					//
+					// The sequence is:
+					// 1. The Bus-Monitor establishes a tunneling connection with the device.
+					// 2. The device returns the ID of the tunneling connection.
+					// 3. The Bus-Monitor requests the ConnectionState of the tunneling connection
+					// using the ID from step 2.
+					// 4. The device answers with OK (the tunneling connection is in an OK state).
+					// 5. The device now can use the tunneling connection to send data to the
+					// Bus-Monitor in the form
+					// of tunneling requests
+					//
+					// If the thread does not sleep but sends a tunneling request immediately, the
+					// Bus-Monitor receives the tunneling request before it has performed the
+					// Connection State check. If any requests arrives before the connection state
+					// check, the Bus-Monitor will disconnect the tunneling connection immediately.
+					//
+					// An alternative would be to start this thread only after the communication
+					// partner
+					// has send a connection state request but some partners do never send a
+					// communication state request
+					getLogger().info(label + " Sleeping 5000 ...");
+					Thread.sleep(5000);
+				} catch (final InterruptedException e) {
+					getLogger().error(e.getMessage(), e);
+				}
+
+				while (true) {
+
+					getLogger().info(label + " Sending data ...");
+
+					dataSender.send(connection);
+
+					try {
+						Thread.sleep(10000);
+					} catch (final InterruptedException e) {
+						getLogger().error(e.getMessage(), e);
+						return;
+					}
+				}
+			}
+		});
+		thread.start();
+	}
+
 	public void setConnectionManager(final ConnectionManager connectionManager) {
 		this.connectionManager = connectionManager;
 	}
@@ -147,6 +205,14 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 
 	public String getLocalInetAddress() {
 		return localInetAddress;
+	}
+
+	public DataSender getDataSender() {
+		return dataSender;
+	}
+
+	public void setDataSender(final DataSender dataSender) {
+		this.dataSender = dataSender;
 	}
 
 }

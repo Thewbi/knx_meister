@@ -21,6 +21,11 @@ public enum ServiceFamily {
 	public static ServiceFamily fromInt(final int id) {
 
 		switch (id) {
+
+		// ???
+		case 0x00:
+			return KNXNET_IP_CORE;
+
 		case 0x02:
 			return KNXNET_IP_CORE;
 

@@ -30,13 +30,29 @@ public final class NetworkUtils {
 
 	private static final String ADAPTER_NAME = "eth5";
 
-	private static String hostAddress;
+	private static String hostAddress = "192.168.2.1";
 
 //	public static final String LOCAL_IP = "172.18.60.118";
 //	public static final String LOCAL_IP = "0.0.0.0";
 
 	private NetworkUtils() {
 		// no instances of this class
+	}
+
+	public static String retrieveLocalIP() throws UnknownHostException, SocketException {
+
+		if (StringUtils.isBlank(hostAddress)) {
+
+			try (final DatagramSocket socket = new DatagramSocket()) {
+
+				socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
+				hostAddress = socket.getLocalAddress().getHostAddress();
+			}
+		}
+
+		LOG.info("Local hostname is: " + hostAddress);
+
+		return hostAddress;
 	}
 
 	public static List<InetAddress> listAllBroadcastAddresses() throws SocketException {
@@ -102,13 +118,13 @@ public final class NetworkUtils {
 
 	public static void displayInterfaceInformation(final NetworkInterface netint) throws SocketException {
 
-		System.out.printf("Display name: %s\n", netint.getDisplayName());
-		System.out.printf("Name: %s\n", netint.getName());
+		LOG.info("Display name: %s\n", netint.getDisplayName());
+		LOG.info("Name: %s\n", netint.getName());
 		final Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
 		for (final InetAddress inetAddress : Collections.list(inetAddresses)) {
-			System.out.printf("InetAddress: %s\n", inetAddress);
+			LOG.info("InetAddress: %s\n", inetAddress);
 		}
-		System.out.printf("\n");
+		LOG.info("\n");
 	}
 
 	public static NetworkInterface findInterfaceByIP(final byte[] ip) throws SocketException {
@@ -172,21 +188,12 @@ public final class NetworkUtils {
 		return stringBuilder.toString();
 	}
 
-	public static String retrieveLocalIP() throws UnknownHostException, SocketException {
+	public static short toNetworkOrder(final short physicalAddress) {
 
-		if (StringUtils.isNotBlank(hostAddress)) {
-			return hostAddress;
-		}
+		final byte byte0 = (byte) (physicalAddress & 0xFF);
+		final byte byte1 = (byte) ((physicalAddress >> 8) & 0xFF);
 
-		try (final DatagramSocket socket = new DatagramSocket()) {
-
-			socket.connect(InetAddress.getByName("8.8.8.8"), 10002);
-			hostAddress = socket.getLocalAddress().getHostAddress();
-
-			LOG.info("Local hostname is: " + hostAddress);
-
-			return hostAddress;
-		}
+		return (short) Utils.bytesToUnsignedShort(byte0, byte1, true);
 	}
 
 }

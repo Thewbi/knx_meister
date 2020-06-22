@@ -24,9 +24,11 @@ public interface Connection {
 
 	void sendResponse(DatagramPacket datagramPacket, InetAddress inetAddress, int port) throws IOException;
 
-	int getSequenceCounter();
+//	int getSequenceCounter();
+//
+//	void setSequenceCounter(int sequenceCounter);
 
-	void setSequenceCounter(int sequenceCounter);
+	void setReceiveSequenceCounter(int receiveSequenceCounter);
 
 	ConnectionType getConnectionType();
 
