@@ -17,17 +17,29 @@
 	<description>Server for the KNX-Meister.</description>
 
 	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>1.8</java.version>
 	</properties>
 
 	<dependencies>
-	
+
+		<!-- KNX -->
 		<dependency>
 			<groupId>de.knx</groupId>
 			<artifactId>core</artifactId>
 			<version>1.0.0</version>
 		</dependency>
-		
+		<dependency>
+			<groupId>de.knx</groupId>
+			<artifactId>api</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+		<dependency>
+			<groupId>de.knx</groupId>
+			<artifactId>common</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
 		<dependency>
 			<groupId>de.knx</groupId>
 			<artifactId>project</artifactId>
@@ -48,27 +60,12 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
-		
-		<!-- 
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
-			<exclusions>
-			    <exclusion>
-			      <groupId>org.springframework.boot</groupId>
-			      <artifactId>spring-boot-starter-logging</artifactId>
-			    </exclusion>
-			    <exclusion>
-		            <groupId>ch.qos.logback</groupId>
-		            <artifactId>logback-classic</artifactId>
-		        </exclusion>
-		        <exclusion>
-		            <groupId>ch.qos.logback</groupId>
-		            <artifactId>logback</artifactId>
-		        </exclusion>
-			  </exclusions>
-		</dependency>
-		 -->
+
+		<!-- <dependency> <groupId>org.springframework.boot</groupId> <artifactId>spring-boot-starter-data-jpa</artifactId> 
+			<exclusions> <exclusion> <groupId>org.springframework.boot</groupId> <artifactId>spring-boot-starter-logging</artifactId> 
+			</exclusion> <exclusion> <groupId>ch.qos.logback</groupId> <artifactId>logback-classic</artifactId> 
+			</exclusion> <exclusion> <groupId>ch.qos.logback</groupId> <artifactId>logback</artifactId> 
+			</exclusion> </exclusions> </dependency> -->
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -85,12 +82,25 @@
 	</dependencies>
 
 	<build>
+
 		<plugins>
+		
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
 			</plugin>
+			
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>3.0.0-M5</version>
+				<configuration>
+					<skipTests>true</skipTests>
+				</configuration>
+			</plugin>
+			
 		</plugins>
+
 	</build>
 
 </project>

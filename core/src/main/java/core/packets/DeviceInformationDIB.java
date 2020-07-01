@@ -1,7 +1,7 @@
 package core.packets;
 
-import core.common.NetworkUtils;
-import core.common.Utils;
+import common.utils.NetworkUtils;
+import common.utils.Utils;
 
 /**
  * 7.5.4.2 Device information DIB

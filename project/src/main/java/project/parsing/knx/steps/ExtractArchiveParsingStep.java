@@ -58,15 +58,16 @@ public class ExtractArchiveParsingStep implements ParsingStep<KNXProjectParsingC
 				zipEntry = zipInputStream.getNextEntry();
 			}
 		}
-
 	}
 
 	private void extractFile(final ZipInputStream zipInputStream, final String filePath)
 			throws FileNotFoundException, IOException {
 
 		try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(filePath))) {
+
 			final byte[] bytesIn = new byte[BUFFER_SIZE];
 			int read = 0;
+
 			while ((read = zipInputStream.read(bytesIn)) != -1) {
 				bufferedOutputStream.write(bytesIn, 0, read);
 			}

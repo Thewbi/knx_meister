@@ -1,7 +1,7 @@
 package core.conversion;
 
+import common.utils.Utils;
 import core.common.Converter;
-import core.common.Utils;
 import core.packets.DescriptionInformationBlock;
 import core.packets.DescriptionInformationBlockType;
 import core.packets.DeviceInformationDIB;

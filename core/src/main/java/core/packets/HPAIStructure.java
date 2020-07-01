@@ -3,8 +3,8 @@ package core.packets;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-import core.common.NetworkUtils;
-import core.common.Utils;
+import common.utils.NetworkUtils;
+import common.utils.Utils;
 
 /**
  * Host Protocol Address Information (HPAI)

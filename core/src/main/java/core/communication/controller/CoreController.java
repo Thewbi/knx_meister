@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import common.packets.ServiceIdentifier;
 import core.communication.Connection;
 import core.packets.ConnectionRequestInformation;
 import core.packets.ConnectionType;
@@ -24,7 +25,6 @@ import core.packets.KNXPacket;
 import core.packets.MfrDataDIB;
 import core.packets.ProtocolDescriptor;
 import core.packets.ServiceFamily;
-import core.packets.ServiceIdentifier;
 import core.packets.StructureType;
 import core.packets.SuppSvcFamiliesDIB;
 

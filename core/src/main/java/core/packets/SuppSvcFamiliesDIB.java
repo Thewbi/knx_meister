@@ -7,7 +7,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.common.Utils;
+import common.utils.Utils;
 
 /**
  * 7.5.4.3 Supported service families DIB

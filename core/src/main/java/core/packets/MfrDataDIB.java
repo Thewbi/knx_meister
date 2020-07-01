@@ -1,6 +1,6 @@
 package core.packets;
 
-import core.common.Utils;
+import common.utils.Utils;
 
 /**
  * Manufacturer (Mfr) Data

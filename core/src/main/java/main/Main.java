@@ -8,13 +8,15 @@ import java.util.Locale;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.pipeline.Pipeline;
+import common.packets.ServiceIdentifier;
+import common.utils.NetworkUtils;
 import core.api.device.Device;
-import core.api.pipeline.Pipeline;
 import core.common.KNXPacketConverter;
-import core.common.NetworkUtils;
 import core.communication.ConnectionManager;
 import core.communication.DefaultConnectionManager;
 import core.communication.MulticastListenerReaderThread;
+import core.communication.ObjectServerReaderThread;
 import core.communication.controller.BaseController;
 import core.communication.controller.CoreController;
 import core.communication.controller.DeviceManagementController;
@@ -27,7 +29,6 @@ import core.data.sending.DefaultDataSender;
 import core.devices.DefaultDevice;
 import core.packets.DeviceStatus;
 import core.packets.KNXPacket;
-import core.packets.ServiceIdentifier;
 import core.pipeline.DefaultPipeline;
 import core.pipeline.InwardConnectionPipelineStep;
 import core.pipeline.InwardConverterPipelineStep;
@@ -35,6 +36,8 @@ import core.pipeline.InwardOutputPipelineStep;
 import core.pipeline.IpFilterPipelineStep;
 import core.pipeline.OutwardConverterPipelineStep;
 import core.pipeline.OutwardOutputPipelineStep;
+import object_server.pipeline.ConverterPipelineStep;
+import object_server.requests.RequestFactory;
 import project.parsing.ProjectParser;
 import project.parsing.domain.KNXProject;
 import project.parsing.knx.KNXProjectParser;
@@ -79,6 +82,14 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
  *
  * Without discovery traffic and own computer name:
  * udp and ( (ip.src == 192.168.0.0/16) or (ip.dst == 192.168.0.0/16) ) and (not frame contains 06:10:02:02) and (not frame contains 06:10:02:01) and (not frame contains 06:10:02:0b) and (not frame contains "DE7487M")
+ *
+ * (ip.src == 127.0.0.1/32) and (ip.dst == 192.168.0.108/32)
+ * (ip.src == 192.168.0.108/32) and (ip.dst == 192.168.0.108/32)
+ *
+ * (ip.src == 192.168.2.3/32) or (ip.dst == 192.168.2.3/32)
+ *
+ * (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32)
+ *
  * </pre>
  */
 public class Main {
@@ -150,28 +161,7 @@ public class Main {
 //		device.setDeviceStatus(DeviceStatus.PROGRAMMING_MODE);
 		device.setDeviceStatus(DeviceStatus.NORMAL_MODE);
 
-		final ExtractArchiveParsingStep extractArchiveParsingStep = new ExtractArchiveParsingStep();
-		final ReadProjectParsingStep readProjectParsingStep = new ReadProjectParsingStep();
-		final ManufacturerParsingStep manufacturerParsingStep = new ManufacturerParsingStep();
-		final ReadProjectInstallationsParsingStep readProjectInstallationsParsingStep = new ReadProjectInstallationsParsingStep();
-		final HardwareParsingStep hardwareParsingStep = new HardwareParsingStep();
-		final ApplicationProgramParsingStep applicationProgramParsingStep = new ApplicationProgramParsingStep();
-		final GroupAddressParsingStep groupAddressParsingStep = new GroupAddressParsingStep();
-		final DatapointTypeParsingStep datapointTypeParsingStep = new DatapointTypeParsingStep();
-		final DeleteTempFolderParsingStep deleteTempFolderParsingStep = new DeleteTempFolderParsingStep();
-		final OutputParsingStep outputParsingStep = new OutputParsingStep();
-
-		final ProjectParser<KNXProjectParsingContext> knxProjectParser = new KNXProjectParser();
-		knxProjectParser.getParsingSteps().add(extractArchiveParsingStep);
-		knxProjectParser.getParsingSteps().add(readProjectParsingStep);
-		knxProjectParser.getParsingSteps().add(manufacturerParsingStep);
-		knxProjectParser.getParsingSteps().add(readProjectInstallationsParsingStep);
-		knxProjectParser.getParsingSteps().add(hardwareParsingStep);
-		knxProjectParser.getParsingSteps().add(applicationProgramParsingStep);
-		knxProjectParser.getParsingSteps().add(groupAddressParsingStep);
-		knxProjectParser.getParsingSteps().add(datapointTypeParsingStep);
-		knxProjectParser.getParsingSteps().add(deleteTempFolderParsingStep);
-		knxProjectParser.getParsingSteps().add(outputParsingStep);
+		final ProjectParser<KNXProjectParsingContext> knxProjectParser = retrieveProjectParser();
 
 		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
 		final KNXProject knxProject = knxProjectParser.parse(projectFile);
@@ -244,6 +234,19 @@ public class Main {
 
 		new Thread(multicastListenerThread).start();
 
+		final RequestFactory requestFactory = new RequestFactory();
+
+		final ConverterPipelineStep objectServerConverterPipelineStep = new ConverterPipelineStep();
+		objectServerConverterPipelineStep.setRequestFactory(requestFactory);
+
+		final Pipeline<Object, Object> objectServerInwardPipeline = new DefaultPipeline();
+		objectServerInwardPipeline.addStep(objectServerConverterPipelineStep);
+
+		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(12004);
+		objectServerReaderThread.setInputPipeline(objectServerInwardPipeline);
+
+		new Thread(objectServerReaderThread).start();
+
 //		new Thread(new Runnable() {
 //
 //			@Override
@@ -265,6 +268,34 @@ public class Main {
 
 		// the Bosch IoT Gateway does not even send an response this request
 //		serverCoreController.sendTunnelConnectionRequest(multicastListenerThread.getMulticastSocket());
+	}
+
+	private static ProjectParser<KNXProjectParsingContext> retrieveProjectParser() {
+
+		final ExtractArchiveParsingStep extractArchiveParsingStep = new ExtractArchiveParsingStep();
+		final ReadProjectParsingStep readProjectParsingStep = new ReadProjectParsingStep();
+		final ManufacturerParsingStep manufacturerParsingStep = new ManufacturerParsingStep();
+		final ReadProjectInstallationsParsingStep readProjectInstallationsParsingStep = new ReadProjectInstallationsParsingStep();
+		final HardwareParsingStep hardwareParsingStep = new HardwareParsingStep();
+		final ApplicationProgramParsingStep applicationProgramParsingStep = new ApplicationProgramParsingStep();
+		final GroupAddressParsingStep groupAddressParsingStep = new GroupAddressParsingStep();
+		final DatapointTypeParsingStep datapointTypeParsingStep = new DatapointTypeParsingStep();
+		final DeleteTempFolderParsingStep deleteTempFolderParsingStep = new DeleteTempFolderParsingStep();
+		final OutputParsingStep outputParsingStep = new OutputParsingStep();
+
+		final ProjectParser<KNXProjectParsingContext> knxProjectParser = new KNXProjectParser();
+		knxProjectParser.getParsingSteps().add(extractArchiveParsingStep);
+		knxProjectParser.getParsingSteps().add(readProjectParsingStep);
+		knxProjectParser.getParsingSteps().add(manufacturerParsingStep);
+		knxProjectParser.getParsingSteps().add(readProjectInstallationsParsingStep);
+		knxProjectParser.getParsingSteps().add(hardwareParsingStep);
+		knxProjectParser.getParsingSteps().add(applicationProgramParsingStep);
+		knxProjectParser.getParsingSteps().add(groupAddressParsingStep);
+		knxProjectParser.getParsingSteps().add(datapointTypeParsingStep);
+		knxProjectParser.getParsingSteps().add(deleteTempFolderParsingStep);
+		knxProjectParser.getParsingSteps().add(outputParsingStep);
+
+		return knxProjectParser;
 	}
 
 	@SuppressWarnings("unused")

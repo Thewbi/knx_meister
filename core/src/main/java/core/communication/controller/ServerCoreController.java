@@ -13,7 +13,8 @@ import java.net.UnknownHostException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.common.NetworkUtils;
+import common.packets.ServiceIdentifier;
+import common.utils.NetworkUtils;
 import core.communication.Connection;
 import core.packets.ConnectionRequestInformation;
 import core.packets.DescriptionInformationBlockType;
@@ -21,7 +22,6 @@ import core.packets.DeviceInformationDIB;
 import core.packets.HPAIStructure;
 import core.packets.KNXLayer;
 import core.packets.KNXPacket;
-import core.packets.ServiceIdentifier;
 import core.packets.StructureType;
 
 /**

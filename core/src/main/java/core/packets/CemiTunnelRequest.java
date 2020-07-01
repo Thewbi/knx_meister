@@ -1,6 +1,6 @@
 package core.packets;
 
-import core.common.Utils;
+import common.utils.Utils;
 
 /**
  * Tunneling Specification - 4.4.6 TUNNELLING_REQUEST

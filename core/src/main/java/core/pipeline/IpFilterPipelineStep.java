@@ -5,7 +5,7 @@ import java.net.InetAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.api.pipeline.PipelineStep;
+import api.pipeline.PipelineStep;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
 import core.packets.StructureType;

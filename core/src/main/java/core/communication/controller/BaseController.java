@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
+import common.packets.ServiceIdentifier;
 import core.api.device.Device;
 import core.communication.BaseDatagramPacketCallback;
 import core.communication.Connection;
@@ -19,7 +20,6 @@ import core.packets.ConnectionStatus;
 import core.packets.ConnectionType;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
-import core.packets.ServiceIdentifier;
 import core.packets.StructureType;
 
 public abstract class BaseController extends BaseDatagramPacketCallback {

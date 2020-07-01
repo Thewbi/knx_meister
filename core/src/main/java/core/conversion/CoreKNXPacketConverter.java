@@ -3,13 +3,13 @@ package core.conversion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.common.Utils;
+import common.packets.KNXHeader;
+import common.utils.Utils;
 import core.packets.ConnectionRequestInformation;
 import core.packets.ConnectionResponseDataBlock;
 import core.packets.ConnectionStatus;
 import core.packets.DescriptionInformationBlock;
 import core.packets.HPAIStructure;
-import core.packets.Header;
 import core.packets.KNXPacket;
 import core.packets.StructureType;
 
@@ -29,7 +29,7 @@ public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 		int index = 0;
 
 		// header
-		final Header header = knxPacket.getHeader();
+		final KNXHeader header = knxPacket.getHeader();
 		header.fromBytes(source, index);
 		index += header.getLength();
 
@@ -188,7 +188,7 @@ public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 	}
 
 	@Override
-	public boolean accept(final Header header) {
+	public boolean accept(final KNXHeader header) {
 
 		if (acceptAll) {
 			return true;

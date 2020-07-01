@@ -9,15 +9,15 @@ import java.net.UnknownHostException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.common.Utils;
+import common.packets.KNXConnectionHeader;
+import common.packets.ServiceIdentifier;
+import common.utils.Utils;
 import core.communication.Connection;
 import core.packets.CemiPropReadRequest;
 import core.packets.CemiTunnelRequest;
-import core.packets.ConnectionHeader;
 import core.packets.DeviceManagement;
 import core.packets.KNXPacket;
 import core.packets.PropertyId;
-import core.packets.ServiceIdentifier;
 
 public class DeviceManagementController extends BaseController {
 
@@ -107,7 +107,7 @@ public class DeviceManagementController extends BaseController {
 				deviceConfigurationRequestAnswer.getCemiPropReadRequest().setResponseData(responseData);
 				connection.sendResponse(deviceConfigurationRequestAnswer, datagramPacket.getSocketAddress());
 
-				final ConnectionHeader connectionHeader = new ConnectionHeader();
+				final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 				connectionHeader.setChannel(knxPacket.getConnectionHeader().getChannel());
 				connectionHeader.setSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter());
 				// status OK

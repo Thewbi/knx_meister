@@ -7,9 +7,9 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.api.pipeline.PipelineStep;
+import api.pipeline.PipelineStep;
+import common.packets.KNXHeader;
 import core.common.KNXPacketConverter;
-import core.packets.Header;
 import core.packets.KNXPacket;
 
 public class InwardConverterPipelineStep implements PipelineStep<Object, Object> {
@@ -18,7 +18,7 @@ public class InwardConverterPipelineStep implements PipelineStep<Object, Object>
 
 	private final List<KNXPacketConverter<byte[], KNXPacket>> converters = new ArrayList<>();
 
-	private final Header header = new Header();
+	private final KNXHeader header = new KNXHeader();
 
 	@Override
 	public Object execute(final Object dataAsObject) {

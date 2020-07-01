@@ -11,16 +11,16 @@ import java.net.UnknownHostException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.common.NetworkUtils;
-import core.common.Utils;
+import common.packets.KNXConnectionHeader;
+import common.packets.ServiceIdentifier;
+import common.utils.NetworkUtils;
+import common.utils.Utils;
 import core.communication.Connection;
 import core.packets.CemiTunnelRequest;
-import core.packets.ConnectionHeader;
 import core.packets.ConnectionType;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
 import core.packets.PropertyId;
-import core.packets.ServiceIdentifier;
 import core.packets.StructureType;
 
 public class TunnelingController extends BaseController {
@@ -41,7 +41,7 @@ public class TunnelingController extends BaseController {
 
 	private KNXPacket indicationKNXPacket;
 
-	private KNXPacket acknowledgeKNXPacket;
+//	private KNXPacket acknowledgeKNXPacket;
 
 	/**
 	 * ctor
@@ -69,8 +69,8 @@ public class TunnelingController extends BaseController {
 
 		// 0x0205
 		case CONNECT_REQUEST:
-			// if the connect request contains a CRI Tunneling Connection, this connection
-			// should be handled by the tunneling controller
+			// if the connect request does not contain a CRI Tunneling Connection, this
+			// connection should be handled by the core controller
 			if (!knxPacket.getStructureMap().containsKey(StructureType.TUNNELING_CONNECTION)) {
 				break;
 			}
@@ -193,7 +193,7 @@ public class TunnelingController extends BaseController {
 
 		LOG.info("sendTunnelRequestConnect() ...");
 
-		final ConnectionHeader connectionHeader = new ConnectionHeader();
+		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 //		connectionHeader.setChannel((short) connection.getId());
 //		connectionHeader.setSequenceCounter(connection.getSequenceCounter() + 2);
 
@@ -280,7 +280,7 @@ public class TunnelingController extends BaseController {
 				// SEND TunnelRequest+Indication GroupValueResp
 				//
 
-				final ConnectionHeader connectionHeader = new ConnectionHeader();
+				final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 
 				final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
 				cemiTunnelRequest.setMessageCode(BaseController.INDICATION_PRIMITIVE);
@@ -420,7 +420,7 @@ public class TunnelingController extends BaseController {
 			knxPacket.getConnection().sendResponse(acknowledgeKNXPacket, datagramPacket.getSocketAddress());
 
 			// SEND TunnelRequest DataIndication connect
-			final ConnectionHeader connectionHeader = new ConnectionHeader();
+//			final ConnectionHeader connectionHeader = new ConnectionHeader();
 
 //			final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
 //			cemiTunnelRequest.setMessageCode(BaseController.INDICATION_PRIMITIVE);
@@ -464,7 +464,7 @@ public class TunnelingController extends BaseController {
 		cemiTunnelRequest.setTpci(0x01);
 		cemiTunnelRequest.setApci(0x40);
 
-		final ConnectionHeader connectionHeader = new ConnectionHeader();
+		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 		connectionHeader.setChannel(knxPacket.getConnectionHeader().getChannel());
 		connectionHeader.setSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter() + 1);
 		connectionHeader.setReserved(0x00);
@@ -485,6 +485,7 @@ public class TunnelingController extends BaseController {
 	 * @param sequenceCounter
 	 * @return
 	 */
+	@SuppressWarnings("unused")
 	private KNXPacket retrieveDeviceDescriptionReadAPCIAcknowledgePacket(final KNXPacket knxPacket,
 			final int sequenceCounter) {
 
@@ -499,7 +500,7 @@ public class TunnelingController extends BaseController {
 		cemiTunnelRequest.setDestKNXAddress(getDevice().getPhysicalAddress());
 		cemiTunnelRequest.setTpci(0xc2);
 
-		final ConnectionHeader connectionHeader = new ConnectionHeader();
+		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 		connectionHeader.setChannel(knxPacket.getConnectionHeader().getChannel());
 		connectionHeader.setSequenceCounter(sequenceCounter + 1);
 		connectionHeader.setReserved(0x00);
@@ -524,6 +525,7 @@ public class TunnelingController extends BaseController {
 	 * @param sequenceCounter
 	 * @return
 	 */
+	@SuppressWarnings("unused")
 	private KNXPacket retrieveDeviceDescriptionReadAPCIIndicationPacket(final KNXPacket knxPacket,
 			final int sequenceCounter) {
 
@@ -548,7 +550,7 @@ public class TunnelingController extends BaseController {
 		// send the answer, that the server wanted
 		final KNXPacket indicationKNXPacket = new KNXPacket();
 		indicationKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);
-		indicationKNXPacket.setConnectionHeader(new ConnectionHeader());
+		indicationKNXPacket.setConnectionHeader(new KNXConnectionHeader());
 		indicationKNXPacket.getConnectionHeader().setChannel(knxPacket.getConnectionHeader().getChannel());
 		indicationKNXPacket.getConnectionHeader().setSequenceCounter(sequenceCounter + 1);
 		indicationKNXPacket.getConnectionHeader().setReserved(0x00);
@@ -563,7 +565,7 @@ public class TunnelingController extends BaseController {
 		final KNXPacket outKNXPacket = new KNXPacket();
 		outKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
 
-		outKNXPacket.setConnectionHeader(new ConnectionHeader());
+		outKNXPacket.setConnectionHeader(new KNXConnectionHeader());
 		outKNXPacket.getConnectionHeader().setChannel(knxPacket.getConnectionHeader().getChannel());
 		outKNXPacket.getConnectionHeader().setSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter());
 		// status OK

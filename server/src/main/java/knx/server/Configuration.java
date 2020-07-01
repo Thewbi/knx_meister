@@ -6,16 +6,15 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Locale;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import api.pipeline.Pipeline;
+import common.packets.ServiceIdentifier;
+import common.utils.NetworkUtils;
 import core.api.device.Device;
-import core.api.pipeline.Pipeline;
 import core.common.KNXPacketConverter;
-import core.common.NetworkUtils;
 import core.communication.ConnectionManager;
 import core.communication.DefaultConnectionManager;
 import core.communication.MulticastListenerReaderThread;
@@ -32,7 +31,6 @@ import core.data.sending.DefaultDataSender;
 import core.devices.DefaultDevice;
 import core.packets.DeviceStatus;
 import core.packets.KNXPacket;
-import core.packets.ServiceIdentifier;
 import core.pipeline.DefaultPipeline;
 import core.pipeline.InwardConnectionPipelineStep;
 import core.pipeline.InwardConverterPipelineStep;
@@ -58,8 +56,8 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
 @Component
 public class Configuration {
 
-	@SuppressWarnings("unused")
-	private static final Logger LOG = LogManager.getLogger(Configuration.class);
+//	@SuppressWarnings("unused")
+//	private static final Logger LOG = LogManager.getLogger(Configuration.class);
 
 	// 1.1.101
 	private static final int DEVICE_ADDRESS = 0x1165;

@@ -5,8 +5,8 @@ import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
 
-import core.api.pipeline.Pipeline;
-import core.api.pipeline.PipelineStep;
+import api.pipeline.Pipeline;
+import api.pipeline.PipelineStep;
 
 public class DefaultPipeline implements Pipeline<Object, Object> {
 

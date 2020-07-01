@@ -3,22 +3,11 @@ package project.parsing.knx.steps;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.function.Consumer;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
-import project.parsing.domain.KNXProject;
-import project.parsing.knx.KNXGroupAddressStyle;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
 
@@ -32,67 +21,38 @@ import project.parsing.steps.ParsingStep;
  */
 public class ReadProjectParsingStep implements ParsingStep<KNXProjectParsingContext> {
 
-	private static final String GROUP_ADDRESS_STYLE_ATTRIBUTE = "GroupAddressStyle";
-
-	private static final String NAME_ATTRIBUTE = "Name";
-
-	private static final String ID_ATTRIBUTE = "Id";
-
+	@SuppressWarnings("unused")
 	private static final Logger LOG = LogManager.getLogger(ReadProjectParsingStep.class);
+
+	private final ProjectParserConsumer consumer = new ProjectParserConsumer();
 
 	@Override
 	public void process(final KNXProjectParsingContext context) throws IOException {
+		walkFolder(context);
+	}
 
-		// find project.xml
-		Files.walk(context.getTempDirectory()).filter(Files::isRegularFile)
-				.filter(p -> p.getFileName().endsWith("project.xml")).findFirst().ifPresent(new Consumer<Path>() {
+	private void walkFolder(final KNXProjectParsingContext context) throws IOException {
 
-					@Override
-					public void accept(final Path path) {
+		consumer.setContext(context);
 
-						try {
+		// @formatter:off
 
-							final KNXProject knxProject = new KNXProject();
-							context.setKnxProject(knxProject);
-							processXML(path, knxProject);
+		// for some reason, the stream has to be closed.
+		// If this stream is not closed, then at cleaning up the
+		// temporary folder, an exception is thrown because some file is still locked
+		//
+		// https://stackoverflow.com/questions/19935624/java-nio-file-files-deletepath-path-occasional-failure-to-recursively-delete
+		try (final Stream<Path> stream = Files
+			.walk(context.getTempDirectory())
+			.filter(Files::isRegularFile)
+			.filter(p -> p.getFileName().endsWith("project.xml"))) {
 
-						} catch (ParserConfigurationException | SAXException | IOException e) {
-							LOG.error(e.getMessage(), e);
-							context.setKnxProject(null);
-						}
-					}
+			stream
+				.findFirst()
+				.ifPresent(consumer);
+		}
 
-					private void processXML(final Path path, final KNXProject knxProject)
-							throws ParserConfigurationException, SAXException, IOException {
-
-						final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-						final DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-						final Document document = documentBuilder.parse(path.toFile());
-
-						final Element projectElement = retrieveProjectElement(document);
-						knxProject.setId(projectElement.getAttribute(ID_ATTRIBUTE));
-
-						final Element projectInformationElement = retrieveProjectInformationElement(projectElement);
-						knxProject.setName(projectInformationElement.getAttribute(NAME_ATTRIBUTE));
-
-						final String attribute = projectInformationElement.getAttribute(GROUP_ADDRESS_STYLE_ATTRIBUTE);
-						knxProject.setGroupAddressStyle(KNXGroupAddressStyle.fromString(attribute));
-					}
-
-					private Element retrieveProjectElement(final Document document) {
-
-						final NodeList elementsByTagName = document.getElementsByTagName("Project");
-						final Node projectNode = elementsByTagName.item(0);
-						final Element projectElement = (Element) projectNode;
-
-						return projectElement;
-					}
-
-					private Element retrieveProjectInformationElement(final Element projectElement) {
-						return (Element) projectElement.getChildNodes().item(1);
-					}
-
-				});
+		// @formatter:on
 	}
 
 }

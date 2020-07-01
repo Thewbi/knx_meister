@@ -7,18 +7,18 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import common.packets.KNXConnectionHeader;
+import common.packets.ServiceIdentifier;
+import common.utils.NetworkUtils;
+import common.utils.Utils;
 import core.api.device.Device;
-import core.common.NetworkUtils;
-import core.common.Utils;
 import core.communication.Connection;
 import core.communication.controller.BaseController;
 import core.data.serializer.BitDataSerializer;
 import core.data.serializer.DataSerializer;
 import core.data.serializer.Float16DataSerializer;
 import core.packets.CemiTunnelRequest;
-import core.packets.ConnectionHeader;
 import core.packets.KNXPacket;
-import core.packets.ServiceIdentifier;
 import project.parsing.domain.KNXComObject;
 import project.parsing.domain.KNXDatapointSubtype;
 import project.parsing.domain.KNXDeviceInstance;
@@ -104,7 +104,7 @@ public class DefaultDataSender implements DataSender {
 			throw new RuntimeException("No serializer for format \"" + format + "\" registered!");
 		}
 
-		final ConnectionHeader connectionHeader = new ConnectionHeader();
+		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 
 		final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
 		cemiTunnelRequest.setMessageCode((short) 0x29);
@@ -141,7 +141,7 @@ public class DefaultDataSender implements DataSender {
 //			throw new RuntimeException("No serializer for format \"" + format + "\" registered!");
 //		}
 
-		final ConnectionHeader connectionHeader = new ConnectionHeader();
+		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 
 		final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
 //		cemiTunnelRequest.setMessageCode(BaseController.CONFIRM_PRIMITIVE);

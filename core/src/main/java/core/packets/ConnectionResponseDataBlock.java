@@ -1,6 +1,6 @@
 package core.packets;
 
-import core.common.Utils;
+import common.utils.Utils;
 
 /**
  * 7.5.3 Connection Response Data Block (CRD)

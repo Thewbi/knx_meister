@@ -15,8 +15,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.api.pipeline.Pipeline;
-import core.common.NetworkUtils;
+import api.pipeline.Pipeline;
+import common.utils.NetworkUtils;
 import core.packets.KNXPacket;
 
 public class MulticastListenerReaderThread implements Runnable, DatagramPacketCallback {
@@ -79,8 +79,6 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 		final InetSocketAddress inetSocketAddress = new InetSocketAddress(NetworkUtils.retrieveLocalIP(), bindPort);
 
 		multicastSocket = new MulticastSocket(inetSocketAddress);
-//		try (MulticastSocket multicastSocket = new MulticastSocket(inetSocketAddress)) {
-
 		multicastSocket.setReuseAddress(true);
 
 		final InetAddress inetAddress = InetAddress.getByName(NetworkUtils.KNX_MULTICAST_IP);
@@ -92,6 +90,8 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 
 			final byte[] buf = new byte[1024];
 			final DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length);
+
+			// blocking call
 			multicastSocket.receive(datagramPacket);
 
 			// use the pipeline to convert the input from the socket to a KNXPacket that the
@@ -112,6 +112,7 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 				if (knxPacket == null) {
 					continue;
 				}
+
 			} catch (final Exception e) {
 				LOG.error(e.getMessage(), e);
 				throw new IOException(e);
@@ -131,7 +132,6 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 
 			}
 		}
-//		}
 	}
 
 	public List<DatagramPacketCallback> getDatagramPacketCallbacks() {

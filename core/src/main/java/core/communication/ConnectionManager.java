@@ -2,7 +2,7 @@ package core.communication;
 
 import java.net.DatagramSocket;
 
-import core.api.pipeline.Pipeline;
+import api.pipeline.Pipeline;
 import core.packets.ConnectionType;
 import core.packets.KNXPacket;
 

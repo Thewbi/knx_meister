@@ -5,6 +5,8 @@ import java.util.TreeMap;
 
 import org.apache.commons.collections4.MapUtils;
 
+import common.packets.KNXConnectionHeader;
+import common.packets.KNXHeader;
 import core.communication.Connection;
 
 /**
@@ -22,9 +24,9 @@ import core.communication.Connection;
  */
 public class KNXPacket {
 
-	private Header header = new Header();
+	private KNXHeader header = new KNXHeader();
 
-	private ConnectionHeader connectionHeader;
+	private KNXConnectionHeader connectionHeader;
 
 	private int communicationChannelId = -1;
 
@@ -57,11 +59,11 @@ public class KNXPacket {
 	public KNXPacket(final KNXPacket knxPacket) {
 
 		// header
-		header = new Header(knxPacket.getHeader());
+		header = new KNXHeader(knxPacket.getHeader());
 
 		// connection header
 		if (knxPacket.connectionHeader != null) {
-			connectionHeader = new ConnectionHeader(knxPacket.connectionHeader);
+			connectionHeader = new KNXConnectionHeader(knxPacket.connectionHeader);
 		}
 
 		if (MapUtils.isNotEmpty(knxPacket.structureMap)) {
@@ -303,7 +305,7 @@ public class KNXPacket {
 		return stringBuilder.toString();
 	}
 
-	public Header getHeader() {
+	public KNXHeader getHeader() {
 		return header;
 	}
 
@@ -347,11 +349,11 @@ public class KNXPacket {
 		this.cemiPropReadRequest = cemiPropReadRequest;
 	}
 
-	public ConnectionHeader getConnectionHeader() {
+	public KNXConnectionHeader getConnectionHeader() {
 		return connectionHeader;
 	}
 
-	public void setConnectionHeader(final ConnectionHeader connectionHeader) {
+	public void setConnectionHeader(final KNXConnectionHeader connectionHeader) {
 		this.connectionHeader = connectionHeader;
 	}
 

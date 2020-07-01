@@ -6,6 +6,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
+import common.packets.ServiceIdentifier;
 import core.common.Converter;
 import core.conversion.CoreKNXPacketConverter;
 

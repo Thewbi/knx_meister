@@ -5,7 +5,7 @@ import java.net.DatagramSocket;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.api.pipeline.PipelineStep;
+import api.pipeline.PipelineStep;
 import core.communication.Connection;
 import core.communication.ConnectionManager;
 import core.packets.KNXPacket;

@@ -7,8 +7,8 @@ import java.util.Set;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.api.pipeline.PipelineStep;
-import core.common.Utils;
+import api.pipeline.PipelineStep;
+import common.utils.Utils;
 import core.packets.KNXPacket;
 
 public class OutwardOutputPipelineStep implements PipelineStep<Object, Object> {

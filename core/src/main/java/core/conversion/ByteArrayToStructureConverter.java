@@ -1,7 +1,7 @@
 package core.conversion;
 
+import common.utils.Utils;
 import core.common.Converter;
-import core.common.Utils;
 import core.packets.ConnectionRequestInformation;
 import core.packets.HPAIStructure;
 import core.packets.Structure;

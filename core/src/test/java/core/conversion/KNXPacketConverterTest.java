@@ -6,11 +6,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
+import common.packets.ServiceIdentifier;
+import common.utils.Utils;
 import core.common.Converter;
-import core.common.Utils;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
-import core.packets.ServiceIdentifier;
 import core.packets.StructureType;
 
 public class KNXPacketConverterTest {

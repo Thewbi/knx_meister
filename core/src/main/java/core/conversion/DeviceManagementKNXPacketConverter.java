@@ -3,11 +3,11 @@ package core.conversion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import common.packets.KNXConnectionHeader;
+import common.packets.KNXHeader;
 import core.packets.CemiPropReadRequest;
 import core.packets.CemiTunnelRequest;
-import core.packets.ConnectionHeader;
 import core.packets.DeviceManagement;
-import core.packets.Header;
 import core.packets.KNXPacket;
 
 public class DeviceManagementKNXPacketConverter extends BaseKNXPacketConverter {
@@ -20,7 +20,7 @@ public class DeviceManagementKNXPacketConverter extends BaseKNXPacketConverter {
 		int index = 0;
 
 		// header
-		final Header header = knxPacket.getHeader();
+		final KNXHeader header = knxPacket.getHeader();
 		header.fromBytes(source, index);
 		index += header.getLength();
 
@@ -29,9 +29,9 @@ public class DeviceManagementKNXPacketConverter extends BaseKNXPacketConverter {
 		}
 
 		// connection header
-		ConnectionHeader connectionHeader = knxPacket.getConnectionHeader();
+		KNXConnectionHeader connectionHeader = knxPacket.getConnectionHeader();
 		if (connectionHeader == null) {
-			connectionHeader = new ConnectionHeader();
+			connectionHeader = new KNXConnectionHeader();
 			knxPacket.setConnectionHeader(connectionHeader);
 		}
 		connectionHeader.fromBytes(source, index);
@@ -73,7 +73,7 @@ public class DeviceManagementKNXPacketConverter extends BaseKNXPacketConverter {
 	}
 
 	@Override
-	public boolean accept(final Header header) {
+	public boolean accept(final KNXHeader header) {
 		switch (header.getServiceIdentifier()) {
 
 		// Device Management Specification- 4.2.6 DEVICE_CONFIGURATION_REQUEST

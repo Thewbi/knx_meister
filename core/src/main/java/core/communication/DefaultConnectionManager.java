@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import core.api.pipeline.Pipeline;
+import api.pipeline.Pipeline;
 import core.packets.ConnectionType;
 import core.packets.KNXPacket;
 

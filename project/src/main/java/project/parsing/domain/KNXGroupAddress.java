@@ -98,7 +98,7 @@ public class KNXGroupAddress {
 
 	public void dump() {
 
-		LOG.info(getId() + " " + getGroupAddress() + " " + getName());
+		LOG.info("ID=" + getId() + " GroupAddress=" + getGroupAddress() + " Name=" + getName());
 
 		for (final KNXGroupAddress knxGroupAddress : knxGroupAddresses) {
 			knxGroupAddress.dump();
