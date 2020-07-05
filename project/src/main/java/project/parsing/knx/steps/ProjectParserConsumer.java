@@ -16,8 +16,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import project.parsing.domain.KNXProject;
-import project.parsing.knx.KNXGroupAddressStyle;
+import api.project.KNXGroupAddressStyle;
+import api.project.KNXProject;
 import project.parsing.knx.KNXProjectParsingContext;
 
 public class ProjectParserConsumer implements Consumer<Path> {

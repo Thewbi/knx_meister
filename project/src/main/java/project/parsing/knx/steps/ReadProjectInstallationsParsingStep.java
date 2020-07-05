@@ -20,10 +20,10 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import project.parsing.domain.KNXComObject;
-import project.parsing.domain.KNXDeviceInstance;
-import project.parsing.domain.KNXGroupAddress;
-import project.parsing.domain.KNXProject;
+import api.project.KNXComObject;
+import api.project.KNXDeviceInstance;
+import api.project.KNXGroupAddress;
+import api.project.KNXProject;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
 

@@ -4,7 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-import project.parsing.domain.KNXProject;
+import api.project.KNXProject;
 import project.parsing.steps.ParsingStep;
 
 public interface ProjectParser<T> {

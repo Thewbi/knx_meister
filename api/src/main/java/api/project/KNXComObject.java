@@ -1,4 +1,4 @@
-package project.parsing.domain;
+package api.project;
 
 public class KNXComObject {
 
@@ -17,6 +17,28 @@ public class KNXComObject {
 	private String hardwareName;
 
 	private String hardwareText;
+
+	public KNXDatapointSubtype getDataPointSubtype(final KNXProject knxProject) {
+
+		final KNXGroupAddress knxGroupAddress = getKnxGroupAddress();
+		if (knxGroupAddress == null) {
+			return null;
+		}
+
+		final String dataPointTypeId = knxGroupAddress.getDataPointType();
+
+		return knxProject.getDatapointSubtypeMap().get(dataPointTypeId);
+	}
+
+	public KNXDatapointType getDataPointType(final KNXProject knxProject) {
+
+		final KNXDatapointSubtype dataPointSubtype = getDataPointSubtype(knxProject);
+		if (dataPointSubtype == null) {
+			return null;
+		}
+
+		return dataPointSubtype.getKnxDatapointType();
+	}
 
 	public String getId() {
 		return id;
@@ -80,6 +102,13 @@ public class KNXComObject {
 
 	public void setHardwareText(final String hardwareText) {
 		this.hardwareText = hardwareText;
+	}
+
+	@Override
+	public String toString() {
+		return "KNXComObject [id=" + id + ", text=" + text + ", number=" + number + ", groupObject=" + groupObject
+				+ ", groupAddressLink=" + groupAddressLink + ", knxGroupAddress=" + knxGroupAddress + ", hardwareName="
+				+ hardwareName + ", hardwareText=" + hardwareText + "]";
 	}
 
 }

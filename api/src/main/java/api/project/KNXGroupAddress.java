@@ -1,4 +1,4 @@
-package project.parsing.domain;
+package api.project;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -97,9 +97,7 @@ public class KNXGroupAddress {
 	}
 
 	public void dump() {
-
 		LOG.info("ID=" + getId() + " GroupAddress=" + getGroupAddress() + " Name=" + getName());
-
 		for (final KNXGroupAddress knxGroupAddress : knxGroupAddresses) {
 			knxGroupAddress.dump();
 		}

@@ -10,11 +10,12 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.exception.ObjectServerException;
 import api.pipeline.Pipeline;
 import common.utils.Utils;
 import object_server.requests.BaseRequest;
 import object_server.requests.BaseResponse;
-import object_server.requests.RequestProcessor;
+import object_server.requests.processors.RequestProcessor;
 
 public class ClientRunnable implements Runnable {
 
@@ -58,18 +59,28 @@ public class ClientRunnable implements Runnable {
 
 				BaseResponse baseResponse = null;
 
+				boolean requestProcessorFound = false;
 				for (final RequestProcessor requestProcessor : requestProcessors) {
+
 					if (requestProcessor.accept(baseRequest)) {
+
 						baseResponse = requestProcessor.process(baseRequest);
+						requestProcessorFound = true;
+
 						break;
 					}
+				}
+
+				if (!requestProcessorFound) {
+					throw new ObjectServerException(
+							"No processor found for request \"" + baseRequest.getClass().getName() + "\"");
 				}
 
 				final byte[] bytes = baseResponse.getBytes();
 
 				final String integerToStringNoPrefix = Utils.integerToStringNoPrefix(bytes);
 
-				LOG.info("Sending Response: " + integerToStringNoPrefix);
+				LOG.trace("Sending Response: " + integerToStringNoPrefix);
 
 				final DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 				dataOutputStream.write(bytes);

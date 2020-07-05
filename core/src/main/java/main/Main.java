@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import api.pipeline.Pipeline;
+import api.project.KNXProject;
 import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
 import core.api.device.Device;
@@ -39,7 +40,6 @@ import core.pipeline.OutwardOutputPipelineStep;
 import object_server.pipeline.ConverterPipelineStep;
 import object_server.requests.RequestFactory;
 import project.parsing.ProjectParser;
-import project.parsing.domain.KNXProject;
 import project.parsing.knx.KNXProjectParser;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.knx.steps.ApplicationProgramParsingStep;
@@ -235,6 +235,7 @@ public class Main {
 		new Thread(multicastListenerThread).start();
 
 		final RequestFactory requestFactory = new RequestFactory();
+		requestFactory.setKnxProject(knxProject);
 
 		final ConverterPipelineStep objectServerConverterPipelineStep = new ConverterPipelineStep();
 		objectServerConverterPipelineStep.setRequestFactory(requestFactory);
@@ -243,6 +244,7 @@ public class Main {
 		objectServerInwardPipeline.addStep(objectServerConverterPipelineStep);
 
 		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(12004);
+		objectServerReaderThread.setKnxProject(knxProject);
 		objectServerReaderThread.setInputPipeline(objectServerInwardPipeline);
 
 		new Thread(objectServerReaderThread).start();

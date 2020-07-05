@@ -1,4 +1,4 @@
-package project.parsing.domain;
+package api.project;
 
 public class KNXDatapointType {
 
@@ -30,6 +30,11 @@ public class KNXDatapointType {
 
 	public void setName(final String name) {
 		this.name = name;
+	}
+
+	@Override
+	public String toString() {
+		return "KNXDatapointType [id=" + id + ", text=" + text + ", name=" + name + "]";
 	}
 
 }

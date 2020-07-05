@@ -1,11 +1,9 @@
-package project.parsing.domain;
+package api.project;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import project.parsing.knx.KNXGroupAddressStyle;
 
 public class KNXProject {
 
@@ -22,6 +20,8 @@ public class KNXProject {
 	private final Map<String, KNXDatapointSubtype> datapointSubtypeMap = new HashMap<>();
 
 	private final Map<String, KNXManufacturer> manufacturerMap = new HashMap<>();
+
+	private final Map<KNXComObject, Object> valueMap = new HashMap<>();
 
 	public String getId() {
 		return id;
@@ -61,6 +61,10 @@ public class KNXProject {
 
 	public Map<String, KNXManufacturer> getManufacturerMap() {
 		return manufacturerMap;
+	}
+
+	public Map<KNXComObject, Object> getValueMap() {
+		return valueMap;
 	}
 
 }

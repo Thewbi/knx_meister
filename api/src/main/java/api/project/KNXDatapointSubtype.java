@@ -1,4 +1,4 @@
-package project.parsing.domain;
+package api.project;
 
 public class KNXDatapointSubtype {
 

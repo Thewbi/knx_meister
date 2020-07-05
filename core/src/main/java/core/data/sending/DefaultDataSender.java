@@ -7,6 +7,11 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.project.KNXComObject;
+import api.project.KNXDatapointSubtype;
+import api.project.KNXDeviceInstance;
+import api.project.KNXGroupAddress;
+import api.project.KNXProject;
 import common.packets.KNXConnectionHeader;
 import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
@@ -19,11 +24,6 @@ import core.data.serializer.DataSerializer;
 import core.data.serializer.Float16DataSerializer;
 import core.packets.CemiTunnelRequest;
 import core.packets.KNXPacket;
-import project.parsing.domain.KNXComObject;
-import project.parsing.domain.KNXDatapointSubtype;
-import project.parsing.domain.KNXDeviceInstance;
-import project.parsing.domain.KNXGroupAddress;
-import project.parsing.domain.KNXProject;
 
 public class DefaultDataSender implements DataSender {
 
@@ -36,8 +36,6 @@ public class DefaultDataSender implements DataSender {
 	private KNXProject knxProject;
 
 	private final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
-
-//	int currentValue = 0;
 
 	/**
 	 * ctor

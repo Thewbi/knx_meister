@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import api.pipeline.Pipeline;
+import api.project.KNXProject;
 import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
 import core.api.device.Device;
@@ -39,7 +40,6 @@ import core.pipeline.IpFilterPipelineStep;
 import core.pipeline.OutwardConverterPipelineStep;
 import core.pipeline.OutwardOutputPipelineStep;
 import project.parsing.ProjectParser;
-import project.parsing.domain.KNXProject;
 import project.parsing.knx.KNXProjectParser;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.knx.steps.ApplicationProgramParsingStep;

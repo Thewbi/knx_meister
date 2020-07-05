@@ -5,8 +5,8 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 
-import project.parsing.domain.KNXGroupAddress;
-import project.parsing.domain.KNXProject;
+import api.project.KNXGroupAddress;
+import api.project.KNXProject;
 
 public class KNXProjectParsingContext {
 

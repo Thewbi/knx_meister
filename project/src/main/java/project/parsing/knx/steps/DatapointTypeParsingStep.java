@@ -18,8 +18,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import project.parsing.domain.KNXDatapointSubtype;
-import project.parsing.domain.KNXDatapointType;
+import api.project.KNXDatapointSubtype;
+import api.project.KNXDatapointType;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
 

@@ -27,6 +27,12 @@
 	</build>
 
 	<dependencies>
+	
+		<dependency>
+			<groupId>de.knx</groupId>
+			<artifactId>api</artifactId>
+			<version>1.0.0</version>
+		</dependency>
 
 		<!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
 		<dependency>

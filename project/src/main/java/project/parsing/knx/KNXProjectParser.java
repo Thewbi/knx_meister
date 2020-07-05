@@ -9,8 +9,8 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.project.KNXProject;
 import project.parsing.ProjectParser;
-import project.parsing.domain.KNXProject;
 import project.parsing.steps.ParsingStep;
 
 public class KNXProjectParser implements ProjectParser<KNXProjectParsingContext> {

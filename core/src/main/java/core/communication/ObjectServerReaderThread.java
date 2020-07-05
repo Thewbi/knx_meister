@@ -11,8 +11,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import api.pipeline.Pipeline;
+import api.project.KNXProject;
 import common.utils.NetworkUtils;
-import object_server.requests.GetServerItemRequestProcessor;
+import object_server.requests.processors.GetDatapointDescriptionRequestProcessor;
+import object_server.requests.processors.GetDatapointValueRequestProcessor;
+import object_server.requests.processors.GetServerItemRequestProcessor;
 
 public class ObjectServerReaderThread implements Runnable {
 
@@ -24,6 +27,8 @@ public class ObjectServerReaderThread implements Runnable {
 
 	private Pipeline<Object, Object> inputPipeline;
 
+	private KNXProject knxProject;
+
 	public ObjectServerReaderThread(final int bindPort) {
 		this.bindPort = bindPort;
 	}
@@ -31,11 +36,13 @@ public class ObjectServerReaderThread implements Runnable {
 	@Override
 	public void run() {
 
+		ServerSocket serverSocket = null;
+
 		try {
 
 			final InetSocketAddress inetSocketAddress = new InetSocketAddress(NetworkUtils.retrieveLocalIP(), bindPort);
 
-			final ServerSocket serverSocket = new ServerSocket();
+			serverSocket = new ServerSocket();
 			serverSocket.bind(inetSocketAddress);
 
 			while (running) {
@@ -45,7 +52,18 @@ public class ObjectServerReaderThread implements Runnable {
 
 				final ClientRunnable clientRunnable = new ClientRunnable(clientSocket);
 				clientRunnable.setInputPipeline(inputPipeline);
-				clientRunnable.getRequestProcessors().add(new GetServerItemRequestProcessor());
+
+				final GetServerItemRequestProcessor getServerItemRequestProcessor = new GetServerItemRequestProcessor();
+				getServerItemRequestProcessor.setKnxProject(knxProject);
+				clientRunnable.getRequestProcessors().add(getServerItemRequestProcessor);
+
+				final GetDatapointDescriptionRequestProcessor getDatapointDescriptionRequestProcessor = new GetDatapointDescriptionRequestProcessor();
+				getDatapointDescriptionRequestProcessor.setKnxProject(knxProject);
+				clientRunnable.getRequestProcessors().add(getDatapointDescriptionRequestProcessor);
+
+				final GetDatapointValueRequestProcessor getDatapointValueRequestProcessor = new GetDatapointValueRequestProcessor();
+				getDatapointValueRequestProcessor.setKnxProject(knxProject);
+				clientRunnable.getRequestProcessors().add(getDatapointValueRequestProcessor);
 
 				final Thread clientThread = new Thread(clientRunnable);
 				clientThread.start();
@@ -57,12 +75,23 @@ public class ObjectServerReaderThread implements Runnable {
 			LOG.error(e.getMessage(), e);
 		} catch (final IOException e) {
 			LOG.error(e.getMessage(), e);
+		} finally {
+			if (serverSocket != null) {
+				try {
+					serverSocket.close();
+				} catch (final IOException e) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
 		}
-
 	}
 
 	public void setInputPipeline(final Pipeline<Object, Object> inputPipeline) {
 		this.inputPipeline = inputPipeline;
+	}
+
+	public void setKnxProject(final KNXProject knxProject) {
+		this.knxProject = knxProject;
 	}
 
 }

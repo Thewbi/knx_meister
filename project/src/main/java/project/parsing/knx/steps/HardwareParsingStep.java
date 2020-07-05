@@ -16,8 +16,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import project.parsing.domain.KNXDeviceInstance;
-import project.parsing.domain.KNXProduct;
+import api.project.KNXDeviceInstance;
+import api.project.KNXProduct;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
 

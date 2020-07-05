@@ -1,4 +1,4 @@
-package project.parsing.knx;
+package api.project;
 
 public enum KNXGroupAddressStyle {
 

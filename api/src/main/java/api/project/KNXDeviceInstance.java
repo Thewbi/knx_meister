@@ -1,4 +1,4 @@
-package project.parsing.domain;
+package api.project;
 
 import java.util.HashMap;
 import java.util.Map;
