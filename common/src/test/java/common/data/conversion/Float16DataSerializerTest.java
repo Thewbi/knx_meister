@@ -1,4 +1,4 @@
-package core.data.serializer;
+package common.data.conversion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 

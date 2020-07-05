@@ -23,14 +23,13 @@ public class ComObjectValueConverter implements Converter<KNXComObject, byte[]> 
 			throw new ObjectServerException("knxProject is null!");
 		}
 
-		final KNXDatapointType dataPointType = knxComObject.getDataPointType(knxProject);
-
 		Object value = null;
-		if (!knxProject.getValueMap().containsKey(knxComObject)) {
-			knxProject.getValueMap().put(knxComObject, 0);
+		if (!knxProject.getValueMap().containsKey(knxComObject.getNumber())) {
+			knxProject.getValueMap().put(knxComObject.getNumber(), 0);
 		}
-		value = knxProject.getValueMap().get(knxComObject);
+		value = knxProject.getValueMap().get(knxComObject.getNumber());
 
+		final KNXDatapointType dataPointType = knxComObject.getDataPointType(knxProject);
 		switch (dataPointType.getId()) {
 
 		// 1-Bit

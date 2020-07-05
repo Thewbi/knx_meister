@@ -1,7 +1,6 @@
 package object_server.requests.processors;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
@@ -11,8 +10,8 @@ import api.exception.ObjectServerException;
 import api.factory.exception.FactoryException;
 import api.project.KNXComObject;
 import api.project.KNXDatapointType;
-import api.project.KNXDeviceInstance;
 import api.project.KNXProject;
+import common.utils.KNXProjectUtils;
 import object_server.requests.BaseRequest;
 import object_server.requests.BaseResponse;
 import object_server.requests.DefaultDatapointConfigFactory;
@@ -64,10 +63,9 @@ public class GetDatapointDescriptionRequestProcessor extends BaseRequestProcesso
 
 			// 1 byte value type
 			// TODO: how to know which device to retrieve from the list?
-			final KNXDeviceInstance knxDeviceInstance = getKnxProject().getDeviceInstances().get(0);
-			final List<KNXComObject> knxComObjects = knxDeviceInstance.getComObjects().values().stream()
-					.filter(c -> c.getNumber() == dataPointId).filter(c -> c.isGroupObject())
-					.collect(Collectors.toList());
+//			final KNXDeviceInstance knxDeviceInstance = getKnxProject().getDeviceInstances().get(0);
+			final List<KNXComObject> knxComObjects = KNXProjectUtils.retrieveComObjectListByDatapointId(getKnxProject(),
+					dataPointId);
 
 //			final Optional<KNXComObject> knxComObjectOptional = .findFirst();
 

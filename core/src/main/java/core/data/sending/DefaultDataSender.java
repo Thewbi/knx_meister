@@ -7,21 +7,18 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import api.project.KNXComObject;
+import api.data.serializer.DataSerializer;
 import api.project.KNXDatapointSubtype;
-import api.project.KNXDeviceInstance;
 import api.project.KNXGroupAddress;
 import api.project.KNXProject;
 import common.packets.KNXConnectionHeader;
 import common.packets.ServiceIdentifier;
+import common.utils.KNXProjectUtils;
 import common.utils.NetworkUtils;
 import common.utils.Utils;
 import core.api.device.Device;
 import core.communication.Connection;
 import core.communication.controller.BaseController;
-import core.data.serializer.BitDataSerializer;
-import core.data.serializer.DataSerializer;
-import core.data.serializer.Float16DataSerializer;
 import core.packets.CemiTunnelRequest;
 import core.packets.KNXPacket;
 
@@ -37,13 +34,13 @@ public class DefaultDataSender implements DataSender {
 
 	private final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
 
-	/**
-	 * ctor
-	 */
-	public DefaultDataSender() {
-		dataSerializerMap.put(FLOAT16, new Float16DataSerializer());
-		dataSerializerMap.put(BIT, new BitDataSerializer());
-	}
+//	/**
+//	 * ctor
+//	 */
+//	public DefaultDataSender() {
+//		dataSerializerMap.put(FLOAT16, new Float16DataSerializer());
+//		dataSerializerMap.put(BIT, new BitDataSerializer());
+//	}
 
 	@Override
 	public void send(final Connection connection) {
@@ -66,27 +63,13 @@ public class DefaultDataSender implements DataSender {
 //		currentValue = 1 - currentValue;
 	}
 
-	private void sendViaComObject(final Connection connection, final String comObjectId, final double value) {
+	private void sendViaComObject(final Connection connection, final int datapointId, final double value) {
 
-		// how to identify the correct device if there are several devices in the list?
-		final KNXDeviceInstance knxDeviceInstance = knxProject.getDeviceInstances().get(0);
-
-		// pick one of the communication objects by its name/id
-		final KNXComObject knxComObject = knxDeviceInstance.getComObjects().get(comObjectId);
-
-		// retrieve the group address to send the data to
-		final KNXGroupAddress knxGroupAddress = knxComObject.getKnxGroupAddress();
-
-		// the group address also stores the datatype. The data has to be send in this
-		// specific datatype so the receiver can decode it correctly
-		final String dataPointType = knxGroupAddress.getDataPointType();
-
-		// retrieve the datapoint subtype because the datapoint subtype stores datapoint
-		// type
-		final KNXDatapointSubtype knxDatapointSubtype = knxProject.getDatapointSubtypeMap().get(dataPointType);
+		final KNXGroupAddress knxGroupAddress = KNXProjectUtils.retrieveGroupAddress(knxProject, datapointId);
+		final KNXDatapointSubtype knxDatapointSubtype = KNXProjectUtils.retrieveDataPointSubType(knxProject,
+				datapointId);
 
 		// from the datapoint subtype, retrieve the datapoint type
-//		final KNXDatapointType knxDatapointType = knxDatapointSubtype.getKnxDatapointType();
 		final String format = knxDatapointSubtype.getFormat();
 
 		sendViaFormat(connection, format, knxGroupAddress, value);
@@ -170,6 +153,12 @@ public class DefaultDataSender implements DataSender {
 		}
 	}
 
+	@Override
+	public Object deserializeByFormat() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 	public Device getDevice() {
 		return device;
 	}
@@ -192,6 +181,10 @@ public class DefaultDataSender implements DataSender {
 
 	public void setKnxProject(final KNXProject knxProject) {
 		this.knxProject = knxProject;
+	}
+
+	public Map<String, DataSerializer<Object>> getDataSerializerMap() {
+		return dataSerializerMap;
 	}
 
 }

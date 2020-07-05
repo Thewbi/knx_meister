@@ -1,4 +1,4 @@
-package core.data.serializer;
+package api.data.serializer;
 
 public interface DataSerializer<T> {
 

@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 import api.conversion.Converter;
 import api.exception.ObjectServerException;
 import api.project.KNXComObject;
-import api.project.KNXDeviceInstance;
+import common.utils.KNXProjectUtils;
 import object_server.conversion.ComObjectValueConverter;
 import object_server.requests.BaseRequest;
 import object_server.requests.BaseResponse;
@@ -40,9 +40,9 @@ public class GetDatapointValueRequestProcessor extends BaseRequestProcessor {
 		final int dataPointId = start;
 
 		// TODO: how do I know which device to use?
-		final KNXDeviceInstance knxDeviceInstance = getKnxProject().getDeviceInstances().get(0);
-		final Optional<KNXComObject> knxComObjectOptional = knxDeviceInstance.getComObjects().values().stream()
-				.filter(c -> c.getNumber() == dataPointId).filter(c -> c.isGroupObject()).findFirst();
+//		final KNXDeviceInstance knxDeviceInstance = getKnxProject().getDeviceInstances().get(0);
+		final Optional<KNXComObject> knxComObjectOptional = KNXProjectUtils
+				.retrieveComObjectByDatapointId(getKnxProject(), dataPointId);
 
 		if (!knxComObjectOptional.isPresent()) {
 			final String msg = "Could not find ComObject for dataPointId = " + dataPointId;

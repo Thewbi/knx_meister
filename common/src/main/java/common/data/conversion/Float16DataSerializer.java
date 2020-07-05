@@ -1,4 +1,6 @@
-package core.data.serializer;
+package common.data.conversion;
+
+import api.data.serializer.DataSerializer;
 
 /**
  * https://github.com/calimero-project/calimero-core/blob/master/src/tuwien/auto/calimero/dptxlator/DPTXlator2ByteFloat.java
@@ -41,12 +43,14 @@ public class Float16DataSerializer implements DataSerializer<Object> {
 		return new short[] { msb, (short) (m & 0xFF) };
 	}
 
+	@Override
 	public byte[] serializeToBytes(final Object data) {
 		final short[] result = serialize(data);
 
 		return new byte[] { (byte) result[0], (byte) result[1] };
 	}
 
+	@Override
 	public double deserialize(final short[] data) {
 
 		final int i = 0;
@@ -62,6 +66,7 @@ public class Float16DataSerializer implements DataSerializer<Object> {
 		return (1 << exp) * v * 0.01;
 	}
 
+	@Override
 	public double deserializeFromBytes(final byte[] data) {
 
 		final short[] dataAsShortArray = new short[] { (short) (data[0] & 0xFF), (short) (data[1] & 0xFF) };

@@ -12,10 +12,14 @@ import org.apache.logging.log4j.Logger;
 
 import api.pipeline.Pipeline;
 import api.project.KNXProject;
+import common.data.conversion.BitDataSerializer;
+import common.data.conversion.DataConversion;
+import common.data.conversion.Float16DataSerializer;
 import common.utils.NetworkUtils;
 import object_server.requests.processors.GetDatapointDescriptionRequestProcessor;
 import object_server.requests.processors.GetDatapointValueRequestProcessor;
 import object_server.requests.processors.GetServerItemRequestProcessor;
+import object_server.requests.processors.SetDatapointValueRequestProcessor;
 
 public class ObjectServerReaderThread implements Runnable {
 
@@ -64,6 +68,14 @@ public class ObjectServerReaderThread implements Runnable {
 				final GetDatapointValueRequestProcessor getDatapointValueRequestProcessor = new GetDatapointValueRequestProcessor();
 				getDatapointValueRequestProcessor.setKnxProject(knxProject);
 				clientRunnable.getRequestProcessors().add(getDatapointValueRequestProcessor);
+
+				final SetDatapointValueRequestProcessor setDatapointValueRequestProcessor = new SetDatapointValueRequestProcessor();
+				setDatapointValueRequestProcessor.getDataSerializerMap().put(DataConversion.FLOAT16,
+						new Float16DataSerializer());
+				setDatapointValueRequestProcessor.getDataSerializerMap().put(DataConversion.BIT,
+						new BitDataSerializer());
+				setDatapointValueRequestProcessor.setKnxProject(knxProject);
+				clientRunnable.getRequestProcessors().add(setDatapointValueRequestProcessor);
 
 				final Thread clientThread = new Thread(clientRunnable);
 				clientThread.start();

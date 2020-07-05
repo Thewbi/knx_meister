@@ -1,4 +1,6 @@
-package core.data.serializer;
+package common.data.conversion;
+
+import api.data.serializer.DataSerializer;
 
 public class BitDataSerializer implements DataSerializer<Object> {
 

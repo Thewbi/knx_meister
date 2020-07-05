@@ -10,6 +10,9 @@ import org.apache.logging.log4j.Logger;
 
 import api.pipeline.Pipeline;
 import api.project.KNXProject;
+import common.data.conversion.BitDataSerializer;
+import common.data.conversion.DataConversion;
+import common.data.conversion.Float16DataSerializer;
 import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
 import core.api.device.Device;
@@ -167,6 +170,8 @@ public class Main {
 		final KNXProject knxProject = knxProjectParser.parse(projectFile);
 
 		final DefaultDataSender dataSender = new DefaultDataSender();
+		dataSender.getDataSerializerMap().put(DataConversion.FLOAT16, new Float16DataSerializer());
+		dataSender.getDataSerializerMap().put(DataConversion.BIT, new BitDataSerializer());
 		dataSender.setDevice(device);
 		dataSender.setKnxProject(knxProject);
 

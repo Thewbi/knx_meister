@@ -58,6 +58,17 @@ public class RequestFactory implements Factory<BaseRequest> {
 
 			return getDatapointValueRequest;
 
+		case SetDatapointValueRequest.SET_DATAPOINT_VALUE_REQUEST_CODE:
+
+			final SetDatapointValueRequest setDatapointValueRequest = new SetDatapointValueRequest();
+			setDatapointValueRequest.setPayload(bytes.clone());
+			setDatapointValueRequest.setKnxHeader(knxHeader);
+			setDatapointValueRequest.setKnxConnectionHeader(knxConnectionHeader);
+			setDatapointValueRequest.setKnxProject(knxProject);
+			setDatapointValueRequest.fromBytes(bytes);
+
+			return setDatapointValueRequest;
+
 		default:
 			throw new FactoryException("Request SubService " + subService + " not implemented yet!");
 		}

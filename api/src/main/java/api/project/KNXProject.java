@@ -21,7 +21,7 @@ public class KNXProject {
 
 	private final Map<String, KNXManufacturer> manufacturerMap = new HashMap<>();
 
-	private final Map<KNXComObject, Object> valueMap = new HashMap<>();
+	private final Map<Integer, Object> valueMap = new HashMap<>();
 
 	public String getId() {
 		return id;
@@ -63,7 +63,7 @@ public class KNXProject {
 		return manufacturerMap;
 	}
 
-	public Map<KNXComObject, Object> getValueMap() {
+	public Map<Integer, Object> getValueMap() {
 		return valueMap;
 	}
 
