@@ -2,11 +2,13 @@ package project.parsing.knx.steps;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Set;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.collections4.SetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -15,6 +17,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import api.exception.ProjectParsingException;
 import api.project.KNXComObject;
 import api.project.KNXDeviceInstance;
 import project.parsing.knx.KNXProjectParsingContext;
@@ -25,7 +28,7 @@ public class ApplicationProgramParsingStep implements ParsingStep<KNXProjectPars
 	private static final Logger LOG = LogManager.getLogger(ApplicationProgramParsingStep.class);
 
 	@Override
-	public void process(final KNXProjectParsingContext context) throws IOException {
+	public void process(final KNXProjectParsingContext context) throws IOException, ProjectParsingException {
 
 		for (final KNXDeviceInstance knxDeviceInstance : context.getKnxProject().getDeviceInstances()) {
 
@@ -47,6 +50,9 @@ public class ApplicationProgramParsingStep implements ParsingStep<KNXProjectPars
 
 				final NodeList manufacturerNodeList = document.getElementsByTagName("ComObjectRefs");
 				final Node comObjectRefsNode = manufacturerNodeList.item(0);
+				if (comObjectRefsNode == null) {
+					continue;
+				}
 				final NodeList comObjectRefNodeList = comObjectRefsNode.getChildNodes();
 
 				for (int i = 0; i < comObjectRefNodeList.getLength(); i++) {
@@ -69,7 +75,8 @@ public class ApplicationProgramParsingStep implements ParsingStep<KNXProjectPars
 
 					final String comObjectId = idSplit[2] + "_" + idSplit[3];
 
-					final boolean isGroupObject = knxDeviceInstance.getGroupObjectInstancesSet().contains(comObjectId);
+					final Set<String> groupObjectInstancesSet = knxDeviceInstance.getGroupObjectInstancesSet();
+					final boolean isGroupObject = SetUtils.emptyIfNull(groupObjectInstancesSet).contains(comObjectId);
 
 					if (knxDeviceInstance.getComObjects().containsKey(comObjectId)) {
 
@@ -93,6 +100,7 @@ public class ApplicationProgramParsingStep implements ParsingStep<KNXProjectPars
 
 			} catch (final ParserConfigurationException | SAXException e) {
 				LOG.error(e.getMessage(), e);
+				throw new ProjectParsingException(e);
 			}
 		}
 

@@ -6,16 +6,16 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.data.serializer.DataSerializer;
 import api.pipeline.Pipeline;
 import api.project.KNXProject;
-import common.data.conversion.BitDataSerializer;
-import common.data.conversion.DataConversion;
-import common.data.conversion.Float16DataSerializer;
 import common.utils.NetworkUtils;
+import object_server.conversion.ComObjectValueConverter;
 import object_server.requests.processors.GetDatapointDescriptionRequestProcessor;
 import object_server.requests.processors.GetDatapointValueRequestProcessor;
 import object_server.requests.processors.GetServerItemRequestProcessor;
@@ -32,6 +32,8 @@ public class ObjectServerReaderThread implements Runnable {
 	private Pipeline<Object, Object> inputPipeline;
 
 	private KNXProject knxProject;
+
+	private Map<String, DataSerializer<Object>> dataSerializerMap;
 
 	public ObjectServerReaderThread(final int bindPort) {
 		this.bindPort = bindPort;
@@ -65,16 +67,18 @@ public class ObjectServerReaderThread implements Runnable {
 				getDatapointDescriptionRequestProcessor.setKnxProject(knxProject);
 				clientRunnable.getRequestProcessors().add(getDatapointDescriptionRequestProcessor);
 
+				final ComObjectValueConverter comObjectValueConverter = new ComObjectValueConverter();
+				comObjectValueConverter.setKnxProject(knxProject);
+				comObjectValueConverter.setDataSerializerMap(dataSerializerMap);
+
 				final GetDatapointValueRequestProcessor getDatapointValueRequestProcessor = new GetDatapointValueRequestProcessor();
 				getDatapointValueRequestProcessor.setKnxProject(knxProject);
+				getDatapointValueRequestProcessor.setObjectServerValueConverter(comObjectValueConverter);
 				clientRunnable.getRequestProcessors().add(getDatapointValueRequestProcessor);
 
 				final SetDatapointValueRequestProcessor setDatapointValueRequestProcessor = new SetDatapointValueRequestProcessor();
-				setDatapointValueRequestProcessor.getDataSerializerMap().put(DataConversion.FLOAT16,
-						new Float16DataSerializer());
-				setDatapointValueRequestProcessor.getDataSerializerMap().put(DataConversion.BIT,
-						new BitDataSerializer());
 				setDatapointValueRequestProcessor.setKnxProject(knxProject);
+				setDatapointValueRequestProcessor.setDataSerializerMap(dataSerializerMap);
 				clientRunnable.getRequestProcessors().add(setDatapointValueRequestProcessor);
 
 				final Thread clientThread = new Thread(clientRunnable);
@@ -104,6 +108,14 @@ public class ObjectServerReaderThread implements Runnable {
 
 	public void setKnxProject(final KNXProject knxProject) {
 		this.knxProject = knxProject;
+	}
+
+	public Map<String, DataSerializer<Object>> getDataSerializerMap() {
+		return dataSerializerMap;
+	}
+
+	public void setDataSerializerMap(final Map<String, DataSerializer<Object>> dataSerializerMap) {
+		this.dataSerializerMap = dataSerializerMap;
 	}
 
 }

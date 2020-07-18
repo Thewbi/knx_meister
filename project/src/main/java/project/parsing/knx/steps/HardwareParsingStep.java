@@ -16,6 +16,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import api.exception.ProjectParsingException;
 import api.project.KNXDeviceInstance;
 import api.project.KNXProduct;
 import project.parsing.knx.KNXProjectParsingContext;
@@ -26,7 +27,7 @@ public class HardwareParsingStep implements ParsingStep<KNXProjectParsingContext
 	private static final Logger LOG = LogManager.getLogger(HardwareParsingStep.class);
 
 	@Override
-	public void process(final KNXProjectParsingContext context) throws IOException {
+	public void process(final KNXProjectParsingContext context) throws IOException, ProjectParsingException {
 
 		for (final KNXDeviceInstance knxDeviceInstance : context.getKnxProject().getDeviceInstances()) {
 
@@ -92,6 +93,7 @@ public class HardwareParsingStep implements ParsingStep<KNXProjectParsingContext
 				}
 			} catch (final ParserConfigurationException | SAXException e) {
 				LOG.error(e.getMessage(), e);
+				throw new ProjectParsingException(e);
 			}
 		}
 	}

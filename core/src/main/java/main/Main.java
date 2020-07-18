@@ -3,11 +3,15 @@ package main;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.data.serializer.DataSerializer;
+import api.exception.ProjectParsingException;
 import api.pipeline.Pipeline;
 import api.project.KNXProject;
 import common.data.conversion.BitDataSerializer;
@@ -118,7 +122,7 @@ public class Main {
 
 	private static final Logger LOG = LogManager.getLogger(Main.class);
 
-	public static void main(final String[] args) throws IOException {
+	public static void main(final String[] args) throws IOException, ProjectParsingException {
 
 		// https://github.com/apache/dubbo/issues/2423
 		//
@@ -166,12 +170,19 @@ public class Main {
 
 		final ProjectParser<KNXProjectParsingContext> knxProjectParser = retrieveProjectParser();
 
-		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
+//		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
+		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNXfirstSteps200212_5devices.knxproj");
+
+		LOG.info("Parsing project file: \"" + projectFile.getAbsolutePath() + "\"");
+
 		final KNXProject knxProject = knxProjectParser.parse(projectFile);
 
+		final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
+		dataSerializerMap.put(DataConversion.FLOAT16, new Float16DataSerializer());
+		dataSerializerMap.put(DataConversion.BIT, new BitDataSerializer());
+
 		final DefaultDataSender dataSender = new DefaultDataSender();
-		dataSender.getDataSerializerMap().put(DataConversion.FLOAT16, new Float16DataSerializer());
-		dataSender.getDataSerializerMap().put(DataConversion.BIT, new BitDataSerializer());
+		dataSender.setDataSerializerMap(dataSerializerMap);
 		dataSender.setDevice(device);
 		dataSender.setKnxProject(knxProject);
 
@@ -250,6 +261,7 @@ public class Main {
 
 		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(12004);
 		objectServerReaderThread.setKnxProject(knxProject);
+		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
 		objectServerReaderThread.setInputPipeline(objectServerInwardPipeline);
 
 		new Thread(objectServerReaderThread).start();

@@ -12,6 +12,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.commons.collections4.SetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -20,6 +21,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import api.exception.ProjectParsingException;
 import api.project.KNXComObject;
 import api.project.KNXDeviceInstance;
 import api.project.KNXGroupAddress;
@@ -41,10 +43,11 @@ import project.parsing.steps.ParsingStep;
  */
 public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProjectParsingContext> {
 
+	private static final int HEX_RADIX = 16;
 	private static final Logger LOG = LogManager.getLogger(ReadProjectInstallationsParsingStep.class);
 
 	@Override
-	public void process(final KNXProjectParsingContext context) throws IOException {
+	public void process(final KNXProjectParsingContext context) throws IOException, ProjectParsingException {
 
 		final Path tempDirectory = context.getTempDirectory();
 		final KNXProject knxProject = context.getKnxProject();
@@ -89,6 +92,7 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 
 		} catch (final ParserConfigurationException | SAXException e) {
 			LOG.error(e.getMessage(), e);
+			throw new ProjectParsingException(e);
 		}
 	}
 
@@ -134,16 +138,10 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 	private KNXDeviceInstance convertKNXDeviceInstance(final Element deviceInstanceElement,
 			final KNXProject knxProject) {
 
-		// group object tree
-		final Element groupObjectTreeElement = (Element) deviceInstanceElement.getElementsByTagName("GroupObjectTree")
-				.item(0);
-		final String groupObjectInstances = groupObjectTreeElement.getAttribute("GroupObjectInstances");
-		final String[] split = groupObjectInstances.split(" ");
-		final Set<String> groupObjectInstancesSet = new HashSet<>(Arrays.asList(split));
-
 		final KNXDeviceInstance knxDeviceInstance = new KNXDeviceInstance();
 		knxDeviceInstance.setId(deviceInstanceElement.getAttribute("Id"));
-		knxDeviceInstance.setGroupObjectInstancesSet(groupObjectInstancesSet);
+
+		parseGroupObjectTreeElement(deviceInstanceElement, knxDeviceInstance);
 
 		final String address = retrieveAddress(deviceInstanceElement, knxProject);
 		final List<KNXComObject> comObjects = retrieveCOMObjects(knxDeviceInstance, deviceInstanceElement);
@@ -160,6 +158,24 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 		}
 
 		return knxDeviceInstance;
+	}
+
+	private void parseGroupObjectTreeElement(final Element deviceInstanceElement,
+			final KNXDeviceInstance knxDeviceInstance) {
+
+		// group object tree (optional element)
+		final Element groupObjectTreeElement = (Element) deviceInstanceElement.getElementsByTagName("GroupObjectTree")
+				.item(0);
+
+		if (groupObjectTreeElement == null) {
+			return;
+		}
+
+		final String groupObjectInstances = groupObjectTreeElement.getAttribute("GroupObjectInstances");
+		final String[] split = groupObjectInstances.split(" ");
+		final Set<String> groupObjectInstancesSet = new HashSet<>(Arrays.asList(split));
+
+		knxDeviceInstance.setGroupObjectInstancesSet(groupObjectInstancesSet);
 	}
 
 	private List<KNXComObject> retrieveCOMObjects(final KNXDeviceInstance knxDeviceInstance,
@@ -180,9 +196,10 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 
 					final KNXComObject convertCOMObject = convertCOMObject(item);
 
-					// if the devices id is part of the GroupObjectTree, the COM object is flagged
+					// if the device's id is part of the GroupObjectTree, the COM object is flagged
 					// as a group object and can be displayed to the user using the flag
-					if (knxDeviceInstance.getGroupObjectInstancesSet().contains(convertCOMObject.getId())) {
+					final Set<String> groupMap = knxDeviceInstance.getGroupObjectInstancesSet();
+					if (SetUtils.emptyIfNull(groupMap).contains(convertCOMObject.getId())) {
 						convertCOMObject.setGroupObject(true);
 					}
 					comObjectList.add(convertCOMObject);
@@ -207,7 +224,7 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 		final String refIdAttribute = element.getAttribute("RefId");
 		final String[] refIdAttributeSplit = refIdAttribute.split("_");
 		final String numberAsString = refIdAttributeSplit[0].split("-")[1];
-		final int number = Integer.parseInt(numberAsString);
+		final int number = Integer.parseInt(numberAsString, HEX_RADIX);
 
 		final KNXComObject comObject = new KNXComObject();
 		comObject.setId(refIdAttribute);

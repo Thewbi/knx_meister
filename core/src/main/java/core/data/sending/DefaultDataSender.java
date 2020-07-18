@@ -32,15 +32,7 @@ public class DefaultDataSender implements DataSender {
 
 	private KNXProject knxProject;
 
-	private final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
-
-//	/**
-//	 * ctor
-//	 */
-//	public DefaultDataSender() {
-//		dataSerializerMap.put(FLOAT16, new Float16DataSerializer());
-//		dataSerializerMap.put(BIT, new BitDataSerializer());
-//	}
+	private Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
 
 	@Override
 	public void send(final Connection connection) {
@@ -61,6 +53,7 @@ public class DefaultDataSender implements DataSender {
 
 		// toggle
 //		currentValue = 1 - currentValue;
+		device.setValue(1 - device.getValue());
 	}
 
 	private void sendViaComObject(final Connection connection, final int datapointId, final double value) {
@@ -114,13 +107,6 @@ public class DefaultDataSender implements DataSender {
 	private void sendBit(final Connection connection, final KNXGroupAddress knxGroupAddress, final int value) {
 
 		LOG.info("Sending BIT Value: " + value);
-
-//		// retrieve the data serializer that can convert the data into the datapoint
-//		// type's format
-//		final DataSerializer<Object> dataSerializer = dataSerializerMap.get(format);
-//		if (dataSerializer == null) {
-//			throw new RuntimeException("No serializer for format \"" + format + "\" registered!");
-//		}
 
 		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 
@@ -185,6 +171,10 @@ public class DefaultDataSender implements DataSender {
 
 	public Map<String, DataSerializer<Object>> getDataSerializerMap() {
 		return dataSerializerMap;
+	}
+
+	public void setDataSerializerMap(final Map<String, DataSerializer<Object>> dataSerializerMap) {
+		this.dataSerializerMap = dataSerializerMap;
 	}
 
 }

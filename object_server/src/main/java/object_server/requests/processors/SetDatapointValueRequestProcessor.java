@@ -1,6 +1,5 @@
 package object_server.requests.processors;
 
-import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.logging.log4j.LogManager;
@@ -21,7 +20,7 @@ public class SetDatapointValueRequestProcessor extends BaseRequestProcessor {
 
 	private static final Logger LOG = LogManager.getLogger(SetDatapointValueRequestProcessor.class);
 
-	private final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
+	private Map<String, DataSerializer<Object>> dataSerializerMap;
 
 	@Override
 	public BaseResponse process(final BaseRequest baseRequest) throws ObjectServerException {
@@ -45,11 +44,10 @@ public class SetDatapointValueRequestProcessor extends BaseRequestProcessor {
 		final KNXProject knxProject = getKnxProject();
 		knxProject.getDeviceInstances().get(0);
 
-//		final KNXGroupAddress knxGroupAddress = KNXProjectUtils.retrieveGroupAddress(knxProject, datapointId);
 		final KNXDatapointSubtype knxDatapointSubtype = KNXProjectUtils.retrieveDataPointSubType(knxProject,
 				setDatapointValueRequestEntry.getDatapointId());
 
-		// TODO: find converter for knxDatapointSubtype
+		// find converter for knxDatapointSubtype
 		final DataSerializer<Object> dataSerializer = dataSerializerMap.get(knxDatapointSubtype.getFormat());
 
 		final double deserializeFromBytes = dataSerializer
@@ -63,7 +61,7 @@ public class SetDatapointValueRequestProcessor extends BaseRequestProcessor {
 			LOG.info("OldValue=n/a NewValue=" + deserializeFromBytes);
 		}
 
-		// TODO: write the new value into the value map of the KNXComObject
+		// write the new value into the value map of the KNXComObject
 		knxProject.getValueMap().put(setDatapointValueRequestEntry.getDatapointId(), deserializeFromBytes);
 
 		final ErrorResponse errorResponse = new ErrorResponse();
@@ -82,6 +80,10 @@ public class SetDatapointValueRequestProcessor extends BaseRequestProcessor {
 
 	public Map<String, DataSerializer<Object>> getDataSerializerMap() {
 		return dataSerializerMap;
+	}
+
+	public void setDataSerializerMap(final Map<String, DataSerializer<Object>> dataSerializerMap) {
+		this.dataSerializerMap = dataSerializerMap;
 	}
 
 }

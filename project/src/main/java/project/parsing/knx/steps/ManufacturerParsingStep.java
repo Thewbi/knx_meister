@@ -15,6 +15,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import api.exception.ProjectParsingException;
 import api.project.KNXManufacturer;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
@@ -24,7 +25,7 @@ public class ManufacturerParsingStep implements ParsingStep<KNXProjectParsingCon
 	private static final Logger LOG = LogManager.getLogger(ManufacturerParsingStep.class);
 
 	@Override
-	public void process(final KNXProjectParsingContext context) throws IOException {
+	public void process(final KNXProjectParsingContext context) throws IOException, ProjectParsingException {
 
 		final Path tempDirectory = context.getTempDirectory();
 		final Path path = tempDirectory.resolve("knx_master.xml");
@@ -40,6 +41,7 @@ public class ManufacturerParsingStep implements ParsingStep<KNXProjectParsingCon
 
 		} catch (final ParserConfigurationException | SAXException e) {
 			LOG.error(e.getMessage(), e);
+			throw new ProjectParsingException(e);
 		}
 	}
 

@@ -18,6 +18,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import api.exception.ProjectParsingException;
 import api.project.KNXDatapointSubtype;
 import api.project.KNXDatapointType;
 import project.parsing.knx.KNXProjectParsingContext;
@@ -28,12 +29,13 @@ public class DatapointTypeParsingStep implements ParsingStep<KNXProjectParsingCo
 	private static final Logger LOG = LogManager.getLogger(DatapointTypeParsingStep.class);
 
 	@Override
-	public void process(final KNXProjectParsingContext context) throws IOException {
+	public void process(final KNXProjectParsingContext context) throws IOException, ProjectParsingException {
 
 		final Path tempDirectory = context.getTempDirectory();
 		final Path path = tempDirectory.resolve("knx_master.xml");
 
 		try {
+
 			final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
 			final DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
 			final Document document = documentBuilder.parse(path.toFile());
@@ -45,6 +47,7 @@ public class DatapointTypeParsingStep implements ParsingStep<KNXProjectParsingCo
 
 		} catch (final ParserConfigurationException | SAXException e) {
 			LOG.error(e.getMessage(), e);
+			throw new ProjectParsingException(e);
 		}
 	}
 

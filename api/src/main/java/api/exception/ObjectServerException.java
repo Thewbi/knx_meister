@@ -8,4 +8,8 @@ public class ObjectServerException extends Exception {
 		super(message);
 	}
 
+	public ObjectServerException(final Throwable throwable) {
+		super(throwable);
+	}
+
 }

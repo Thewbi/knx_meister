@@ -9,7 +9,6 @@ import api.conversion.Converter;
 import api.exception.ObjectServerException;
 import api.project.KNXComObject;
 import common.utils.KNXProjectUtils;
-import object_server.conversion.ComObjectValueConverter;
 import object_server.requests.BaseRequest;
 import object_server.requests.BaseResponse;
 import object_server.requests.GetDatapointValueRequest;
@@ -19,7 +18,7 @@ public class GetDatapointValueRequestProcessor extends BaseRequestProcessor {
 
 	private static final Logger LOG = LogManager.getLogger(GetDatapointValueRequestProcessor.class);
 
-	private final Converter<KNXComObject, byte[]> objectServerValueConverter = new ComObjectValueConverter();
+	private Converter<KNXComObject, byte[]> objectServerValueConverter;
 
 	@Override
 	public BaseResponse process(final BaseRequest baseRequest) throws ObjectServerException {
@@ -40,7 +39,6 @@ public class GetDatapointValueRequestProcessor extends BaseRequestProcessor {
 		final int dataPointId = start;
 
 		// TODO: how do I know which device to use?
-//		final KNXDeviceInstance knxDeviceInstance = getKnxProject().getDeviceInstances().get(0);
 		final Optional<KNXComObject> knxComObjectOptional = KNXProjectUtils
 				.retrieveComObjectByDatapointId(getKnxProject(), dataPointId);
 
@@ -52,7 +50,6 @@ public class GetDatapointValueRequestProcessor extends BaseRequestProcessor {
 
 		final KNXComObject knxComObject = knxComObjectOptional.get();
 
-		((ComObjectValueConverter) objectServerValueConverter).setKnxProject(getKnxProject());
 		final byte[] data = objectServerValueConverter.convert(knxComObject);
 
 		final GetDatapointValueResponse getDatapointValueResponse = new GetDatapointValueResponse();
@@ -70,7 +67,6 @@ public class GetDatapointValueRequestProcessor extends BaseRequestProcessor {
 
 		// 1 - 14 byte data point value. value length has to be stored in the previous
 		// value length.
-//		getDatapointValueResponse.setValue(new byte[] { 50 });
 		getDatapointValueResponse.setValue(data);
 
 		return getDatapointValueResponse;
@@ -79,6 +75,14 @@ public class GetDatapointValueRequestProcessor extends BaseRequestProcessor {
 	@Override
 	public boolean accept(final BaseRequest baseRequest) {
 		return baseRequest instanceof GetDatapointValueRequest;
+	}
+
+	public Converter<KNXComObject, byte[]> getObjectServerValueConverter() {
+		return objectServerValueConverter;
+	}
+
+	public void setObjectServerValueConverter(final Converter<KNXComObject, byte[]> objectServerValueConverter) {
+		this.objectServerValueConverter = objectServerValueConverter;
 	}
 
 }

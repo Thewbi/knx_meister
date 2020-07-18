@@ -9,7 +9,7 @@ package common.packets;
  */
 public enum ServiceIdentifier {
 
-	UNKNOWN(0x0000),
+	UNKNOWN(0x99),
 
 	/*
 	 * The following service families are defined for the version 1.0 KNXnet/IP

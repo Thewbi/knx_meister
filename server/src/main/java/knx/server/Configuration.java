@@ -4,14 +4,21 @@ import java.io.File;
 import java.io.IOException;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import api.data.serializer.DataSerializer;
+import api.exception.ProjectParsingException;
 import api.pipeline.Pipeline;
 import api.project.KNXProject;
+import common.data.conversion.BitDataSerializer;
+import common.data.conversion.DataConversion;
+import common.data.conversion.Float16DataSerializer;
 import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
 import core.api.device.Device;
@@ -19,6 +26,7 @@ import core.common.KNXPacketConverter;
 import core.communication.ConnectionManager;
 import core.communication.DefaultConnectionManager;
 import core.communication.MulticastListenerReaderThread;
+import core.communication.ObjectServerReaderThread;
 import core.communication.controller.BaseController;
 import core.communication.controller.CoreController;
 import core.communication.controller.DeviceManagementController;
@@ -39,6 +47,8 @@ import core.pipeline.InwardOutputPipelineStep;
 import core.pipeline.IpFilterPipelineStep;
 import core.pipeline.OutwardConverterPipelineStep;
 import core.pipeline.OutwardOutputPipelineStep;
+import object_server.pipeline.ConverterPipelineStep;
+import object_server.requests.RequestFactory;
 import project.parsing.ProjectParser;
 import project.parsing.knx.KNXProjectParser;
 import project.parsing.knx.KNXProjectParsingContext;
@@ -230,7 +240,8 @@ public class Configuration {
 	}
 
 	@Bean
-	KNXProject getKnxProject(final ProjectParser<KNXProjectParsingContext> projectParser) throws IOException {
+	public KNXProject getKnxProject(final ProjectParser<KNXProjectParsingContext> projectParser)
+			throws IOException, ProjectParsingException {
 
 		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
 		final KNXProject knxProject = projectParser.parse(projectFile);
@@ -262,6 +273,7 @@ public class Configuration {
 	@Bean
 	public ServerCoreController getServerCoreController(final ConnectionManager connectionManager, final Device device)
 			throws SocketException, UnknownHostException {
+
 		final ServerCoreController serverCoreController = new ServerCoreController(NetworkUtils.retrieveLocalIP());
 		serverCoreController.setDevice(device);
 		serverCoreController.setConnectionManager(connectionManager);
@@ -272,6 +284,7 @@ public class Configuration {
 	@Bean
 	public DeviceManagementController getDeviceManagementController(final ConnectionManager connectionManager,
 			final Device device) throws SocketException, UnknownHostException {
+
 		final DeviceManagementController deviceManagementController = new DeviceManagementController(
 				NetworkUtils.retrieveLocalIP());
 		deviceManagementController.setDevice(device);
@@ -310,6 +323,53 @@ public class Configuration {
 		new Thread(multicastListenerThread).start();
 
 		return multicastListenerThread;
+	}
+
+	@Bean
+	public RequestFactory getRequestFactory(final KNXProject knxProject) {
+
+		final RequestFactory requestFactory = new RequestFactory();
+		requestFactory.setKnxProject(knxProject);
+
+		return requestFactory;
+	}
+
+	@Bean("objectServerInputPipeline")
+	@Qualifier("objectServerInputPipeline")
+	public Pipeline<Object, Object> getObjectServerInwardPipeline(final RequestFactory requestFactory) {
+
+		final ConverterPipelineStep objectServerConverterPipelineStep = new ConverterPipelineStep();
+		objectServerConverterPipelineStep.setRequestFactory(requestFactory);
+
+		final Pipeline<Object, Object> objectServerInwardPipeline = new DefaultPipeline();
+		objectServerInwardPipeline.addStep(objectServerConverterPipelineStep);
+
+		return objectServerInwardPipeline;
+	}
+
+	@Bean
+	public Map<String, DataSerializer<Object>> getDataSerializerMap() {
+
+		final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
+		dataSerializerMap.put(DataConversion.FLOAT16, new Float16DataSerializer());
+		dataSerializerMap.put(DataConversion.BIT, new BitDataSerializer());
+
+		return dataSerializerMap;
+	}
+
+	@Bean
+	public ObjectServerReaderThread getObjectServerReaderThread(final KNXProject knxProject,
+			final Map<String, DataSerializer<Object>> dataSerializerMap,
+			final Pipeline<Object, Object> objectServerInputPipeline) {
+
+		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(12004);
+		objectServerReaderThread.setKnxProject(knxProject);
+		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
+		objectServerReaderThread.setInputPipeline(objectServerInputPipeline);
+
+		new Thread(objectServerReaderThread).start();
+
+		return objectServerReaderThread;
 	}
 
 }
