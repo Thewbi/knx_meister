@@ -19,6 +19,9 @@ public class DefaultDevice implements Device {
 
 	private int value;
 
+	/**
+	 * ctor
+	 */
 	public DefaultDevice() {
 		properties.put((short) PropertyId.PID_IP_CAPABILITIES.getValue(), (short) 0x0037);
 		properties.put((short) PropertyId.PID_DEVICE_DESCRIPTOR.getValue(), (short) 0x07B0);

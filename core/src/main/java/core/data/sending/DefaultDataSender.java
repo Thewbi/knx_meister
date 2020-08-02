@@ -45,17 +45,29 @@ public class DefaultDataSender implements DataSender {
 //		knxGroupAddress.setGroupAddress(currentValue == 0 ? "0/3/4" : "0/3/3");
 		knxGroupAddress.setGroupAddress("0/3/4");
 //		knxGroupAddress.setGroupAddress("7/7/2");
+//		knxGroupAddress.setGroupAddress("0/4/1");
+		sendBit(connection, knxGroupAddress, device.getValue());
+
+//		// ETS-File: C:\Users\U5353\Desktop\KNX_IP_BAOS_777.knxproj
+//		//
+//		// 0/1/1 - Temperatur ist
+//		// Datatype: 9.xxx 1 2-Byte Gleitkommawert, Temperatur (°C) Float16
+//		final KNXGroupAddress knxGroupAddress = new KNXGroupAddress();
+//		knxGroupAddress.setGroupAddress("0/1/1");
+//		final String comObjectId = "O-145_R-1849";
+//		final int dataPointId = 325;
+//		final double value = 100.0d;
+//		sendViaComObject(connection, dataPointId, value);
 
 //		sendViaFormat(connection, DataSender.BIT, knxGroupAddress, 0);
 //		sendBit(connection, knxGroupAddress, currentValue);
-
-		sendBit(connection, knxGroupAddress, device.getValue());
 
 		// toggle
 //		currentValue = 1 - currentValue;
 		device.setValue(1 - device.getValue());
 	}
 
+	@SuppressWarnings("unused")
 	private void sendViaComObject(final Connection connection, final int datapointId, final double value) {
 
 		final KNXGroupAddress knxGroupAddress = KNXProjectUtils.retrieveGroupAddress(knxProject, datapointId);
@@ -77,6 +89,7 @@ public class DefaultDataSender implements DataSender {
 		if (dataSerializer == null) {
 			throw new RuntimeException("No serializer for format \"" + format + "\" registered!");
 		}
+		final byte[] payload = dataSerializer.serializeToBytes(value);
 
 		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 
@@ -90,7 +103,7 @@ public class DefaultDataSender implements DataSender {
 		cemiTunnelRequest.setLength(3);
 		cemiTunnelRequest.setTpci(0x00);
 		cemiTunnelRequest.setApci(0x80);
-		cemiTunnelRequest.setPayloadBytes(dataSerializer.serializeToBytes((int) value));
+		cemiTunnelRequest.setPayloadBytes(payload);
 
 		final KNXPacket knxPacket = new KNXPacket();
 		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);

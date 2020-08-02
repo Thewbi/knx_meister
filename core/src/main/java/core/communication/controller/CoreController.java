@@ -28,6 +28,14 @@ import core.packets.ServiceFamily;
 import core.packets.StructureType;
 import core.packets.SuppSvcFamiliesDIB;
 
+/**
+ * This is the message handler for the core section of the KNX specification. It
+ * handles all packets specified in the accepts() methods.
+ *
+ * Initially there has been one large handler for all packet types. This handler
+ * got so big that it was split into individual controllers. There is one
+ * controller for each subsection of the KNX specification.
+ */
 public class CoreController extends BaseController {
 
 	private static final Logger LOG = LogManager.getLogger(CoreController.class);
@@ -75,7 +83,7 @@ public class CoreController extends BaseController {
 			inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
 			port = hpaiStructure.getPort() & 0xFFFF;
 
-			final KNXPacket sendDescriptionResponse = sendDescriptionResponse(datagramSocket, datagramPacket,
+			final KNXPacket sendDescriptionResponse = retrieveDescriptionResponse(datagramSocket, datagramPacket,
 					inetAddress, port);
 
 			connection.sendResponse(sendDescriptionResponse, datagramPacket.getSocketAddress());
@@ -86,7 +94,7 @@ public class CoreController extends BaseController {
 					.get(DescriptionInformationBlockType.DEVICE_INFO);
 			hpaiStructure = getDeviceMap().get(deviceInformationDIB.getDeviceSerialNumberAsString());
 
-			final KNXPacket sendConnectionRequest = sendConnectionRequest(datagramPacket, knxPacket,
+			final KNXPacket sendConnectionRequest = retrieveConnectionRequest(datagramPacket, knxPacket,
 					hpaiStructure.getIpAddressAsObject(), hpaiStructure.getPort());
 
 			final InetSocketAddress inetSocketAddress = new InetSocketAddress(hpaiStructure.getIpAddressAsObject(),
@@ -178,7 +186,14 @@ public class CoreController extends BaseController {
 		socket.send(outDatagramPacket);
 	}
 
+	/**
+	 * Factory that creates a search response packet.
+	 *
+	 * @return
+	 * @throws UnknownHostException
+	 */
 	private KNXPacket retrieveSearchResponseKNXPacket() throws UnknownHostException {
+
 		final KNXPacket knxPacket = new KNXPacket();
 
 		// header
@@ -205,7 +220,17 @@ public class CoreController extends BaseController {
 		return knxPacket;
 	}
 
-	private KNXPacket sendDescriptionResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
+	/**
+	 * Factory that creates a description response packet.
+	 *
+	 * @param socket
+	 * @param datagramPacket
+	 * @param inetAddress
+	 * @param port
+	 * @return
+	 * @throws IOException
+	 */
+	private KNXPacket retrieveDescriptionResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
 			final InetAddress inetAddress, final int port) throws IOException {
 
 		final KNXPacket knxPacket = new KNXPacket();
@@ -231,7 +256,17 @@ public class CoreController extends BaseController {
 		return mfrDataDIB;
 	}
 
-	private KNXPacket sendConnectionRequest(final DatagramPacket originalDatagramPacket,
+	/**
+	 * Factory that creates a connection request packet.
+	 *
+	 * @param originalDatagramPacket
+	 * @param originalKNXPacket
+	 * @param inetAddress
+	 * @param port
+	 * @return
+	 * @throws IOException
+	 */
+	private KNXPacket retrieveConnectionRequest(final DatagramPacket originalDatagramPacket,
 			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
 
 		final HPAIStructure controlHPAIStructure = new HPAIStructure();
@@ -327,11 +362,17 @@ public class CoreController extends BaseController {
 		return suppSvcFamiliesDIB;
 	}
 
+	/**
+	 * Does not accept datagram packets.
+	 */
 	@Override
 	public boolean accepts(final DatagramPacket datagramPacket) {
 		return false;
 	}
 
+	/**
+	 * Accepts all of the KNX packets specified below.
+	 */
 	@Override
 	public boolean accepts(final KNXPacket knxPacket) {
 		switch (knxPacket.getHeader().getServiceIdentifier()) {

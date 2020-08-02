@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
@@ -66,8 +68,7 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
 @Component
 public class Configuration {
 
-//	@SuppressWarnings("unused")
-//	private static final Logger LOG = LogManager.getLogger(Configuration.class);
+	private static final Logger LOG = LogManager.getLogger(Configuration.class);
 
 	// 1.1.101
 	private static final int DEVICE_ADDRESS = 0x1165;
@@ -362,7 +363,13 @@ public class Configuration {
 			final Map<String, DataSerializer<Object>> dataSerializerMap,
 			final Pipeline<Object, Object> objectServerInputPipeline) {
 
-		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(12004);
+		ObjectServerReaderThread objectServerReaderThread = null;
+		try {
+			objectServerReaderThread = new ObjectServerReaderThread(NetworkUtils.retrieveLocalIP(),
+					NetworkUtils.OBJECT_SERVER_PROTOCO_PORT);
+		} catch (UnknownHostException | SocketException e) {
+			LOG.error(e.getMessage(), e);
+		}
 		objectServerReaderThread.setKnxProject(knxProject);
 		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
 		objectServerReaderThread.setInputPipeline(objectServerInputPipeline);

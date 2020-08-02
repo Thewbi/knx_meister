@@ -28,6 +28,7 @@
 
 	<dependencies>
 	
+		<!-- KNX-Meister -->
 		<dependency>
 			<groupId>de.knx</groupId>
 			<artifactId>api</artifactId>

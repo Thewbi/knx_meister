@@ -26,12 +26,14 @@ public final class NetworkUtils {
 
 	private static final Logger LOG = LogManager.getLogger(NetworkUtils.class);
 
+	public static final int OBJECT_SERVER_PROTOCO_PORT = 12004;
+
 	public static final String KNX_MULTICAST_IP = "224.0.23.12";
 
 	private static final String ADAPTER_NAME = "eth5";
 
-//	private static String hostAddress = "192.168.2.1";
-	private static String hostAddress = null;
+	private static String hostAddress = "192.168.2.1";
+//	private static String hostAddress = null;
 
 //	public static final String LOCAL_IP = "172.18.60.118";
 //	public static final String LOCAL_IP = "0.0.0.0";

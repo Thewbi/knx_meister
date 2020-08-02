@@ -14,18 +14,23 @@ import org.apache.logging.log4j.Logger;
 import api.data.serializer.DataSerializer;
 import api.pipeline.Pipeline;
 import api.project.KNXProject;
-import common.utils.NetworkUtils;
 import object_server.conversion.ComObjectValueConverter;
 import object_server.requests.processors.GetDatapointDescriptionRequestProcessor;
 import object_server.requests.processors.GetDatapointValueRequestProcessor;
 import object_server.requests.processors.GetServerItemRequestProcessor;
 import object_server.requests.processors.SetDatapointValueRequestProcessor;
 
+/**
+ * Start this thread on port 12004 which is the well known port for the object
+ * server protocol.
+ */
 public class ObjectServerReaderThread implements Runnable {
 
 	private static final Logger LOG = LogManager.getLogger(ObjectServerReaderThread.class);
 
 	private final boolean running = true;
+
+	private final String ip;
 
 	private final int bindPort;
 
@@ -35,7 +40,14 @@ public class ObjectServerReaderThread implements Runnable {
 
 	private Map<String, DataSerializer<Object>> dataSerializerMap;
 
-	public ObjectServerReaderThread(final int bindPort) {
+	/**
+	 * ctor
+	 *
+	 * @param ip       the IP address to bind to
+	 * @param bindPort the port on the IP to bind to
+	 */
+	public ObjectServerReaderThread(final String ip, final int bindPort) {
+		this.ip = ip;
 		this.bindPort = bindPort;
 	}
 
@@ -46,15 +58,18 @@ public class ObjectServerReaderThread implements Runnable {
 
 		try {
 
-			final InetSocketAddress inetSocketAddress = new InetSocketAddress(NetworkUtils.retrieveLocalIP(), bindPort);
+			final InetSocketAddress inetSocketAddress = new InetSocketAddress(ip, bindPort);
 
+			LOG.info("Binding Object Server Protocol to {}:{}", ip, bindPort);
 			serverSocket = new ServerSocket();
 			serverSocket.bind(inetSocketAddress);
 
 			while (running) {
 
 				// blocking call
+				LOG.info("ObjectServer accepting ...");
 				final Socket clientSocket = serverSocket.accept();
+				LOG.info("ObjectServer accepting. Packat received.");
 
 				final ClientRunnable clientRunnable = new ClientRunnable(clientSocket);
 				clientRunnable.setInputPipeline(inputPipeline);
@@ -116,6 +131,10 @@ public class ObjectServerReaderThread implements Runnable {
 
 	public void setDataSerializerMap(final Map<String, DataSerializer<Object>> dataSerializerMap) {
 		this.dataSerializerMap = dataSerializerMap;
+	}
+
+	public String getIp() {
+		return ip;
 	}
 
 }

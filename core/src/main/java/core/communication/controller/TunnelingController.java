@@ -327,7 +327,7 @@ public class TunnelingController extends BaseController {
 
 				knxPacket.getConnection().sendResponse(ackKnxPacket, datagramPacket.getSocketAddress());
 
-				// Send confirm
+				// send confirm
 				final KNXPacket response = new KNXPacket(knxPacket);
 
 //				response.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
@@ -339,10 +339,15 @@ public class TunnelingController extends BaseController {
 				// set GroupValueResponse and value
 				// bitmask 01000001 (lower 6 bit are the value, upper two are the type, 01 is
 				// response)
-//				response.getCemiTunnelRequest().setApci(0x41);
+
+				// TODO: hardcoded magic number!
 //				response.getCemiTunnelRequest().setSourceKNXAddress(0x11FF);
 				response.getCemiTunnelRequest().setSourceKNXAddress(0x110B);
+
+				// TODO: hardcoded magic number!
 				response.getCemiTunnelRequest().setDestKNXAddress(Utils.knxAddressToInteger("0/3/4"));
+
+//				response.getCemiTunnelRequest().setApci(0x41);
 				response.getCemiTunnelRequest().setApci(0x80 | ((byte) (value & 0xFF)));
 
 				// increment sequence

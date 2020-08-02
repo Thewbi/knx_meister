@@ -65,7 +65,7 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	}
 
 	/**
-	 * 8.6.3.1 General listen for UDP multicast on the standard KNX device routing
+	 * 8.6.3.1 General listener for UDP multicast on the standard KNX device routing
 	 * multicast address 224.0.23.12:3671
 	 *
 	 * @param datagramPacketCallback
@@ -171,6 +171,7 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 			throw new RuntimeException("No listeners registered! System is malconfigured!");
 		}
 
+		// find a callback to handle this packet
 		for (final DatagramPacketCallback datagramPacketCallback : datagramPacketCallbacks) {
 
 			if (datagramPacketCallback.accepts(knxPacket)) {

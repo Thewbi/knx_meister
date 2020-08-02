@@ -114,45 +114,6 @@ public class ServerCoreController extends BaseController {
 		}
 	}
 
-//	/**
-//	 * Specification: <br />
-//	 * <br />
-//	 * KNX Standard Core <br />
-//	 * <br />
-//	 * 7.8 Connection Management <br />
-//	 * <br />
-//	 * 7.8.1 CONNECT_REQUEST<br />
-//	 * <br />
-//	 *
-//	 * @param inputKnxPacket
-//	 * @return
-//	 * @throws UnknownHostException
-//	 */
-//	private KNXPacket sendConnectionRequest(final KNXPacket inputKnxPacket) throws UnknownHostException {
-//
-//		final HPAIStructure controlEndpointHpaiStructure = new HPAIStructure();
-//		controlEndpointHpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-//		controlEndpointHpaiStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
-//
-//		final HPAIStructure dataEndpointHpaiStructure = new HPAIStructure();
-//		dataEndpointHpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-//		dataEndpointHpaiStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
-//
-////		final ConnectionHeader connectionHeader = new ConnectionHeader();
-////		connectionHeader.setChannel(inputKnxPacket.getConnectionHeader().getChannel());
-////		connectionHeader.setSequenceCounter(inputKnxPacket.getConnectionHeader().getSequenceCounter());
-////		// status OK
-////		connectionHeader.setReserved(0x00);
-//
-//		final KNXPacket knxPacket = new KNXPacket();
-//		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_REQUEST);
-//		knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, controlEndpointHpaiStructure);
-//		knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataEndpointHpaiStructure);
-////		knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
-//
-//		return knxPacket;
-//	}
-
 	/**
 	 * Specification: <br />
 	 * <br />
@@ -329,3 +290,42 @@ public class ServerCoreController extends BaseController {
 	}
 
 }
+
+///**
+//* Specification: <br />
+//* <br />
+//* KNX Standard Core <br />
+//* <br />
+//* 7.8 Connection Management <br />
+//* <br />
+//* 7.8.1 CONNECT_REQUEST<br />
+//* <br />
+//*
+//* @param inputKnxPacket
+//* @return
+//* @throws UnknownHostException
+//*/
+//private KNXPacket sendConnectionRequest(final KNXPacket inputKnxPacket) throws UnknownHostException {
+//
+//	final HPAIStructure controlEndpointHpaiStructure = new HPAIStructure();
+//	controlEndpointHpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
+//	controlEndpointHpaiStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
+//
+//	final HPAIStructure dataEndpointHpaiStructure = new HPAIStructure();
+//	dataEndpointHpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
+//	dataEndpointHpaiStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
+//
+////	final ConnectionHeader connectionHeader = new ConnectionHeader();
+////	connectionHeader.setChannel(inputKnxPacket.getConnectionHeader().getChannel());
+////	connectionHeader.setSequenceCounter(inputKnxPacket.getConnectionHeader().getSequenceCounter());
+////	// status OK
+////	connectionHeader.setReserved(0x00);
+//
+//	final KNXPacket knxPacket = new KNXPacket();
+//	knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_REQUEST);
+//	knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, controlEndpointHpaiStructure);
+//	knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataEndpointHpaiStructure);
+////	knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
+//
+//	return knxPacket;
+//}

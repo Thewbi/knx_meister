@@ -92,6 +92,7 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
  *
  * (ip.src == 127.0.0.1/32) and (ip.dst == 192.168.0.108/32)
  * (ip.src == 192.168.0.108/32) and (ip.dst == 192.168.0.108/32)
+ * udp and ((ip.src == 192.168.0.108/32) or (ip.dst == 192.168.0.108/32))
  *
  * (ip.src == 192.168.2.3/32) or (ip.dst == 192.168.2.3/32)
  *
@@ -170,8 +171,9 @@ public class Main {
 
 		final ProjectParser<KNXProjectParsingContext> knxProjectParser = retrieveProjectParser();
 
+		final File projectFile = new File("C:/Users/U5353/Desktop/KNX_IP_BAOS_777.knxproj");
 //		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
-		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNXfirstSteps200212_5devices.knxproj");
+//		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNXfirstSteps200212_5devices.knxproj");
 
 		LOG.info("Parsing project file: \"" + projectFile.getAbsolutePath() + "\"");
 
@@ -259,7 +261,12 @@ public class Main {
 		final Pipeline<Object, Object> objectServerInwardPipeline = new DefaultPipeline();
 		objectServerInwardPipeline.addStep(objectServerConverterPipelineStep);
 
-		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(12004);
+		// start the ObjectServer protocol on port 12004
+		final String ip = "127.0.0.1";
+//		final String ip = "192.168.0.108";
+//		final String ip = "192.168.2.1";
+		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(ip,
+				NetworkUtils.OBJECT_SERVER_PROTOCO_PORT);
 		objectServerReaderThread.setKnxProject(knxProject);
 		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
 		objectServerReaderThread.setInputPipeline(objectServerInwardPipeline);

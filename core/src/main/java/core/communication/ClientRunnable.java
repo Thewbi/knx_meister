@@ -17,6 +17,9 @@ import object_server.requests.BaseRequest;
 import object_server.requests.BaseResponse;
 import object_server.requests.processors.RequestProcessor;
 
+/**
+ * Object server protocol server handler for incoming messages.
+ */
 public class ClientRunnable implements Runnable {
 
 	private static final Logger LOG = LogManager.getLogger(ClientRunnable.class);
