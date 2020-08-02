@@ -7,19 +7,23 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import api.data.serializer.DataSerializer;
+import api.device.Device;
+import api.device.DeviceStatus;
 import api.exception.ProjectParsingException;
 import api.pipeline.Pipeline;
+import api.project.KNXDeviceInstance;
+import api.project.KNXGroupAddress;
 import api.project.KNXProject;
 import common.data.conversion.BitDataSerializer;
 import common.data.conversion.DataConversion;
 import common.data.conversion.Float16DataSerializer;
 import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
-import core.api.device.Device;
 import core.common.KNXPacketConverter;
 import core.communication.ConnectionManager;
 import core.communication.DefaultConnectionManager;
@@ -35,7 +39,6 @@ import core.conversion.DeviceManagementKNXPacketConverter;
 import core.conversion.TunnelKNXPacketConverter;
 import core.data.sending.DefaultDataSender;
 import core.devices.DefaultDevice;
-import core.packets.DeviceStatus;
 import core.packets.KNXPacket;
 import core.pipeline.DefaultPipeline;
 import core.pipeline.InwardConnectionPipelineStep;
@@ -61,6 +64,13 @@ import project.parsing.knx.steps.ReadProjectInstallationsParsingStep;
 import project.parsing.knx.steps.ReadProjectParsingStep;
 
 /**
+ * TODO:
+ * <ol>
+ * <li />Initiale group reads werden nicht korrekt beantwortet glaub ich.
+ * <li />Weiter an Device und enthaltene Properties arbeiten.
+ * <li />Vereinheitlichen von Datenserien senden.
+ * </ol>
+ *
  * Wireshark filters
  *
  * <pre>
@@ -98,9 +108,13 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
  *
  * (ip.src == 192.168.0.241/32) or (ip.dst == 192.168.0.241/32)
  *
+ * (ip.src == 192.168.2.2/32) or (ip.dst == 192.168.2.2/32)
+ *
  * </pre>
  */
 public class Main {
+
+	private static final boolean START_OBJECT_SERVER = false;
 
 	/** Host physical address in ETS5, 0x1A11 == 1.10.17 */
 	// private static final int DEVICE_ADDRESS = 0x1A11;
@@ -124,6 +138,24 @@ public class Main {
 	private static final Logger LOG = LogManager.getLogger(Main.class);
 
 	public static void main(final String[] args) throws IOException, ProjectParsingException {
+
+//		try (Socket socket = new Socket("192.168.0.234", 12004)) {
+//
+//			final InputStream input = socket.getInputStream();
+//			final BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+//
+//			final String time = reader.readLine();
+//
+//			System.out.println(time);
+//
+//		} catch (final UnknownHostException ex) {
+//
+//			System.out.println("Server not found: " + ex.getMessage());
+//
+//		} catch (final IOException ex) {
+//
+//			System.out.println("I/O error: " + ex.getMessage());
+//		}
 
 		// https://github.com/apache/dubbo/issues/2423
 		//
@@ -178,6 +210,18 @@ public class Main {
 		LOG.info("Parsing project file: \"" + projectFile.getAbsolutePath() + "\"");
 
 		final KNXProject knxProject = knxProjectParser.parse(projectFile);
+
+		// index 0 is Weinzierl
+		final KNXDeviceInstance knxDeviceInstance = knxProject.getDeviceInstances().get(0);
+		knxDeviceInstance.getComObjects().values().stream().forEach(comObject -> {
+
+			final KNXGroupAddress knxGroupAddress = comObject.getKnxGroupAddress();
+			if (knxGroupAddress != null && StringUtils.isNotBlank(knxGroupAddress.getGroupAddress())) {
+
+				final String groupAddress = knxGroupAddress.getGroupAddress();
+				device.getDeviceProperties().put(groupAddress, knxGroupAddress);
+			}
+		});
 
 		final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
 		dataSerializerMap.put(DataConversion.FLOAT16, new Float16DataSerializer());
@@ -262,16 +306,18 @@ public class Main {
 		objectServerInwardPipeline.addStep(objectServerConverterPipelineStep);
 
 		// start the ObjectServer protocol on port 12004
-		final String ip = "127.0.0.1";
+//		final String ip = "127.0.0.1";
 //		final String ip = "192.168.0.108";
-//		final String ip = "192.168.2.1";
+		final String ip = "192.168.2.1";
 		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(ip,
 				NetworkUtils.OBJECT_SERVER_PROTOCO_PORT);
 		objectServerReaderThread.setKnxProject(knxProject);
 		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
 		objectServerReaderThread.setInputPipeline(objectServerInwardPipeline);
 
-		new Thread(objectServerReaderThread).start();
+		if (START_OBJECT_SERVER) {
+			new Thread(objectServerReaderThread).start();
+		}
 
 //		new Thread(new Runnable() {
 //

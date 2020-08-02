@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import api.data.serializer.DataSerializer;
+import api.device.Device;
 import api.project.KNXDatapointSubtype;
 import api.project.KNXGroupAddress;
 import api.project.KNXProject;
@@ -16,7 +17,6 @@ import common.packets.ServiceIdentifier;
 import common.utils.KNXProjectUtils;
 import common.utils.NetworkUtils;
 import common.utils.Utils;
-import core.api.device.Device;
 import core.communication.Connection;
 import core.communication.controller.BaseController;
 import core.packets.CemiTunnelRequest;
@@ -37,16 +37,32 @@ public class DefaultDataSender implements DataSender {
 	@Override
 	public void send(final Connection connection) {
 
+		LOG.info("[DefaultDataSender] send() ...");
+
 //		final String comObjectId = "O-145_R-1849";
 //		final double value = 100.0d;
 //		sendViaComObject(connection, comObjectId, value);
 
-		final KNXGroupAddress knxGroupAddress = new KNXGroupAddress();
-//		knxGroupAddress.setGroupAddress(currentValue == 0 ? "0/3/4" : "0/3/3");
-		knxGroupAddress.setGroupAddress("0/3/4");
-//		knxGroupAddress.setGroupAddress("7/7/2");
-//		knxGroupAddress.setGroupAddress("0/4/1");
-		sendBit(connection, knxGroupAddress, device.getValue());
+//		final KNXGroupAddress knxGroupAddress = new KNXGroupAddress();
+////		knxGroupAddress.setGroupAddress(currentValue == 0 ? "0/3/4" : "0/3/3");
+////		knxGroupAddress.setGroupAddress("0/3/4");
+////		knxGroupAddress.setGroupAddress("7/7/2");
+////		knxGroupAddress.setGroupAddress("0/4/1");
+//		knxGroupAddress.setGroupAddress("0/1/1");
+
+//		final String integerToKNXAddress = Utils
+//				.integerToKNXAddress(knxPacket.getCemiTunnelRequest().getDestKNXAddress(), "/");
+		final KNXGroupAddress knxGroupAddress = getDevice().getDeviceProperties().get("0/1/1");
+		if (knxGroupAddress == null) {
+			LOG.warn("GroupAddress is unknown: " + knxGroupAddress);
+			return;
+		}
+
+		final String dataPointType = knxGroupAddress.getDataPointType();
+		final KNXDatapointSubtype knxDatapointSubtype = knxProject.getDatapointSubtypeMap().get(dataPointType);
+		final DataSerializer<Object> dataSerializer = dataSerializerMap.get(knxDatapointSubtype.getFormat());
+
+//		sendBit(connection, knxGroupAddress, device.getValue());
 
 //		// ETS-File: C:\Users\U5353\Desktop\KNX_IP_BAOS_777.knxproj
 //		//
@@ -55,16 +71,25 @@ public class DefaultDataSender implements DataSender {
 //		final KNXGroupAddress knxGroupAddress = new KNXGroupAddress();
 //		knxGroupAddress.setGroupAddress("0/1/1");
 //		final String comObjectId = "O-145_R-1849";
-//		final int dataPointId = 325;
-//		final double value = 100.0d;
-//		sendViaComObject(connection, dataPointId, value);
+		final int dataPointId = 325;
+		double value = 100.0d;
+
+		if (knxGroupAddress.getValue() == null) {
+			knxGroupAddress.setValue(value);
+		} else {
+			value = (double) knxGroupAddress.getValue();
+		}
+
+		sendViaComObject(connection, dataPointId, value);
 
 //		sendViaFormat(connection, DataSender.BIT, knxGroupAddress, 0);
 //		sendBit(connection, knxGroupAddress, currentValue);
 
 		// toggle
 //		currentValue = 1 - currentValue;
-		device.setValue(1 - device.getValue());
+//		device.setValue(1 - device.getValue());
+
+		knxGroupAddress.setValue(value + 1.0d);
 	}
 
 	@SuppressWarnings("unused")
@@ -91,6 +116,8 @@ public class DefaultDataSender implements DataSender {
 		}
 		final byte[] payload = dataSerializer.serializeToBytes(value);
 
+		LOG.info("[DefaultDataSender] sending: {}", Utils.byteArrayToStringNoPrefix(payload));
+
 		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 
 		final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
@@ -103,6 +130,8 @@ public class DefaultDataSender implements DataSender {
 		cemiTunnelRequest.setLength(3);
 		cemiTunnelRequest.setTpci(0x00);
 		cemiTunnelRequest.setApci(0x80);
+
+		// TODO: the one bit datatypes are encoded directly into APCI !!!!!!!!!!!!!!!!
 		cemiTunnelRequest.setPayloadBytes(payload);
 
 		final KNXPacket knxPacket = new KNXPacket();
@@ -117,6 +146,7 @@ public class DefaultDataSender implements DataSender {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	private void sendBit(final Connection connection, final KNXGroupAddress knxGroupAddress, final int value) {
 
 		LOG.info("Sending BIT Value: " + value);
@@ -154,7 +184,6 @@ public class DefaultDataSender implements DataSender {
 
 	@Override
 	public Object deserializeByFormat() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

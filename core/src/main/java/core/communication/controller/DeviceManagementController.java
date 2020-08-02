@@ -9,6 +9,7 @@ import java.net.UnknownHostException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.packets.PropertyId;
 import common.packets.KNXConnectionHeader;
 import common.packets.ServiceIdentifier;
 import common.utils.Utils;
@@ -17,7 +18,6 @@ import core.packets.CemiPropReadRequest;
 import core.packets.CemiTunnelRequest;
 import core.packets.DeviceManagement;
 import core.packets.KNXPacket;
-import core.packets.PropertyId;
 
 public class DeviceManagementController extends BaseController {
 

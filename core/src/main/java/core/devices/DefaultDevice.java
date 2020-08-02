@@ -1,11 +1,13 @@
 package core.devices;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import core.api.device.Device;
-import core.packets.DeviceStatus;
-import core.packets.PropertyId;
+import api.device.Device;
+import api.device.DeviceStatus;
+import api.packets.PropertyId;
+import api.project.KNXGroupAddress;
 
 public class DefaultDevice implements Device {
 
@@ -17,7 +19,7 @@ public class DefaultDevice implements Device {
 
 	private DeviceStatus deviceStatus = DeviceStatus.NORMAL_MODE;
 
-	private int value;
+	private final Map<String, KNXGroupAddress> deviceProperties = new HashMap<>();
 
 	/**
 	 * ctor
@@ -73,14 +75,18 @@ public class DefaultDevice implements Device {
 		this.physicalAddress = physicalAddress;
 	}
 
-	@Override
-	public int getValue() {
-		return value;
+	public Map<String, KNXGroupAddress> getDeviceProperties() {
+		return deviceProperties;
 	}
 
-	@Override
-	public void setValue(final int value) {
-		this.value = value;
-	}
+//	@Override
+//	public int getValue() {
+//		return value;
+//	}
+//
+//	@Override
+//	public void setValue(final int value) {
+//		this.value = value;
+//	}
 
 }

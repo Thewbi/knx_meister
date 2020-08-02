@@ -62,6 +62,19 @@ public final class Utils {
 		return stringBuffer.toString();
 	}
 
+	public static String byteArrayToStringNoPrefix(final byte[] data) {
+
+		if (data == null) {
+			return StringUtils.EMPTY;
+		}
+		final StringBuffer stringBuffer = new StringBuffer();
+		for (final byte tempByte : data) {
+			stringBuffer.append(String.format("%1$02X", tempByte).toUpperCase(Locale.getDefault())).append(" ");
+		}
+
+		return stringBuffer.toString();
+	}
+
 	public static int bytesToUnsignedShort(final byte byte1, final byte byte2, final boolean bigEndian) {
 		if (bigEndian) {
 			return (((byte1 & 0xFF) << 8) | (byte2 & 0xFF));
@@ -95,7 +108,7 @@ public final class Utils {
 		return dateTimeFormatter.format(now);
 	}
 
-	public static String integerToKNXAddress(final int individualAddress) {
+	public static String integerToKNXAddress(final int individualAddress, final String separator) {
 
 		final int upperByte = ((individualAddress >> 8) & 0xFF);
 		final int areaAddress = (upperByte & 0xF0) >> 4;
@@ -103,7 +116,7 @@ public final class Utils {
 
 		final int deviceAddress = ((individualAddress) & 0xFF);
 
-		return areaAddress + "." + lineAddress + "." + deviceAddress;
+		return areaAddress + separator + lineAddress + separator + deviceAddress;
 	}
 
 	public static int knxAddressToInteger(final String addressAsString) {

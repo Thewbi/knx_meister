@@ -1,4 +1,4 @@
-package core.packets;
+package api.packets;
 
 public enum PropertyId {
 

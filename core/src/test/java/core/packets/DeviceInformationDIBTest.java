@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Test;
 
+import api.device.DeviceStatus;
 import common.utils.Utils;
 
 public class DeviceInformationDIBTest {

@@ -9,8 +9,8 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
+import api.device.Device;
 import common.packets.ServiceIdentifier;
-import core.api.device.Device;
 import core.communication.BaseDatagramPacketCallback;
 import core.communication.Connection;
 import core.communication.ConnectionManager;
@@ -124,7 +124,7 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 		return knxPacket;
 	}
 
-	protected void startThread(final String label, final Connection connection) {
+	protected Thread startThread(final String label, final Connection connection) {
 
 		getLogger().info(label + " Starting Thread");
 
@@ -181,6 +181,8 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 			}
 		});
 		thread.start();
+
+		return thread;
 	}
 
 	public void setConnectionManager(final ConnectionManager connectionManager) {

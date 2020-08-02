@@ -63,7 +63,7 @@ public class DefaultConnection implements Connection {
 			throw new IOException(e);
 		}
 
-		LOG.info("Connection {} is sending packet over socketAddress {}", id, socketAddress);
+		LOG.trace("Connection {} is sending packet over socketAddress {}", id, socketAddress);
 
 		datagramSocket.send(datagramPacket);
 	}
@@ -135,7 +135,7 @@ public class DefaultConnection implements Connection {
 
 		LOG.trace("Connection {} is sending packet to socketAddress {}", id, destinationInetSocketAddress);
 
-		LOG.info("SendSequenceCounter: " + sendSequenceCounter + ") Sending Data to "
+		LOG.trace("SendSequenceCounter: " + sendSequenceCounter + ") Sending Data to "
 				+ destinationInetSocketAddress.getHostString() + ":" + destinationInetSocketAddress.getPort());
 
 		datagramSocket.send(datagramPacket);

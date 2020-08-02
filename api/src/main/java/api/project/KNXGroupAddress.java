@@ -11,14 +11,17 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Parsed from a ETS5 project, group addresses are contained in a tree where
- * each parent layer stores a single digit of a group address.
+ * each parent layer stores a single digit of a group address.<br />
+ * <br />
  *
  * For a three level group address, there will be a tree of group addresses of
- * depth of at least three.
+ * depth of at least three.<br />
+ * <br />
  *
  * For convenience, this class has also a string member groupAddress where you
  * can assign a group address directly. If the KNXGroupAddress instance has no
- * parent, then this string member is used directly.
+ * parent, then this string member is used directly.<br />
+ * <br />
  */
 public class KNXGroupAddress {
 
@@ -37,6 +40,8 @@ public class KNXGroupAddress {
 	private String dataPointType;
 
 	private String groupAddress;
+
+	private Object value;
 
 	private final List<KNXGroupAddress> knxGroupAddresses = new ArrayList<>();
 
@@ -161,6 +166,39 @@ public class KNXGroupAddress {
 
 	public void setName(final String name) {
 		this.name = name;
+	}
+
+	public Object getValue() {
+		return value;
+	}
+
+	public void setValue(final Object value) {
+		this.value = value;
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((knxGroupAddresses == null) ? 0 : knxGroupAddresses.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		final KNXGroupAddress other = (KNXGroupAddress) obj;
+		if (knxGroupAddresses == null) {
+			if (other.knxGroupAddresses != null)
+				return false;
+		} else if (!knxGroupAddresses.equals(other.knxGroupAddresses))
+			return false;
+		return true;
 	}
 
 }

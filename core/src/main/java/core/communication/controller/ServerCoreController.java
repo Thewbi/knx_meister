@@ -32,6 +32,8 @@ public class ServerCoreController extends BaseController {
 
 	private static final Logger LOG = LogManager.getLogger(ServerCoreController.class);
 
+	private Thread dataSenderThread;
+
 	/**
 	 * ctor
 	 *
@@ -100,11 +102,15 @@ public class ServerCoreController extends BaseController {
 		// 0x0206
 		case CONNECT_RESPONSE:
 			LOG.info("Connected");
-			LOG.info("Connected! Tunnel connection id is: " + knxPacket.getCommunicationChannelId() + " Sequence "
+			LOG.info("Connected! Tunnel connection id = " + knxPacket.getCommunicationChannelId() + ", Sequence = "
 					+ knxPacket.getConnectionStatus());
 
 			if (knxPacket.getCommunicationChannelId() > 1) {
-				startThread(getClass().getName() + " CONNECT_RESPONSE", knxPacket.getConnection());
+				if (dataSenderThread == null) {
+					LOG.info("Server core controller starts data sender!");
+					dataSenderThread = startThread(getClass().getName() + " CONNECT_RESPONSE",
+							knxPacket.getConnection());
+				}
 			}
 			break;
 

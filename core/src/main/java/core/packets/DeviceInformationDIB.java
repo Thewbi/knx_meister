@@ -1,5 +1,6 @@
 package core.packets;
 
+import api.device.DeviceStatus;
 import common.utils.NetworkUtils;
 import common.utils.Utils;
 
@@ -158,7 +159,7 @@ public class DeviceInformationDIB extends DescriptionInformationBlock {
 				.append(Utils.integerToString(getMedium().getValue())).append("\n");
 		stringBuilder.append("Device Status: ").append(deviceStatus.name()).append(" ")
 				.append(Utils.integerToString(deviceStatus.getValue())).append("\n");
-		stringBuilder.append("KNX Individual Address: ").append(Utils.integerToKNXAddress(individualAddress))
+		stringBuilder.append("KNX Individual Address: ").append(Utils.integerToKNXAddress(individualAddress, "."))
 				.append(" ").append(Utils.integerToString(individualAddress)).append("\n");
 		stringBuilder.append("Project Installation Identifier: ")
 				.append(Utils.integerToString(projectInstallationIdentifier)).append("\n");

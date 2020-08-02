@@ -1,9 +1,9 @@
-package core.api.device;
+package api.device;
 
 import java.util.Map;
 
-import core.packets.DeviceStatus;
-import core.packets.PropertyId;
+import api.packets.PropertyId;
+import api.project.KNXGroupAddress;
 
 public interface Device {
 
@@ -25,9 +25,11 @@ public interface Device {
 
 	short getPropertyValue(final PropertyId propertyId);
 
-	// DEBUG
-	void setValue(int value);
+	Map<String, KNXGroupAddress> getDeviceProperties();
 
-	int getValue();
+//	// DEBUG
+//	void setValue(int value);
+//
+//	int getValue();
 
 }
