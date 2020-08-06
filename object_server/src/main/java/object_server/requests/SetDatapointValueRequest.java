@@ -35,6 +35,8 @@ public class SetDatapointValueRequest extends BaseRequest {
 	@Override
 	public void fromBytes(final byte[] bytes) {
 
+		LOG.info("fromBytes()");
+
 		final int preludeLength = 12;
 
 		// start, length

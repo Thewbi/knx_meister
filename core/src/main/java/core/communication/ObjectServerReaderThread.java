@@ -69,7 +69,7 @@ public class ObjectServerReaderThread implements Runnable {
 				// blocking call
 				LOG.info("ObjectServer accepting ...");
 				final Socket clientSocket = serverSocket.accept();
-				LOG.info("ObjectServer accepting. Packat received.");
+				LOG.info("ObjectServer accepting. Packet received.");
 
 				final ClientRunnable clientRunnable = new ClientRunnable(clientSocket);
 				clientRunnable.setInputPipeline(inputPipeline);

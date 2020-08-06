@@ -84,7 +84,7 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 		final InetAddress inetAddress = InetAddress.getByName(NetworkUtils.KNX_MULTICAST_IP);
 		multicastSocket.joinGroup(inetAddress);
 
-		LOG.info("Multicast listener on " + NetworkUtils.KNX_MULTICAST_IP + " started.");
+		LOG.info("Multicast listener on " + NetworkUtils.KNX_MULTICAST_IP + ":" + bindPort + " started.");
 
 		while (running) {
 
@@ -93,6 +93,8 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 
 			// blocking call
 			multicastSocket.receive(datagramPacket);
+
+			LOG.info("Received packet ...");
 
 			// use the pipeline to convert the input from the socket to a KNXPacket that the
 			// system can use

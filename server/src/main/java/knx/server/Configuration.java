@@ -366,7 +366,7 @@ public class Configuration {
 		ObjectServerReaderThread objectServerReaderThread = null;
 		try {
 			objectServerReaderThread = new ObjectServerReaderThread(NetworkUtils.retrieveLocalIP(),
-					NetworkUtils.OBJECT_SERVER_PROTOCO_PORT);
+					NetworkUtils.OBJECT_SERVER_PROTOCOL_PORT);
 		} catch (UnknownHostException | SocketException e) {
 			LOG.error(e.getMessage(), e);
 		}

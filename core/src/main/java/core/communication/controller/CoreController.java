@@ -72,10 +72,10 @@ public class CoreController extends BaseController {
 			inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
 			port = hpaiStructure.getPort() & 0xFFFF;
 
-			final KNXPacket sendSearchResponseToAddress = sendSearchResponseToAddress(datagramSocket, inetAddress,
+			final KNXPacket searchResponseToAddress = retrieveSearchResponseToAddress(datagramSocket, inetAddress,
 					port);
 
-			connection.sendResponse(sendSearchResponseToAddress, new InetSocketAddress(inetAddress, port));
+			connection.sendResponse(searchResponseToAddress, new InetSocketAddress(inetAddress, port));
 			break;
 
 		case DESCRIPTION_REQUEST:
@@ -167,7 +167,7 @@ public class CoreController extends BaseController {
 		}
 	}
 
-	private KNXPacket sendSearchResponseToAddress(final DatagramSocket socket3671, final InetAddress inetAddress,
+	private KNXPacket retrieveSearchResponseToAddress(final DatagramSocket socket3671, final InetAddress inetAddress,
 			final int port) throws IOException {
 		return retrieveSearchResponseKNXPacket();
 	}

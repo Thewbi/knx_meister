@@ -114,7 +114,7 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
  */
 public class Main {
 
-	private static final boolean START_OBJECT_SERVER = false;
+	private static final boolean START_OBJECT_SERVER = true;
 
 	/** Host physical address in ETS5, 0x1A11 == 1.10.17 */
 	// private static final int DEVICE_ADDRESS = 0x1A11;
@@ -294,30 +294,9 @@ public class Main {
 		multicastListenerThread.setInputPipeline(inwardPipeline);
 //		multicastListenerThread.setConnectionManager(connectionManager);
 
-		new Thread(multicastListenerThread).start();
+//		new Thread(multicastListenerThread).start();
 
-		final RequestFactory requestFactory = new RequestFactory();
-		requestFactory.setKnxProject(knxProject);
-
-		final ConverterPipelineStep objectServerConverterPipelineStep = new ConverterPipelineStep();
-		objectServerConverterPipelineStep.setRequestFactory(requestFactory);
-
-		final Pipeline<Object, Object> objectServerInwardPipeline = new DefaultPipeline();
-		objectServerInwardPipeline.addStep(objectServerConverterPipelineStep);
-
-		// start the ObjectServer protocol on port 12004
-//		final String ip = "127.0.0.1";
-//		final String ip = "192.168.0.108";
-		final String ip = "192.168.2.1";
-		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(ip,
-				NetworkUtils.OBJECT_SERVER_PROTOCO_PORT);
-		objectServerReaderThread.setKnxProject(knxProject);
-		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
-		objectServerReaderThread.setInputPipeline(objectServerInwardPipeline);
-
-		if (START_OBJECT_SERVER) {
-			new Thread(objectServerReaderThread).start();
-		}
+		setupObjectServerInfrastructure(knxProject, dataSerializerMap);
 
 //		new Thread(new Runnable() {
 //
@@ -340,6 +319,40 @@ public class Main {
 
 		// the Bosch IoT Gateway does not even send an response this request
 //		serverCoreController.sendTunnelConnectionRequest(multicastListenerThread.getMulticastSocket());
+	}
+
+	/**
+	 * BASO object server protocol server
+	 *
+	 * @param knxProject
+	 * @param dataSerializerMap
+	 */
+	private static void setupObjectServerInfrastructure(final KNXProject knxProject,
+			final Map<String, DataSerializer<Object>> dataSerializerMap) {
+
+		final RequestFactory requestFactory = new RequestFactory();
+		requestFactory.setKnxProject(knxProject);
+
+		final ConverterPipelineStep objectServerConverterPipelineStep = new ConverterPipelineStep();
+		objectServerConverterPipelineStep.setRequestFactory(requestFactory);
+
+		final Pipeline<Object, Object> objectServerInwardPipeline = new DefaultPipeline();
+		objectServerInwardPipeline.addStep(objectServerConverterPipelineStep);
+
+		// start the ObjectServer protocol on port 12004
+//		final String ip = "127.0.0.1";
+//		final String ip = "192.168.0.108";
+		final String ip = "192.168.2.1";
+
+		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(ip,
+				NetworkUtils.OBJECT_SERVER_PROTOCOL_PORT);
+		objectServerReaderThread.setKnxProject(knxProject);
+		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
+		objectServerReaderThread.setInputPipeline(objectServerInwardPipeline);
+
+		if (START_OBJECT_SERVER) {
+			new Thread(objectServerReaderThread).start();
+		}
 	}
 
 	private static ProjectParser<KNXProjectParsingContext> retrieveProjectParser() {

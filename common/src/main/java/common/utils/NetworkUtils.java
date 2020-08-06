@@ -26,7 +26,7 @@ public final class NetworkUtils {
 
 	private static final Logger LOG = LogManager.getLogger(NetworkUtils.class);
 
-	public static final int OBJECT_SERVER_PROTOCO_PORT = 12004;
+	public static final int OBJECT_SERVER_PROTOCOL_PORT = 12004;
 
 	public static final String KNX_MULTICAST_IP = "224.0.23.12";
 

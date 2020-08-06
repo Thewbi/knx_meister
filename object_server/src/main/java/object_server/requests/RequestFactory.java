@@ -11,7 +11,7 @@ public class RequestFactory implements Factory<BaseRequest> {
 	private KNXProject knxProject;
 
 	/**
-	 * args = {subService, bytes, knxHeader, knxConnectionHeader}
+	 * args = {subService, bytes, knxHeader, knxConnectionHeader} in that order
 	 *
 	 * @throws FactoryException
 	 */
