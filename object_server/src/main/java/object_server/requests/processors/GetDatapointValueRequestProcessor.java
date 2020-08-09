@@ -39,8 +39,9 @@ public class GetDatapointValueRequestProcessor extends BaseRequestProcessor {
 		final int dataPointId = start;
 
 		// TODO: how do I know which device to use?
+		final int deviceIndex = 0;
 		final Optional<KNXComObject> knxComObjectOptional = KNXProjectUtils
-				.retrieveComObjectByDatapointId(getKnxProject(), dataPointId);
+				.retrieveComObjectByDatapointId(getKnxProject(), deviceIndex, dataPointId);
 
 		if (!knxComObjectOptional.isPresent()) {
 			final String msg = "Could not find ComObject for dataPointId = " + dataPointId;

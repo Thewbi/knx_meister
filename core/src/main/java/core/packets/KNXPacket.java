@@ -125,7 +125,7 @@ public class KNXPacket {
 					.getBytes();
 		}
 
-		// Connection Response Datablock
+		// Connection Response Datablock (= CRD)
 		byte[] crdBuffer = null;
 		if (getConnectionResponseDataBlock() != null) {
 			crdBuffer = getConnectionResponseDataBlock().getBytes();

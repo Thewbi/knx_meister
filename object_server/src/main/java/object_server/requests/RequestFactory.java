@@ -11,7 +11,16 @@ public class RequestFactory implements Factory<BaseRequest> {
 	private KNXProject knxProject;
 
 	/**
-	 * args = {subService, bytes, knxHeader, knxConnectionHeader} in that order
+	 * Converts from byte array to request.<br />
+	 * <br />
+	 *
+	 * Converts a byte array containing a serialized KNX message into a deserialized
+	 * request object.<br />
+	 * <br />
+	 *
+	 * args = {subService, bytes, knxHeader, knxConnectionHeader} in that
+	 * order.<br />
+	 * <br />
 	 *
 	 * @throws FactoryException
 	 */

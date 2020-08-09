@@ -21,6 +21,9 @@ import api.project.KNXProject;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
 
+/**
+ * This step dumps information to the console that was parsed in prior steps.
+ */
 public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> {
 
 	private static final Logger LOG = LogManager.getLogger(OutputParsingStep.class);
@@ -31,6 +34,8 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 		final KNXProject knxProject = context.getKnxProject();
 
 		if (knxProject == null) {
+
+			LOG.warn("No project found in the context, aborting!");
 			return;
 		}
 
@@ -45,8 +50,9 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 			LOG.info("ProductId: " + knxDeviceInstance.getProductId());
 
 			final Collection<KNXComObject> values = knxDeviceInstance.getComObjects().values();
-			final List<KNXComObject> valueList = new ArrayList<KNXComObject>(values);
 
+			// sort the KNXComObjects by number ascending
+			final List<KNXComObject> valueList = new ArrayList<KNXComObject>(values);
 			Collections.sort(valueList, new Comparator<KNXComObject>() {
 				@Override
 				public int compare(final KNXComObject lhs, final KNXComObject rhs) {
@@ -54,6 +60,7 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 				}
 			});
 
+			// output the KNXComObjects
 			for (final KNXComObject knxComObject : valueList) {
 
 				if (!knxComObject.isGroupObject()) {
@@ -66,9 +73,14 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 					stringBuilder.append("[GroupObject] ");
 				}
 
-				// number and text
-				stringBuilder.append(knxComObject.getNumber()).append(" ").append(knxComObject.getId());
+				// number
+				stringBuilder.append(knxComObject.getNumber()).append(" (0x")
+						.append(String.format("%1$02X", knxComObject.getNumber())).append(")");
 
+				// id
+				stringBuilder.append(" ").append(knxComObject.getId());
+
+				// text
 				if (StringUtils.isNotBlank(knxComObject.getText())) {
 					stringBuilder.append(" ").append(knxComObject.getText());
 				}

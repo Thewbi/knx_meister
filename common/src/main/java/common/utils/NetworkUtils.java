@@ -32,7 +32,9 @@ public final class NetworkUtils {
 
 	private static final String ADAPTER_NAME = "eth5";
 
-	private static String hostAddress = "192.168.2.1";
+//	private static String hostAddress = "192.168.2.1";
+//	private static String hostAddress = "127.0.0.1";
+	private static String hostAddress = "192.168.0.108";
 //	private static String hostAddress = null;
 
 //	public static final String LOCAL_IP = "172.18.60.118";

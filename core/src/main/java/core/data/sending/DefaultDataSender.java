@@ -95,9 +95,11 @@ public class DefaultDataSender implements DataSender {
 	@SuppressWarnings("unused")
 	private void sendViaComObject(final Connection connection, final int datapointId, final double value) {
 
-		final KNXGroupAddress knxGroupAddress = KNXProjectUtils.retrieveGroupAddress(knxProject, datapointId);
-		final KNXDatapointSubtype knxDatapointSubtype = KNXProjectUtils.retrieveDataPointSubType(knxProject,
+		final int deviceIndex = 0;
+		final KNXGroupAddress knxGroupAddress = KNXProjectUtils.retrieveGroupAddress(knxProject, deviceIndex,
 				datapointId);
+		final KNXDatapointSubtype knxDatapointSubtype = KNXProjectUtils.retrieveDataPointSubType(knxProject,
+				deviceIndex, datapointId);
 
 		// from the datapoint subtype, retrieve the datapoint type
 		final String format = knxDatapointSubtype.getFormat();

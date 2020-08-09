@@ -31,8 +31,19 @@ public abstract class BaseRequest {
 
 	protected KNXConnectionHeader knxConnectionHeader = new KNXConnectionHeader();
 
+	/**
+	 * requests for datapoints specify the start datapoint from which to iterate
+	 * datapoints. start is the id of the data point to start the iteration from.
+	 */
 	private int start;
 
+	/**
+	 * requests for datapoints specify a start data point and the amount of
+	 * datapoints that the response should contain at most. This maximum expected
+	 * amount is called maxAmount and limits the amount of data that can be
+	 * returned. This prevents buffer overflow in low spec communication partners
+	 * that would potentially be flodded with too much data point information.
+	 */
 	private int maxAmount;
 
 	private KNXProject knxProject;
@@ -51,7 +62,7 @@ public abstract class BaseRequest {
 
 	public byte[] getBytes() {
 
-		final byte[] payload = new byte[getMessageLength()];
+		final byte[] result = new byte[getMessageLength()];
 
 		int index = 0;
 
@@ -59,22 +70,22 @@ public abstract class BaseRequest {
 		knxHeader.setProtocolVersion((byte) OBJECT_SERVER_PROTOCOL_VERSION);
 		knxHeader.setServiceIdentifier(ServiceIdentifier.OBJECT_SERVER_REQUEST);
 
-		knxHeader.writeBytesIntoBuffer(payload, index);
+		knxHeader.writeBytesIntoBuffer(result, index);
 		index += knxHeader.getLength();
 
-		knxConnectionHeader.writeBytesIntoBuffer(payload, index);
+		knxConnectionHeader.writeBytesIntoBuffer(result, index);
 		index += knxConnectionHeader.getLength();
 
-		payload[index++] = (byte) (mainService & 0xFF);
-		payload[index++] = (byte) (getSubService() & 0xFF);
+		result[index++] = (byte) (mainService & 0xFF);
+		result[index++] = (byte) (getSubService() & 0xFF);
 
-		payload[index++] = (byte) (((getStart()) >> 8) & 0xFF);
-		payload[index++] = (byte) (getStart() & 0xFF);
+		result[index++] = (byte) (((getStart()) >> 8) & 0xFF);
+		result[index++] = (byte) (getStart() & 0xFF);
 
-		payload[index++] = (byte) (((getMaxAmount()) >> 8) & 0xFF);
-		payload[index++] = (byte) (getMaxAmount() & 0xFF);
+		result[index++] = (byte) (((getMaxAmount()) >> 8) & 0xFF);
+		result[index++] = (byte) (getMaxAmount() & 0xFF);
 
-		return payload;
+		return result;
 	}
 
 	public KNXHeader getKnxHeader() {

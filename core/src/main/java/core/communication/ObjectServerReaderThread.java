@@ -61,6 +61,7 @@ public class ObjectServerReaderThread implements Runnable {
 			final InetSocketAddress inetSocketAddress = new InetSocketAddress(ip, bindPort);
 
 			LOG.info("Binding Object Server Protocol to {}:{}", ip, bindPort);
+
 			serverSocket = new ServerSocket();
 			serverSocket.bind(inetSocketAddress);
 
@@ -69,7 +70,7 @@ public class ObjectServerReaderThread implements Runnable {
 				// blocking call
 				LOG.info("ObjectServer accepting ...");
 				final Socket clientSocket = serverSocket.accept();
-				LOG.info("ObjectServer accepting. Packet received.");
+				LOG.info("ObjectServer packet received.");
 
 				final ClientRunnable clientRunnable = new ClientRunnable(clientSocket);
 				clientRunnable.setInputPipeline(inputPipeline);
@@ -98,6 +99,14 @@ public class ObjectServerReaderThread implements Runnable {
 
 				final Thread clientThread = new Thread(clientRunnable);
 				clientThread.start();
+
+				try {
+					Thread.sleep(2000);
+				} catch (final InterruptedException e) {
+					// ignored
+				}
+
+				clientRunnable.sendRequest();
 			}
 
 		} catch (final UnknownHostException e) {

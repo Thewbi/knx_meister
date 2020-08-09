@@ -16,7 +16,8 @@ public class KNXProjectUtils {
 		// no instances of this class
 	}
 
-	public static KNXGroupAddress retrieveGroupAddress(final KNXProject knxProject, final int dataPointId) {
+	public static KNXGroupAddress retrieveGroupAddress(final KNXProject knxProject, final int deviceIndex,
+			final int dataPointId) {
 
 //		// TODO: how to identify the correct device if there are several devices in the
 //		// list?
@@ -25,7 +26,8 @@ public class KNXProjectUtils {
 //		// pick one of the communication objects by its name/id
 //		final KNXComObject knxComObject = knxDeviceInstance.getComObjects().get(comObjectId);
 
-		final Optional<KNXComObject> knxComObjectOptional = retrieveComObjectByDatapointId(knxProject, dataPointId);
+		final Optional<KNXComObject> knxComObjectOptional = retrieveComObjectByDatapointId(knxProject, deviceIndex,
+				dataPointId);
 
 		if (!knxComObjectOptional.isPresent()) {
 			return null;
@@ -35,7 +37,8 @@ public class KNXProjectUtils {
 		return knxComObjectOptional.get().getKnxGroupAddress();
 	}
 
-	public static KNXDatapointSubtype retrieveDataPointSubType(final KNXProject knxProject, final int dataPointId) {
+	public static KNXDatapointSubtype retrieveDataPointSubType(final KNXProject knxProject, final int deviceIndex,
+			final int dataPointId) {
 
 //		// TODO: how to identify the correct device if there are several devices in the
 //		// list?
@@ -47,7 +50,7 @@ public class KNXProjectUtils {
 //		// retrieve the group address to send the data to
 //		final KNXGroupAddress knxGroupAddress = knxComObject.getKnxGroupAddress();
 
-		final KNXGroupAddress knxGroupAddress = retrieveGroupAddress(knxProject, dataPointId);
+		final KNXGroupAddress knxGroupAddress = retrieveGroupAddress(knxProject, deviceIndex, dataPointId);
 
 		// the group address also stores the datatype. The data has to be send in this
 		// specific datatype so the receiver can decode it correctly
@@ -73,11 +76,11 @@ public class KNXProjectUtils {
 	}
 
 	public static Optional<KNXComObject> retrieveComObjectByDatapointId(final KNXProject knxProject,
-			final int dataPointId) {
+			final int deviceIndex, final int dataPointId) {
 
 		// TODO: how to identify the correct device if there are several devices in the
 		// list?
-		final KNXDeviceInstance knxDeviceInstance = knxProject.getDeviceInstances().get(0);
+		final KNXDeviceInstance knxDeviceInstance = knxProject.getDeviceInstances().get(deviceIndex);
 
 		// TODO: maybe create a map from datapoint id to ComObject????
 		return knxDeviceInstance.getComObjects().values().stream().filter(c -> c.getNumber() == dataPointId)

@@ -11,6 +11,13 @@ import api.pipeline.PipelineStep;
 import common.utils.Utils;
 import core.packets.KNXPacket;
 
+/**
+ * Input: KNXPacket<br />
+ * <br />
+ * Output: The same unchanged KNXPacket<br />
+ * <br />
+ * Side Effect: prints the packet to the console.
+ */
 public class OutwardOutputPipelineStep implements PipelineStep<Object, Object> {
 
 	private static final Logger LOG = LogManager.getLogger(OutwardOutputPipelineStep.class);

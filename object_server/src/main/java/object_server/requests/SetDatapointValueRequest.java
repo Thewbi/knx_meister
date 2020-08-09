@@ -10,9 +10,9 @@ import common.utils.Utils;
 
 public class SetDatapointValueRequest extends BaseRequest {
 
-	@SuppressWarnings("unused")
 	private static final Logger LOG = LogManager.getLogger(SetDatapointValueRequest.class);
 
+	/** sub service code */
 	public static final int SET_DATAPOINT_VALUE_REQUEST_CODE = 0x06;
 
 	public static final int SET_DATAPOINT_VALUE_RESPONSE_CODE = 0x86;
@@ -23,6 +23,9 @@ public class SetDatapointValueRequest extends BaseRequest {
 
 	private final List<SetDatapointValueRequestEntry> entries = new ArrayList<>();
 
+	/**
+	 * ctor
+	 */
 	public SetDatapointValueRequest() {
 		setSubService(SET_DATAPOINT_VALUE_REQUEST_CODE);
 	}
@@ -34,8 +37,6 @@ public class SetDatapointValueRequest extends BaseRequest {
 
 	@Override
 	public void fromBytes(final byte[] bytes) {
-
-		LOG.info("fromBytes()");
 
 		final int preludeLength = 12;
 

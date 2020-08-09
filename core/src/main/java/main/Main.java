@@ -3,6 +3,8 @@ package main;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
+import java.net.SocketException;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -22,6 +24,7 @@ import api.project.KNXProject;
 import common.data.conversion.BitDataSerializer;
 import common.data.conversion.DataConversion;
 import common.data.conversion.Float16DataSerializer;
+import common.data.conversion.UnsignedIntByteSerializer;
 import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
 import core.common.KNXPacketConverter;
@@ -163,6 +166,8 @@ public class Main {
 		// IPv4 interfaces. Force the JVM to use IPv4.
 		System.setProperty("java.net.preferIPv4Stack", "true");
 
+		final String localIP = NetworkUtils.retrieveLocalIP();
+
 //		final InetAddress inetAddress = InetAddress.getLocalHost();
 //		LOG.info("IP of my system is := " + inetAddress.getHostAddress());
 
@@ -203,8 +208,11 @@ public class Main {
 
 		final ProjectParser<KNXProjectParsingContext> knxProjectParser = retrieveProjectParser();
 
-		final File projectFile = new File("C:/Users/U5353/Desktop/KNX_IP_BAOS_777.knxproj");
-//		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
+//		final File projectFile = new File("C:/Users/U5353/Desktop/KNX_IP_BAOS_777.knxproj");
+//		final File projectFile = new File("C:/Users/U5353/Desktop/KNX_IP_BAOS_777_version.knxproj");
+//		final File projectFile = new File("C:/Users/U5353/Desktop/test.knxproj");
+//		final File projectFile = new File("C:/Users/U5353/Desktop/KNXfirstSteps200212_5devices.knxproj");
+		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
 //		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNXfirstSteps200212_5devices.knxproj");
 
 		LOG.info("Parsing project file: \"" + projectFile.getAbsolutePath() + "\"");
@@ -226,6 +234,7 @@ public class Main {
 		final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
 		dataSerializerMap.put(DataConversion.FLOAT16, new Float16DataSerializer());
 		dataSerializerMap.put(DataConversion.BIT, new BitDataSerializer());
+		dataSerializerMap.put(DataConversion.UNSIGNED_INTEGER_8, new UnsignedIntByteSerializer());
 
 		final DefaultDataSender dataSender = new DefaultDataSender();
 		dataSender.setDataSerializerMap(dataSerializerMap);
@@ -265,11 +274,11 @@ public class Main {
 		inwardPipeline.addStep(inwardConnectionPipelineStep);
 //		inwardPipeline.addStep(inwardOutputPipelineStep);
 
-		final CoreController coreController = new CoreController(NetworkUtils.retrieveLocalIP());
+		final CoreController coreController = new CoreController(localIP);
 		coreController.setDevice(device);
 		coreController.setConnectionManager(connectionManager);
 
-		final ServerCoreController serverCoreController = new ServerCoreController(NetworkUtils.retrieveLocalIP());
+		final ServerCoreController serverCoreController = new ServerCoreController(localIP);
 		serverCoreController.setDevice(device);
 		serverCoreController.setConnectionManager(connectionManager);
 		serverCoreController.setDataSender(dataSender);
@@ -279,13 +288,13 @@ public class Main {
 		deviceManagementController.setDevice(device);
 		deviceManagementController.setConnectionManager(connectionManager);
 
-		final TunnelingController tunnelingController = new TunnelingController(NetworkUtils.retrieveLocalIP());
+		final TunnelingController tunnelingController = new TunnelingController(localIP);
 		tunnelingController.setDevice(device);
 		tunnelingController.setConnectionManager(connectionManager);
 		tunnelingController.setDataSender(dataSender);
 
 		// reader for multicast messages
-		final MulticastListenerReaderThread multicastListenerThread = new MulticastListenerReaderThread(
+		final MulticastListenerReaderThread multicastListenerThread = new MulticastListenerReaderThread(localIP,
 				BaseController.KNX_PORT_DEFAULT);
 		multicastListenerThread.getDatagramPacketCallbacks().add(coreController);
 		multicastListenerThread.getDatagramPacketCallbacks().add(serverCoreController);
@@ -294,9 +303,9 @@ public class Main {
 		multicastListenerThread.setInputPipeline(inwardPipeline);
 //		multicastListenerThread.setConnectionManager(connectionManager);
 
-//		new Thread(multicastListenerThread).start();
+		new Thread(multicastListenerThread).start();
 
-		setupObjectServerInfrastructure(knxProject, dataSerializerMap);
+		setupObjectServerInfrastructure(localIP, knxProject, dataSerializerMap);
 
 //		new Thread(new Runnable() {
 //
@@ -322,13 +331,36 @@ public class Main {
 	}
 
 	/**
-	 * BASO object server protocol server
+	 * BAOS object server protocol server.
+	 *
+	 * Connection-Procedure to a BAOS Server (See
+	 * KNX_BAOS_Binary_Protocol_V2_0.pdf):
+	 * <ol>
+	 * <li />The application software that contains the BAOS client will send a
+	 * request to an IP.
+	 * <li />The BAOS client first perform KNX Discovery, that means it will send a
+	 * SearchRequest Package to the multicast IP 224.0.23.12.
+	 * <li />The BAOS server answers that request. It will send it's own IP and it's
+	 * supported protocols in the response. Two things are important. The IP of the
+	 * BAOS Server has to match the IP specified by the application program using
+	 * the BAOS client and second, the supported protocols have to contain the byte
+	 * sequence: 0x01 (= Record type) 0x04 (= Record length) 0xF0 (= ObjectServer
+	 * protocol) 0x20 (= ObjectServer version)
+	 * <li />The BOAS client checks the discovery response. If the BAOS Object
+	 * Server Protocol is supported AND the IP matches the IP specified by the
+	 * application, the BAOS client switches to talking to the IP using the Binary
+	 * Object Protocol.
+	 * <li />The BAOS server was bound the the IP beforehand and now talks BAOS to
+	 * the BAOS client.
+	 * </ol>
 	 *
 	 * @param knxProject
 	 * @param dataSerializerMap
+	 * @throws SocketException
+	 * @throws UnknownHostException
 	 */
-	private static void setupObjectServerInfrastructure(final KNXProject knxProject,
-			final Map<String, DataSerializer<Object>> dataSerializerMap) {
+	private static void setupObjectServerInfrastructure(final String localIP, final KNXProject knxProject,
+			final Map<String, DataSerializer<Object>> dataSerializerMap) throws UnknownHostException, SocketException {
 
 		final RequestFactory requestFactory = new RequestFactory();
 		requestFactory.setKnxProject(knxProject);
@@ -340,11 +372,7 @@ public class Main {
 		objectServerInwardPipeline.addStep(objectServerConverterPipelineStep);
 
 		// start the ObjectServer protocol on port 12004
-//		final String ip = "127.0.0.1";
-//		final String ip = "192.168.0.108";
-		final String ip = "192.168.2.1";
-
-		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(ip,
+		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(localIP,
 				NetworkUtils.OBJECT_SERVER_PROTOCOL_PORT);
 		objectServerReaderThread.setKnxProject(knxProject);
 		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);

@@ -21,6 +21,8 @@ import core.packets.KNXPacket;
 
 public class MulticastListenerReaderThread implements Runnable, DatagramPacketCallback {
 
+	private static final boolean BIND_TO_IP_AND_PORT = false;
+
 	private static final Logger LOG = LogManager.getLogger(MulticastListenerReaderThread.class);
 
 	private boolean running;
@@ -33,6 +35,8 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	 */
 	private final List<DatagramPacketCallback> datagramPacketCallbacks = new ArrayList<>();
 
+	private final String localIP;
+
 	private final int bindPort;
 
 	private Pipeline<Object, Object> inputPipeline;
@@ -44,7 +48,8 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	 *
 	 * @param bindPort
 	 */
-	public MulticastListenerReaderThread(final int bindPort) {
+	public MulticastListenerReaderThread(final String localIP, final int bindPort) {
+		this.localIP = localIP;
 		this.bindPort = bindPort;
 	}
 
@@ -76,9 +81,23 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	private void runMultiCastListener(final DatagramPacketCallback datagramPacketCallback)
 			throws IOException, SocketException, UnknownHostException {
 
-		final InetSocketAddress inetSocketAddress = new InetSocketAddress(NetworkUtils.retrieveLocalIP(), bindPort);
+		LOG.info("Binding " + getClass().getName()
+				+ (BIND_TO_IP_AND_PORT ? (" to IP and Port (" + localIP + ":" + bindPort + ")")
+						: (" to port (" + bindPort + ")")));
 
-		multicastSocket = new MulticastSocket(inetSocketAddress);
+		if (BIND_TO_IP_AND_PORT) {
+
+			// local environment
+			multicastSocket = new MulticastSocket(bindPort);
+
+		} else {
+
+			// for networked environments
+			final InetSocketAddress inetSocketAddress = new InetSocketAddress(localIP, bindPort);
+			multicastSocket = new MulticastSocket(inetSocketAddress);
+
+		}
+
 		multicastSocket.setReuseAddress(true);
 
 		final InetAddress inetAddress = InetAddress.getByName(NetworkUtils.KNX_MULTICAST_IP);
@@ -91,10 +110,12 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 			final byte[] buf = new byte[1024];
 			final DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length);
 
+			LOG.info("MultiCastListener accepting ...");
+
 			// blocking call
 			multicastSocket.receive(datagramPacket);
 
-			LOG.info("Received packet ...");
+			LOG.info("MultiCastListener received packet ...");
 
 			// use the pipeline to convert the input from the socket to a KNXPacket that the
 			// system can use
@@ -200,6 +221,10 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 
 	public MulticastSocket getMulticastSocket() {
 		return multicastSocket;
+	}
+
+	public String getLocalIP() {
+		return localIP;
 	}
 
 }

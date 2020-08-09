@@ -2,24 +2,24 @@ package common.data.conversion;
 
 import api.data.serializer.DataSerializer;
 
-public class BitDataSerializer implements DataSerializer<Object> {
+/**
+ * Takes care of unsigned integers encoded in a single byte.
+ */
+public class UnsignedIntByteSerializer implements DataSerializer<Object> {
 
 	@Override
 	public short[] serialize(final Object data) {
-		throw new RuntimeException("Not implemented!");
+		throw new RuntimeException("Not implemented yet!");
 	}
 
 	@Override
 	public byte[] serializeToBytes(final Object data) {
-
-		final int value = (int) data;
-
-		return new byte[] { (byte) value };
+		return new byte[] { (byte) (((int) data) & 0xFF) };
 	}
 
 	@Override
 	public double deserialize(final short[] data) {
-		throw new RuntimeException("Not implemented!");
+		throw new RuntimeException("Not implemented yet!");
 	}
 
 	@Override

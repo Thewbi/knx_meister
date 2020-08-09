@@ -29,6 +29,7 @@ public class GetDatapointDescriptionRequestProcessor extends BaseRequestProcesso
 	public BaseResponse process(final BaseRequest baseRequest) throws ObjectServerException {
 
 		final GetDatapointDescriptionRequest getDatapointDescriptionRequest = (GetDatapointDescriptionRequest) baseRequest;
+
 		LOG.info("getDatapointDescriptionRequest " + getDatapointDescriptionRequest);
 
 		final GetDatapointDescriptionResponse getDatapointDescriptionResponse = new GetDatapointDescriptionResponse();
@@ -40,10 +41,13 @@ public class GetDatapointDescriptionRequestProcessor extends BaseRequestProcesso
 		getDatapointDescriptionResponse.setMaxAmount(maxAmount);
 
 		if (maxAmount > 50) {
-			return getDatapointDescriptionResponse;
+			final String msg = "maxAmount = " + maxAmount + "! Too many devices requested! Not answering request!";
+			LOG.info(msg);
+			throw new ObjectServerException(msg);
 		}
 
 		for (int dataPointId = start; dataPointId < start + maxAmount; dataPointId++) {
+
 			LOG.info("dataPointId = " + dataPointId);
 			addEntry(getDatapointDescriptionResponse, dataPointId, getKnxProject());
 		}
@@ -51,32 +55,58 @@ public class GetDatapointDescriptionRequestProcessor extends BaseRequestProcesso
 		return getDatapointDescriptionResponse;
 	}
 
+	/**
+	 * https://stackoverflow.com/questions/9321553/java-convert-integer-to-hex-integer
+	 *
+	 * reinterpret the integer to a integer that encoded in hex has the same
+	 * representation as the original integer.
+	 *
+	 * e.g. 20d becomes 32d because 32d in hex is 0x20 and looks like the initial
+	 * value.<br />
+	 * <br />
+	 *
+	 * e.g. 59d becomes 89d because 89d = 0x59<br />
+	 * <br />
+	 *
+	 * e.g. 133d becomes 307d because 0x133 = 307d
+	 *
+	 * @param n
+	 * @return
+	 */
+	public static int convert(final int n) {
+		return Integer.valueOf(String.valueOf(n), 16);
+	}
+
 	private void addEntry(final GetDatapointDescriptionResponse getDatapointDescriptionResponse, final int dataPointId,
 			final KNXProject knxProject) throws ObjectServerException {
 
 		try {
 
+			// I do not know what is going on, but the dataPointId is a BCD representation
+			// of a hex number!
+			// e.g. dataPointId 59 actually means 0x59 which is the datapoint decimal id 89
+//			final int dataPointAsInt = convert(dataPointId);
+			final int dataPointAsInt = dataPointId;
+
 			final GetDatapointDescriptionResponseEntry entry = new GetDatapointDescriptionResponseEntry();
 
 			// 2 byte datapoint id
-			entry.setDatapointId(dataPointId);
+			entry.setDatapointId(dataPointAsInt);
 
 			// 1 byte value type
-			// TODO: how to know which device to retrieve from the list?
-//			final KNXDeviceInstance knxDeviceInstance = getKnxProject().getDeviceInstances().get(0);
 			final List<KNXComObject> knxComObjects = KNXProjectUtils.retrieveComObjectListByDatapointId(getKnxProject(),
-					dataPointId);
-
-//			final Optional<KNXComObject> knxComObjectOptional = .findFirst();
+					dataPointAsInt);
 
 			if (CollectionUtils.isEmpty(knxComObjects)) {
-				final String msg = "No KNXComObject with number " + dataPointId + " available!";
-				LOG.trace(msg);
+				final String msg = "No KNXComObject with number " + dataPointAsInt + " available!";
+				LOG.error(msg);
 				return;
 			}
 
 			if (knxComObjects.size() > 1) {
-				throw new ObjectServerException("more than 1 knxComObject");
+				final String msg = "more than 1 knxComObject";
+				LOG.error(msg);
+				throw new ObjectServerException(msg);
 			}
 
 			final KNXComObject knxComObject = knxComObjects.get(0);
@@ -89,6 +119,7 @@ public class GetDatapointDescriptionRequestProcessor extends BaseRequestProcesso
 			entry.setDataPointType(getDataPointType(knxComObject, knxProject));
 
 			getDatapointDescriptionResponse.getEntryList().add(entry);
+
 		} catch (final FactoryException e) {
 			LOG.error(e.getMessage(), e);
 		}

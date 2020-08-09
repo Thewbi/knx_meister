@@ -6,4 +6,6 @@ public interface DataConversion {
 
 	static final String FLOAT16 = "Float16";
 
+	static final String UNSIGNED_INTEGER_8 = "UnsignedInteger8";
+
 }
