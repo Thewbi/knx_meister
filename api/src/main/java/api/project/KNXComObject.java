@@ -1,5 +1,9 @@
 package api.project;
 
+import java.util.Map;
+
+import org.apache.commons.lang3.StringUtils;
+
 public class KNXComObject {
 
 	private String id;
@@ -17,6 +21,8 @@ public class KNXComObject {
 	private String hardwareName;
 
 	private String hardwareText;
+
+	private KNXProject knxProject;
 
 	public KNXDatapointSubtype getDataPointSubtype(final KNXProject knxProject) {
 
@@ -106,9 +112,66 @@ public class KNXComObject {
 
 	@Override
 	public String toString() {
-		return "KNXComObject [id=" + id + ", text=" + text + ", number=" + number + ", groupObject=" + groupObject
-				+ ", groupAddressLink=" + groupAddressLink + ", knxGroupAddress=" + knxGroupAddress + ", hardwareName="
-				+ hardwareName + ", hardwareText=" + hardwareText + "]";
+
+//		return "KNXComObject [id=" + id + ", text=" + text + ", number=" + number + ", groupObject=" + groupObject
+//				+ ", groupAddressLink=" + groupAddressLink + ", knxGroupAddress=" + knxGroupAddress + ", hardwareName="
+//				+ hardwareName + ", hardwareText=" + hardwareText + "]";
+
+		final StringBuilder stringBuilder = new StringBuilder();
+
+		// label
+		if (isGroupObject()) {
+			stringBuilder.append("[KNXComObject is a GroupObject] ");
+		}
+
+		// number, datapoint Id
+		stringBuilder.append("DataPointId:").append(getNumber()).append(" (0x")
+				.append(String.format("%1$02X", getNumber())).append(")");
+
+		// group address
+		if (getKnxGroupAddress() != null) {
+			stringBuilder.append(" ").append(getKnxGroupAddress().getGroupAddress());
+		}
+
+		// data point type
+		final KNXGroupAddress knxGroupAddress = getKnxGroupAddress();
+		if (knxGroupAddress != null) {
+
+			final String dataPointTypeId = knxGroupAddress.getDataPointType();
+
+			final KNXDatapointSubtype knxDatapointSubtype = knxProject.getDatapointSubtypeMap().get(dataPointTypeId);
+
+			final Map<String, String> languageMap = knxProject.getLanguageStoreMap().get("de-DE");
+			final KNXDatapointType knxDatapointType = knxDatapointSubtype.getKnxDatapointType();
+			final String datapointTranslated = languageMap.get(knxDatapointType.getId());
+			final String datapointSubtypeTranslated = languageMap.get(knxDatapointSubtype.getId());
+
+			stringBuilder.append(" ").append(knxDatapointType.getName()).append(" ")
+					.append(knxDatapointSubtype.getNumber()).append(" ").append(datapointTranslated).append(", ")
+					.append(datapointSubtypeTranslated).append(" ").append(knxDatapointSubtype.getFormat())
+					.append(" DataPointType: ").append(dataPointTypeId);
+		}
+
+		// id
+		stringBuilder.append(" ").append(getId());
+
+		// text
+		if (StringUtils.isNotBlank(getText())) {
+			stringBuilder.append(" ").append(getText());
+		}
+
+		// hardware information
+		stringBuilder.append(" ").append(getHardwareName()).append(" ").append(getHardwareText());
+
+		return stringBuilder.toString();
+	}
+
+	public KNXProject getKnxProject() {
+		return knxProject;
+	}
+
+	public void setKnxProject(final KNXProject knxProject) {
+		this.knxProject = knxProject;
 	}
 
 }

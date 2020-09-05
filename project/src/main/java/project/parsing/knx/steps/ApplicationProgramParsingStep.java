@@ -27,6 +27,8 @@ public class ApplicationProgramParsingStep implements ParsingStep<KNXProjectPars
 
 	private static final Logger LOG = LogManager.getLogger(ApplicationProgramParsingStep.class);
 
+	private static int idx = 0;
+
 	@Override
 	public void process(final KNXProjectParsingContext context) throws IOException, ProjectParsingException {
 
@@ -89,11 +91,15 @@ public class ApplicationProgramParsingStep implements ParsingStep<KNXProjectPars
 
 						final KNXComObject knxComObject = new KNXComObject();
 						knxComObject.setId(comObjectId);
+						knxComObject.setKnxProject(context.getKnxProject());
 						knxComObject.setNumber(comObjectNumber);
 						knxComObject.setHardwareName(name);
 						knxComObject.setHardwareText(text);
 						knxComObject.setGroupObject(isGroupObject);
 
+						LOG.trace("PUT_A into knxDeviceInstance " + knxDeviceInstance.getAddress() + " " + idx + " "
+								+ knxComObject.getId());
+						idx++;
 						knxDeviceInstance.getComObjects().put(knxComObject.getId(), knxComObject);
 					}
 				}

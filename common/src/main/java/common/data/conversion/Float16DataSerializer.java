@@ -25,7 +25,14 @@ public class Float16DataSerializer implements DataSerializer<Object> {
 	@Override
 	public short[] serialize(final Object data) {
 
-		final double value = (double) data;
+		double value = -1;
+
+		if (data instanceof Integer) {
+			value = ((Integer) data);
+		} else if (data instanceof Double) {
+			value = ((Double) data);
+		}
+
 		double v = value * 100.0f;
 		int e = 0;
 		for (; v < -2048.0f; v /= 2) {

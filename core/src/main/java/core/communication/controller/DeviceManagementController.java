@@ -3,8 +3,6 @@ package core.communication.controller;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketException;
-import java.net.UnknownHostException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -37,15 +35,15 @@ public class DeviceManagementController extends BaseController {
 
 	private static final Logger LOG = LogManager.getLogger(DeviceManagementController.class);
 
-	/**
-	 * ctor
-	 *
-	 * @throws SocketException
-	 * @throws UnknownHostException
-	 */
-	public DeviceManagementController(final String localInetAddress) throws SocketException, UnknownHostException {
-		super(localInetAddress);
-	}
+//	/**
+//	 * ctor
+//	 *
+//	 * @throws SocketException
+//	 * @throws UnknownHostException
+//	 */
+//	public DeviceManagementController(final String localInetAddress) throws SocketException, UnknownHostException {
+//		super(localInetAddress);
+//	}
 
 	@Override
 	public void knxPacket(final Connection connection, final DatagramSocket socket3671,

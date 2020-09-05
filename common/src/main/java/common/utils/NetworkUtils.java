@@ -32,14 +32,16 @@ public final class NetworkUtils {
 
 	private static final String ADAPTER_NAME = "eth5";
 
-//	private static String hostAddress = "192.168.2.1";
-//	private static String hostAddress = "127.0.0.1";
-	private static String hostAddress = "192.168.0.108";
 //	private static String hostAddress = null;
+	private static String hostAddress = "192.168.2.1";
+//	private static String hostAddress = "127.0.0.1";
+//	private static String hostAddress = "192.168.0.108";
+//	private static String hostAddress = "172.18.60.118";
+//	private static String hostAddress = "0.0.0.0";
 
-//	public static final String LOCAL_IP = "172.18.60.118";
-//	public static final String LOCAL_IP = "0.0.0.0";
-
+	/**
+	 * ctor
+	 */
 	private NetworkUtils() {
 		// no instances of this class
 	}

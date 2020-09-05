@@ -14,7 +14,18 @@ public class UnsignedIntByteSerializer implements DataSerializer<Object> {
 
 	@Override
 	public byte[] serializeToBytes(final Object data) {
-		return new byte[] { (byte) (((int) data) & 0xFF) };
+
+		int temp = -1;
+
+		if (data instanceof Integer) {
+			temp = ((Integer) data).intValue();
+		} else if (data instanceof Double) {
+			temp = ((Double) data).intValue();
+		} else {
+			throw new RuntimeException("No rule for datatype " + data.getClass());
+		}
+
+		return new byte[] { (byte) ((temp) & 0xFF) };
 	}
 
 	@Override

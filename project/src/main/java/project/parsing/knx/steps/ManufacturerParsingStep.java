@@ -27,6 +27,10 @@ public class ManufacturerParsingStep implements ParsingStep<KNXProjectParsingCon
 	@Override
 	public void process(final KNXProjectParsingContext context) throws IOException, ProjectParsingException {
 
+		if (context.getKnxProject() == null) {
+			throw new ProjectParsingException("Context is invalid because it does not contain a KNX project!");
+		}
+
 		final Path tempDirectory = context.getTempDirectory();
 		final Path path = tempDirectory.resolve("knx_master.xml");
 
@@ -63,7 +67,7 @@ public class ManufacturerParsingStep implements ParsingStep<KNXProjectParsingCon
 			final String manufacturerId = manufacturerElement.getAttribute("Id");
 			final String manufacturerName = manufacturerElement.getAttribute("Name");
 
-			LOG.trace(manufacturerId + " " + manufacturerName);
+			LOG.trace("Parsing Manufacturer {}) {} {}", i, manufacturerId, manufacturerName);
 
 			final KNXManufacturer knxManufacturer = new KNXManufacturer();
 			knxManufacturer.setId(manufacturerId);

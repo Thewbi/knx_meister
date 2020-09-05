@@ -67,14 +67,20 @@ public class KNXGroupAddress {
 	}
 
 	public void assignAddresses() {
+		assignAddresses(0);
+	}
 
+	public void assignAddresses(final int level) {
+
+//		int index = level == 2 ? 1 : 0;
 		int index = 0;
 		for (final KNXGroupAddress knxGroupAddress : knxGroupAddresses) {
 
 			knxGroupAddress.setAddressComponent(index);
 			index++;
 
-			knxGroupAddress.assignAddresses();
+			// recurse
+			knxGroupAddress.assignAddresses(level + 1);
 		}
 	}
 
@@ -106,6 +112,11 @@ public class KNXGroupAddress {
 		for (final KNXGroupAddress knxGroupAddress : knxGroupAddresses) {
 			knxGroupAddress.dump();
 		}
+	}
+
+	@Override
+	public String toString() {
+		return getGroupAddress();
 	}
 
 	public List<KNXGroupAddress> getKNXGroupAddresses() {

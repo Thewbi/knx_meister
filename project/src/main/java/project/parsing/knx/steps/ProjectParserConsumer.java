@@ -44,7 +44,7 @@ public class ProjectParserConsumer implements Consumer<Path> {
 
 			processXML(path, knxProject);
 
-		} catch (ParserConfigurationException | SAXException | IOException e) {
+		} catch (final Exception e) {
 			LOG.error(e.getMessage(), e);
 			context.setKnxProject(null);
 		}

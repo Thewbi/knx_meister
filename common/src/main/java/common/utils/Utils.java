@@ -69,7 +69,10 @@ public final class Utils {
 		}
 		final StringBuffer stringBuffer = new StringBuffer();
 		for (final byte tempByte : data) {
-			stringBuffer.append(String.format("%1$02X", tempByte).toUpperCase(Locale.getDefault())).append(" ");
+			if (stringBuffer.length() != 0) {
+				stringBuffer.append(" ");
+			}
+			stringBuffer.append(String.format("%1$02X", tempByte).toUpperCase(Locale.getDefault()));
 		}
 
 		return stringBuffer.toString();

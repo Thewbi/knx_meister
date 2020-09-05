@@ -4,11 +4,13 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import api.data.serializer.DataSerializer;
 import api.device.Device;
+import api.project.KNXComObject;
 import api.project.KNXDatapointSubtype;
 import api.project.KNXGroupAddress;
 import api.project.KNXProject;
@@ -35,7 +37,8 @@ public class DefaultDataSender implements DataSender {
 	private Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
 
 	@Override
-	public void send(final Connection connection) {
+	public void send(final Connection connection, final String physicalAddress, final int dataPointId,
+			final Object value, final int deviceIndex) {
 
 		LOG.info("[DefaultDataSender] send() ...");
 
@@ -52,15 +55,22 @@ public class DefaultDataSender implements DataSender {
 
 //		final String integerToKNXAddress = Utils
 //				.integerToKNXAddress(knxPacket.getCemiTunnelRequest().getDestKNXAddress(), "/");
-		final KNXGroupAddress knxGroupAddress = getDevice().getDeviceProperties().get("0/1/1");
+
+//		final String physicalAddress = "0/1/1";
+//		final String physicalAddress = "0/0/6";
+//		final String physicalAddress = "0/0/9";
+
+		final KNXGroupAddress knxGroupAddress = getDevice().getDeviceProperties().get(physicalAddress);
 		if (knxGroupAddress == null) {
-			LOG.warn("GroupAddress is unknown: " + knxGroupAddress);
+			LOG.warn(
+					"Tried to find GroupAddress for PhysicalAddressGroupAddress '{}' but was unknown: '{}'. Cannot send data!",
+					physicalAddress, knxGroupAddress);
 			return;
 		}
 
-		final String dataPointType = knxGroupAddress.getDataPointType();
-		final KNXDatapointSubtype knxDatapointSubtype = knxProject.getDatapointSubtypeMap().get(dataPointType);
-		final DataSerializer<Object> dataSerializer = dataSerializerMap.get(knxDatapointSubtype.getFormat());
+//		final String dataPointType = knxGroupAddress.getDataPointType();
+//		final KNXDatapointSubtype knxDatapointSubtype = knxProject.getDatapointSubtypeMap().get(dataPointType);
+//		final DataSerializer<Object> dataSerializer = dataSerializerMap.get(knxDatapointSubtype.getFormat());
 
 //		sendBit(connection, knxGroupAddress, device.getValue());
 
@@ -71,16 +81,20 @@ public class DefaultDataSender implements DataSender {
 //		final KNXGroupAddress knxGroupAddress = new KNXGroupAddress();
 //		knxGroupAddress.setGroupAddress("0/1/1");
 //		final String comObjectId = "O-145_R-1849";
-		final int dataPointId = 325;
-		double value = 100.0d;
 
-		if (knxGroupAddress.getValue() == null) {
-			knxGroupAddress.setValue(value);
-		} else {
-			value = (double) knxGroupAddress.getValue();
-		}
+//		LOG.info("KNXGroupAddress.id = " + knxGroupAddress.getId());
 
-		sendViaComObject(connection, dataPointId, value);
+//		final int dataPointId = 325;
+//		final int dataPointId = 17;
+//		double value = 100.0d;
+
+//		if (knxGroupAddress.getValue() == null) {
+//			knxGroupAddress.setValue(value);
+//		} else {
+//			value = (double) knxGroupAddress.getValue();
+//		}
+
+		sendViaComObject(connection, dataPointId, value, deviceIndex);
 
 //		sendViaFormat(connection, DataSender.BIT, knxGroupAddress, 0);
 //		sendBit(connection, knxGroupAddress, currentValue);
@@ -89,17 +103,26 @@ public class DefaultDataSender implements DataSender {
 //		currentValue = 1 - currentValue;
 //		device.setValue(1 - device.getValue());
 
-		knxGroupAddress.setValue(value + 1.0d);
+		// increment value
+//		knxGroupAddress.setValue(value + 1.0d);
 	}
 
 	@SuppressWarnings("unused")
-	private void sendViaComObject(final Connection connection, final int datapointId, final double value) {
+	private void sendViaComObject(final Connection connection, final int datapointId, final Object value,
+			final int deviceIndex) {
 
-		final int deviceIndex = 0;
-		final KNXGroupAddress knxGroupAddress = KNXProjectUtils.retrieveGroupAddress(knxProject, deviceIndex,
-				datapointId);
+		final Device device = getDevice();
+		final KNXComObject knxComObject = device.getComObjectsByDatapointType().get(datapointId);
+		final KNXGroupAddress knxGroupAddress = knxComObject.getKnxGroupAddress();
+		final String dataPointType = knxGroupAddress.getDataPointType();
 		final KNXDatapointSubtype knxDatapointSubtype = KNXProjectUtils.retrieveDataPointSubType(knxProject,
 				deviceIndex, datapointId);
+
+////		final int deviceIndex = 0;
+//		final KNXGroupAddress knxGroupAddress = KNXProjectUtils.retrieveGroupAddress(knxProject, deviceIndex,
+//				datapointId);
+//		final KNXDatapointSubtype knxDatapointSubtype = KNXProjectUtils.retrieveDataPointSubType(knxProject,
+//				deviceIndex, datapointId);
 
 		// from the datapoint subtype, retrieve the datapoint type
 		final String format = knxDatapointSubtype.getFormat();
@@ -108,33 +131,83 @@ public class DefaultDataSender implements DataSender {
 	}
 
 	private void sendViaFormat(final Connection connection, final String format, final KNXGroupAddress knxGroupAddress,
-			final double value) {
+			final Object value) {
 
 		// retrieve the data serializer that can convert the data into the datapoint
 		// type's format
 		final DataSerializer<Object> dataSerializer = dataSerializerMap.get(format);
 		if (dataSerializer == null) {
 			throw new RuntimeException("No serializer for format \"" + format + "\" registered!");
+		} else {
+			LOG.trace("Using serializer: '{}' for format '{}'", dataSerializer.getClass(), format);
 		}
 		final byte[] payload = dataSerializer.serializeToBytes(value);
 
-		LOG.info("[DefaultDataSender] sending: {}", Utils.byteArrayToStringNoPrefix(payload));
+		LOG.info("[DefaultDataSender] sending: '{}' to address: '{}'", Utils.byteArrayToStringNoPrefix(payload),
+				knxGroupAddress.getGroupAddress());
 
 		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 
 		final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
-		cemiTunnelRequest.setMessageCode((short) 0x29);
+		cemiTunnelRequest.setMessageCode(BaseController.INDICATION_PRIMITIVE);
 		cemiTunnelRequest.setAdditionalInfoLength(0);
-		cemiTunnelRequest.setCtrl1(0xB0);
-		cemiTunnelRequest.setCtrl2(0xE0);
+		cemiTunnelRequest.setCtrl1(PRIORITY_LOW);
+		cemiTunnelRequest.setCtrl2(HOP_COUNT_6);
 		cemiTunnelRequest.setSourceKNXAddress(getDevice().getPhysicalAddress());
+//		cemiTunnelRequest.setSourceKNXAddress(getDevice().getHostPhysicalAddress());
 		cemiTunnelRequest.setDestKNXAddress(Utils.knxAddressToInteger(knxGroupAddress.getGroupAddress()));
-		cemiTunnelRequest.setLength(3);
+//		cemiTunnelRequest.setLength(1 + payload.length);
+		cemiTunnelRequest.setLength(0);
 		cemiTunnelRequest.setTpci(0x00);
 		cemiTunnelRequest.setApci(0x80);
 
 		// TODO: the one bit datatypes are encoded directly into APCI !!!!!!!!!!!!!!!!
-		cemiTunnelRequest.setPayloadBytes(payload);
+		// Also the one byte datatypes are encoded directly into APCI !!!!!!!!!!!!!!!!
+		if (format.equalsIgnoreCase("UnsignedInteger8")) {
+
+			cemiTunnelRequest.setLength(1);
+
+//			// default value is zero
+//			int temp = 0;
+//
+//			// if a specific value is given, use that specific value
+//			if (knxGroupAddress.getValue() != null) {
+//				temp = (int) knxGroupAddress.getValue();
+//			}
+
+			// response bit + value
+			// TODO: answer with the correct data type
+//			cemiTunnelRequest.setApci(0x40 | ((byte) temp & 0xFF));
+
+			cemiTunnelRequest.setApci(0x40 | (payload[0] & 0xFF));
+
+		} else {
+
+			if (ArrayUtils.isNotEmpty(payload)) {
+				cemiTunnelRequest.setLength(2 + payload.length);
+				cemiTunnelRequest.setPayloadBytes(payload);
+			}
+
+		}
+
+//		final String dataPointType = knxGroupAddress.getDataPointType();
+//		if (StringUtils.equalsAnyIgnoreCase(dataPointType, "DPST-1-1")) {
+//
+//			// default value is zero
+//			int temp = 0;
+//
+//			// if a specific value is given, use that specific value
+//			if (knxGroupAddress.getValue() != null) {
+//				temp = (int) knxGroupAddress.getValue();
+//			}
+//
+//			// response bit + value
+//			// TODO: answer with the correct data type
+//			cemiTunnelRequest.setApci(0x40 | ((byte) temp & 0xFF));
+//
+//		} else {
+//			throw new RuntimeException("dataPointType: " + dataPointType + " not implemented yet!");
+//		}
 
 		final KNXPacket knxPacket = new KNXPacket();
 		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);

@@ -83,8 +83,18 @@ public class KNXProjectUtils {
 		final KNXDeviceInstance knxDeviceInstance = knxProject.getDeviceInstances().get(deviceIndex);
 
 		// TODO: maybe create a map from datapoint id to ComObject????
-		return knxDeviceInstance.getComObjects().values().stream().filter(c -> c.getNumber() == dataPointId)
-				.filter(c -> c.isGroupObject()).findFirst();
+
+		// @formatter:off
+
+		return knxDeviceInstance
+				.getComObjects()
+				.values()
+				.stream()
+				.filter(c -> c.getNumber() == dataPointId)
+				.filter(c -> c.isGroupObject())
+				.findFirst();
+
+		// @formatter:on
 	}
 
 }

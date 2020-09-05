@@ -13,6 +13,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
@@ -98,17 +99,22 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 
 	private void recurseGroupAddresses(final Element element, final KNXGroupAddress knxGroupAddress) {
 
+		// handle a leaf
 		if (element.getChildNodes().getLength() == 0) {
 
 			final KNXGroupAddress childKNXGroupAddress = new KNXGroupAddress();
 			childKNXGroupAddress.setId(element.getAttribute("Id"));
 			childKNXGroupAddress.setName(element.getAttribute("Name"));
-			childKNXGroupAddress.setAddress(Integer.parseInt(element.getAttribute("Address")));
+
+			final String address = element.getAttribute("Address");
+			final int addressAsInt = StringUtils.isNotBlank(address) ? Integer.parseInt(address) : -1;
+			childKNXGroupAddress.setAddress(addressAsInt);
 			childKNXGroupAddress.setRangeStart(0);
 			childKNXGroupAddress.setDataPointType(element.getAttribute("DatapointType"));
 
 			knxGroupAddress.getKNXGroupAddresses().add(childKNXGroupAddress);
 			childKNXGroupAddress.setParentKNXGroupAddress(knxGroupAddress);
+
 			return;
 		}
 
@@ -144,16 +150,19 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 		parseGroupObjectTreeElement(deviceInstanceElement, knxDeviceInstance);
 
 		final String address = retrieveAddress(deviceInstanceElement, knxProject);
-		final List<KNXComObject> comObjects = retrieveCOMObjects(knxDeviceInstance, deviceInstanceElement);
+		final List<KNXComObject> comObjects = retrieveCOMObjects(knxDeviceInstance, deviceInstanceElement, knxProject);
 
 		// product refid contains the manufacturer code which is needed to find the
-		// manufacturer subfolder and the application program xml file within that
+		// manufacturer sub folder and the application program xml file within that
 		// manufacturer sub folder.
 		// From the application program xml file, the ComObjectRef names are parsed
 		knxDeviceInstance.setProductRefId(deviceInstanceElement.getAttribute("ProductRefId"));
 		knxDeviceInstance.setAddress(address);
 
 		for (final KNXComObject knxComObject : comObjects) {
+
+			LOG.info("PUT_B into knxDeviceInstance " + knxDeviceInstance.getAddress() + " " + knxComObject.getId() + " "
+					+ knxComObject.getNumber() + " " + knxComObject.getNumber());
 			knxDeviceInstance.getComObjects().put(knxComObject.getId(), knxComObject);
 		}
 
@@ -179,7 +188,7 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 	}
 
 	private List<KNXComObject> retrieveCOMObjects(final KNXDeviceInstance knxDeviceInstance,
-			final Element deviceInstanceElement) {
+			final Element deviceInstanceElement, final KNXProject knxProject) {
 
 		// COM objects
 		final List<KNXComObject> comObjectList = new ArrayList<>();
@@ -194,7 +203,7 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 
 				if (item instanceof Element) {
 
-					final KNXComObject convertCOMObject = convertCOMObject(item);
+					final KNXComObject convertCOMObject = convertCOMObject(item, knxProject);
 
 					// if the device's id is part of the GroupObjectTree, the COM object is flagged
 					// as a group object and can be displayed to the user using the flag
@@ -216,7 +225,7 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 	 * @param node
 	 * @return
 	 */
-	private KNXComObject convertCOMObject(final Node node) {
+	private KNXComObject convertCOMObject(final Node node, final KNXProject knxProject) {
 
 		final Element element = (Element) node;
 
@@ -226,15 +235,16 @@ public class ReadProjectInstallationsParsingStep implements ParsingStep<KNXProje
 		final String numberAsString = refIdAttributeSplit[0].split("-")[1];
 		final int number = Integer.parseInt(numberAsString, HEX_RADIX);
 
-		final KNXComObject comObject = new KNXComObject();
-		comObject.setId(refIdAttribute);
-		comObject.setNumber(number);
-		comObject.setText(element.getAttribute("Text"));
+		final KNXComObject knxComObject = new KNXComObject();
+		knxComObject.setId(refIdAttribute);
+		knxComObject.setKnxProject(knxProject);
+		knxComObject.setNumber(number);
+		knxComObject.setText(element.getAttribute("Text"));
 		if (element.hasAttribute("Links")) {
-			comObject.setGroupAddressLink(element.getAttribute("Links"));
+			knxComObject.setGroupAddressLink(element.getAttribute("Links"));
 		}
 
-		return comObject;
+		return knxComObject;
 	}
 
 	private String retrieveAddress(final Element deviceInstanceElement, final KNXProject knxProject) {

@@ -11,6 +11,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.configuration.ConfigurationManager;
 import api.data.serializer.DataSerializer;
 import api.pipeline.Pipeline;
 import api.project.KNXProject;
@@ -26,13 +27,17 @@ import object_server.requests.processors.SetDatapointValueRequestProcessor;
  */
 public class ObjectServerReaderThread implements Runnable {
 
+	private static final boolean SEND_WINDOW_POSITION_REQUEST = false;
+
 	private static final Logger LOG = LogManager.getLogger(ObjectServerReaderThread.class);
+
+	private ConfigurationManager configurationManager;
 
 	private final boolean running = true;
 
-	private final String ip;
-
-	private final int bindPort;
+//	private final String ip;
+//
+//	private final int bindPort;
 
 	private Pipeline<Object, Object> inputPipeline;
 
@@ -40,16 +45,16 @@ public class ObjectServerReaderThread implements Runnable {
 
 	private Map<String, DataSerializer<Object>> dataSerializerMap;
 
-	/**
-	 * ctor
-	 *
-	 * @param ip       the IP address to bind to
-	 * @param bindPort the port on the IP to bind to
-	 */
-	public ObjectServerReaderThread(final String ip, final int bindPort) {
-		this.ip = ip;
-		this.bindPort = bindPort;
-	}
+//	/**
+//	 * ctor
+//	 *
+//	 * @param ip       the IP address to bind to
+//	 * @param bindPort the port on the IP to bind to
+//	 */
+//	public ObjectServerReaderThread(final String ip, final int bindPort) {
+//		this.ip = ip;
+//		this.bindPort = bindPort;
+//	}
 
 	@Override
 	public void run() {
@@ -57,6 +62,10 @@ public class ObjectServerReaderThread implements Runnable {
 		ServerSocket serverSocket = null;
 
 		try {
+
+			final String ip = configurationManager.getPropertyAsString(ConfigurationManager.LOCAL_IP_CONFIG_KEY);
+			final int bindPort = configurationManager
+					.getPropertyAsInt(ConfigurationManager.OBJECT_SERVER_PORT_CONFIG_KEY);
 
 			final InetSocketAddress inetSocketAddress = new InetSocketAddress(ip, bindPort);
 
@@ -106,7 +115,9 @@ public class ObjectServerReaderThread implements Runnable {
 					// ignored
 				}
 
-				clientRunnable.sendRequest();
+				if (SEND_WINDOW_POSITION_REQUEST) {
+					clientRunnable.sendWindowPositionRequest();
+				}
 			}
 
 		} catch (final UnknownHostException e) {
@@ -142,8 +153,12 @@ public class ObjectServerReaderThread implements Runnable {
 		this.dataSerializerMap = dataSerializerMap;
 	}
 
-	public String getIp() {
-		return ip;
+//	public String getIp() {
+//		return ip;
+//	}
+
+	public void setConfigurationManager(final ConfigurationManager configurationManager) {
+		this.configurationManager = configurationManager;
 	}
 
 }

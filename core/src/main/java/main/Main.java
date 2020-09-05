@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.configuration.ConfigurationManager;
 import api.data.serializer.DataSerializer;
 import api.device.Device;
 import api.device.DeviceStatus;
@@ -21,6 +22,7 @@ import api.pipeline.Pipeline;
 import api.project.KNXDeviceInstance;
 import api.project.KNXGroupAddress;
 import api.project.KNXProject;
+import common.configuration.DefaultConfigurationManager;
 import common.data.conversion.BitDataSerializer;
 import common.data.conversion.DataConversion;
 import common.data.conversion.Float16DataSerializer;
@@ -32,7 +34,6 @@ import core.communication.ConnectionManager;
 import core.communication.DefaultConnectionManager;
 import core.communication.MulticastListenerReaderThread;
 import core.communication.ObjectServerReaderThread;
-import core.communication.controller.BaseController;
 import core.communication.controller.CoreController;
 import core.communication.controller.DeviceManagementController;
 import core.communication.controller.ServerCoreController;
@@ -117,7 +118,12 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
  */
 public class Main {
 
+	// index 0 is Weinzierl
+	public static final int DEVICE_INDEX = 0;
+//	private static final int DEVICE_INDEX = 1;
+
 	private static final boolean START_OBJECT_SERVER = true;
+//	private static final boolean START_OBJECT_SERVER = false;
 
 	/** Host physical address in ETS5, 0x1A11 == 1.10.17 */
 	// private static final int DEVICE_ADDRESS = 0x1A11;
@@ -166,6 +172,9 @@ public class Main {
 		// IPv4 interfaces. Force the JVM to use IPv4.
 		System.setProperty("java.net.preferIPv4Stack", "true");
 
+		final ConfigurationManager configurationManager = new DefaultConfigurationManager();
+//		final ConfigurationManager configurationManager = null;
+
 		final String localIP = NetworkUtils.retrieveLocalIP();
 
 //		final InetAddress inetAddress = InetAddress.getLocalHost();
@@ -196,45 +205,67 @@ public class Main {
 		final KNXPacketConverter<byte[], KNXPacket> tunnelKNXPacketConverter = new TunnelKNXPacketConverter();
 
 		final Device device = new DefaultDevice();
-		device.setHostPhysicalAddress(0x0A11); // 1.1.10
+
+		// 0x0A11 == 1.1.10
+		device.setHostPhysicalAddress(0x0A11);
 //		device.setHostPhysicalAddress(0xFF11);
 //		device.setHostPhysicalAddress(0x11FF);
+
 //		device.setPhysicalAddress(DEVICE_ADDRESS);
 //		device.setPhysicalAddress(0x0A11);
-		device.setPhysicalAddress(0xFF11); // 1.1.255
-//		device.setPhysicalAddress(0x11FF);
+		// 0xFF11 == 1.1.255, 0xFF11 == 15.15.17
+//		device.setPhysicalAddress(0xFF11);
+		device.setPhysicalAddress(0x11FF);
+
 //		device.setDeviceStatus(DeviceStatus.PROGRAMMING_MODE);
 		device.setDeviceStatus(DeviceStatus.NORMAL_MODE);
 
 		final ProjectParser<KNXProjectParsingContext> knxProjectParser = retrieveProjectParser();
 
+		final File projectFile = new File("C:/Users/U5353/Documents/knxproj/KNX_IP_BAOS_777.knxproj");
 //		final File projectFile = new File("C:/Users/U5353/Desktop/KNX_IP_BAOS_777.knxproj");
 //		final File projectFile = new File("C:/Users/U5353/Desktop/KNX_IP_BAOS_777_version.knxproj");
 //		final File projectFile = new File("C:/Users/U5353/Desktop/test.knxproj");
 //		final File projectFile = new File("C:/Users/U5353/Desktop/KNXfirstSteps200212_5devices.knxproj");
-		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
+//		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
 //		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNXfirstSteps200212_5devices.knxproj");
+//		final File projectFile = new File("C:/Users/U5353/Documents/knxproj/Messe_NatVent_newGA_2_PFS2.knxproj");
 
 		LOG.info("Parsing project file: \"" + projectFile.getAbsolutePath() + "\"");
 
 		final KNXProject knxProject = knxProjectParser.parse(projectFile);
 
-		// index 0 is Weinzierl
-		final KNXDeviceInstance knxDeviceInstance = knxProject.getDeviceInstances().get(0);
-		knxDeviceInstance.getComObjects().values().stream().forEach(comObject -> {
+		// copy data from KNXDeviceInstance into Device / DefaultDevice
+		final KNXDeviceInstance knxDeviceInstance = knxProject.getDeviceInstances().get(DEVICE_INDEX);
+		knxDeviceInstance.getComObjects().values().stream().forEach(knxComObject -> {
 
-			final KNXGroupAddress knxGroupAddress = comObject.getKnxGroupAddress();
+			// copy the group addresses of of comObjects into the device
+			final KNXGroupAddress knxGroupAddress = knxComObject.getKnxGroupAddress();
 			if (knxGroupAddress != null && StringUtils.isNotBlank(knxGroupAddress.getGroupAddress())) {
 
 				final String groupAddress = knxGroupAddress.getGroupAddress();
 				device.getDeviceProperties().put(groupAddress, knxGroupAddress);
+
+				// PUT_A and PUT_B put comObjects into knxDeviceInstance.
+				// Now copy from knxDeviceInstance into Device / DefaultDevice
+				LOG.info("PUT_C into device " + device.getPhysicalAddress() + " DataPointId:" + knxComObject.getNumber()
+						+ " " + knxComObject.getKnxGroupAddress() + " " + knxComObject.getHardwareName() + " "
+						+ knxComObject.getText());
+				device.getComObjects().put(groupAddress, knxComObject);
+				device.getComObjectsByDatapointType().put(knxComObject.getNumber(), knxComObject);
 			}
+
 		});
 
 		final Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
 		dataSerializerMap.put(DataConversion.FLOAT16, new Float16DataSerializer());
 		dataSerializerMap.put(DataConversion.BIT, new BitDataSerializer());
 		dataSerializerMap.put(DataConversion.UNSIGNED_INTEGER_8, new UnsignedIntByteSerializer());
+
+		final Map<String, DataSerializer<Object>> dataSerializerMapByDataPointType = new HashMap<>();
+//		dataSerializerMapByDataPointType.put(DataConversion.FLOAT16, new Float16DataSerializer());
+//		dataSerializerMapByDataPointType.put(DataConversion.BIT, new BitDataSerializer());
+		dataSerializerMapByDataPointType.put("DPST-1-5", new UnsignedIntByteSerializer());
 
 		final DefaultDataSender dataSender = new DefaultDataSender();
 		dataSender.setDataSerializerMap(dataSerializerMap);
@@ -274,28 +305,30 @@ public class Main {
 		inwardPipeline.addStep(inwardConnectionPipelineStep);
 //		inwardPipeline.addStep(inwardOutputPipelineStep);
 
-		final CoreController coreController = new CoreController(localIP);
+		final CoreController coreController = new CoreController();
+		coreController.setLocalInetAddress(localIP);
 		coreController.setDevice(device);
 		coreController.setConnectionManager(connectionManager);
 
-		final ServerCoreController serverCoreController = new ServerCoreController(localIP);
+		final ServerCoreController serverCoreController = new ServerCoreController();
+		serverCoreController.setLocalInetAddress(localIP);
 		serverCoreController.setDevice(device);
 		serverCoreController.setConnectionManager(connectionManager);
 		serverCoreController.setDataSender(dataSender);
 
-		final DeviceManagementController deviceManagementController = new DeviceManagementController(
-				NetworkUtils.retrieveLocalIP());
+		final DeviceManagementController deviceManagementController = new DeviceManagementController();
 		deviceManagementController.setDevice(device);
 		deviceManagementController.setConnectionManager(connectionManager);
 
-		final TunnelingController tunnelingController = new TunnelingController(localIP);
+		final TunnelingController tunnelingController = new TunnelingController();
+		tunnelingController.setLocalInetAddress(localIP);
 		tunnelingController.setDevice(device);
 		tunnelingController.setConnectionManager(connectionManager);
 		tunnelingController.setDataSender(dataSender);
 
 		// reader for multicast messages
-		final MulticastListenerReaderThread multicastListenerThread = new MulticastListenerReaderThread(localIP,
-				BaseController.KNX_PORT_DEFAULT);
+		final MulticastListenerReaderThread multicastListenerThread = new MulticastListenerReaderThread();
+		multicastListenerThread.setConfigurationManager(configurationManager);
 		multicastListenerThread.getDatagramPacketCallbacks().add(coreController);
 		multicastListenerThread.getDatagramPacketCallbacks().add(serverCoreController);
 		multicastListenerThread.getDatagramPacketCallbacks().add(deviceManagementController);
@@ -305,7 +338,7 @@ public class Main {
 
 		new Thread(multicastListenerThread).start();
 
-		setupObjectServerInfrastructure(localIP, knxProject, dataSerializerMap);
+		setupObjectServerInfrastructure(localIP, knxProject, dataSerializerMap, configurationManager);
 
 //		new Thread(new Runnable() {
 //
@@ -360,7 +393,8 @@ public class Main {
 	 * @throws UnknownHostException
 	 */
 	private static void setupObjectServerInfrastructure(final String localIP, final KNXProject knxProject,
-			final Map<String, DataSerializer<Object>> dataSerializerMap) throws UnknownHostException, SocketException {
+			final Map<String, DataSerializer<Object>> dataSerializerMap,
+			final ConfigurationManager configurationManager) throws UnknownHostException, SocketException {
 
 		final RequestFactory requestFactory = new RequestFactory();
 		requestFactory.setKnxProject(knxProject);
@@ -372,8 +406,8 @@ public class Main {
 		objectServerInwardPipeline.addStep(objectServerConverterPipelineStep);
 
 		// start the ObjectServer protocol on port 12004
-		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread(localIP,
-				NetworkUtils.OBJECT_SERVER_PROTOCOL_PORT);
+		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread();
+		objectServerReaderThread.setConfigurationManager(configurationManager);
 		objectServerReaderThread.setKnxProject(knxProject);
 		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
 		objectServerReaderThread.setInputPipeline(objectServerInwardPipeline);

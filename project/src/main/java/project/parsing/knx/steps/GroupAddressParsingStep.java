@@ -16,7 +16,7 @@ import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
 
 /**
- * retrieve the group address and set it into the communication object. <br />
+ * Retrieve the group address and set it into the communication object. <br />
  * <br />
  * The group addresses themselves are parsed in the
  * ReadProjectInstallationsParsingStep. <br />

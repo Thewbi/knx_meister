@@ -8,29 +8,33 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
+import api.configuration.ConfigurationManager;
 import api.data.serializer.DataSerializer;
 import api.device.Device;
 import api.device.DeviceStatus;
 import api.exception.ProjectParsingException;
 import api.pipeline.Pipeline;
+import api.project.KNXDeviceInstance;
+import api.project.KNXGroupAddress;
 import api.project.KNXProject;
+import common.configuration.DefaultConfigurationManager;
 import common.data.conversion.BitDataSerializer;
 import common.data.conversion.DataConversion;
 import common.data.conversion.Float16DataSerializer;
 import common.packets.ServiceIdentifier;
-import common.utils.NetworkUtils;
 import core.common.KNXPacketConverter;
 import core.communication.ConnectionManager;
 import core.communication.DefaultConnectionManager;
 import core.communication.MulticastListenerReaderThread;
 import core.communication.ObjectServerReaderThread;
-import core.communication.controller.BaseController;
 import core.communication.controller.CoreController;
 import core.communication.controller.DeviceManagementController;
 import core.communication.controller.ServerCoreController;
@@ -68,10 +72,29 @@ import project.parsing.knx.steps.ReadProjectParsingStep;
 @Component
 public class Configuration {
 
+	@SuppressWarnings("unused")
 	private static final Logger LOG = LogManager.getLogger(Configuration.class);
 
 	// 1.1.101
 	private static final int DEVICE_ADDRESS = 0x1165;
+
+	@Value("${knx.projectfile}")
+	private String projectfile;
+
+	@Value("${ip}")
+	private String ip;
+
+	@Bean
+	public KNXProject getKnxProject(final ProjectParser<KNXProjectParsingContext> projectParser)
+			throws IOException, ProjectParsingException {
+
+		final File projectFile = new File(projectfile);
+
+		LOG.info("Parsing file: '{}'", projectFile.getAbsoluteFile());
+		final KNXProject knxProject = projectParser.parse(projectFile);
+
+		return knxProject;
+	}
 
 	@Bean
 	public OutwardOutputPipelineStep getOutwardOutputPipelineStep() {
@@ -201,12 +224,24 @@ public class Configuration {
 	}
 
 	@Bean
-	public Device getDevice() {
+	public Device getDevice(final KNXProject knxProject) {
 
 		final Device device = new DefaultDevice();
 		device.setHostPhysicalAddress(DEVICE_ADDRESS);
 		device.setPhysicalAddress(DEVICE_ADDRESS);
-		device.setDeviceStatus(DeviceStatus.PROGRAMMING_MODE);
+//		device.setDeviceStatus(DeviceStatus.PROGRAMMING_MODE);
+		device.setDeviceStatus(DeviceStatus.NORMAL_MODE);
+
+		final KNXDeviceInstance knxDeviceInstance = knxProject.getDeviceInstances().get(0);
+		knxDeviceInstance.getComObjects().values().stream().forEach(comObject -> {
+
+			final KNXGroupAddress knxGroupAddress = comObject.getKnxGroupAddress();
+			if (knxGroupAddress != null && StringUtils.isNotBlank(knxGroupAddress.getGroupAddress())) {
+
+				final String groupAddress = knxGroupAddress.getGroupAddress();
+				device.getDeviceProperties().put(groupAddress, knxGroupAddress);
+			}
+		});
 
 		return device;
 	}
@@ -241,16 +276,6 @@ public class Configuration {
 	}
 
 	@Bean
-	public KNXProject getKnxProject(final ProjectParser<KNXProjectParsingContext> projectParser)
-			throws IOException, ProjectParsingException {
-
-		final File projectFile = new File("C:/dev/knx_simulator/K-NiX/ETS5/KNX IP BAOS 777.knxproj");
-		final KNXProject knxProject = projectParser.parse(projectFile);
-
-		return knxProject;
-	}
-
-	@Bean
 	public DefaultDataSender getDefaultDataSender(final KNXProject knxProject, final Device device) throws IOException {
 
 		final DefaultDataSender dataSender = new DefaultDataSender();
@@ -261,10 +286,13 @@ public class Configuration {
 	}
 
 	@Bean
-	public CoreController getCoreController(final ConnectionManager connectionManager, final Device device)
+	public CoreController getCoreController(final ConfigurationManager configurationManager,
+			final ConnectionManager connectionManager, final Device device)
 			throws SocketException, UnknownHostException {
 
-		final CoreController coreController = new CoreController(NetworkUtils.retrieveLocalIP());
+//		final CoreController coreController = new CoreController(NetworkUtils.retrieveLocalIP());
+		final CoreController coreController = new CoreController();
+		coreController.setConfigurationManager(configurationManager);
 		coreController.setDevice(device);
 		coreController.setConnectionManager(connectionManager);
 
@@ -272,10 +300,13 @@ public class Configuration {
 	}
 
 	@Bean
-	public ServerCoreController getServerCoreController(final ConnectionManager connectionManager, final Device device)
+	public ServerCoreController getServerCoreController(final ConfigurationManager configurationManager,
+			final ConnectionManager connectionManager, final Device device)
 			throws SocketException, UnknownHostException {
 
-		final ServerCoreController serverCoreController = new ServerCoreController(NetworkUtils.retrieveLocalIP());
+//		final ServerCoreController serverCoreController = new ServerCoreController(NetworkUtils.retrieveLocalIP());
+		final ServerCoreController serverCoreController = new ServerCoreController();
+		serverCoreController.setConfigurationManager(configurationManager);
 		serverCoreController.setDevice(device);
 		serverCoreController.setConnectionManager(connectionManager);
 
@@ -283,11 +314,16 @@ public class Configuration {
 	}
 
 	@Bean
-	public DeviceManagementController getDeviceManagementController(final ConnectionManager connectionManager,
-			final Device device) throws SocketException, UnknownHostException {
+	public DeviceManagementController getDeviceManagementController(final ConfigurationManager configurationManager,
+			final ConnectionManager connectionManager, final Device device)
+			throws SocketException, UnknownHostException {
 
-		final DeviceManagementController deviceManagementController = new DeviceManagementController(
-				NetworkUtils.retrieveLocalIP());
+//		final DeviceManagementController deviceManagementController = new DeviceManagementController(
+//				NetworkUtils.retrieveLocalIP());
+		final DeviceManagementController deviceManagementController = new DeviceManagementController();
+		deviceManagementController.setConfigurationManager(configurationManager);
+		deviceManagementController.setLocalInetAddress(
+				configurationManager.getPropertyAsString(ConfigurationManager.LOCAL_IP_CONFIG_KEY));
 		deviceManagementController.setDevice(device);
 		deviceManagementController.setConnectionManager(connectionManager);
 
@@ -295,10 +331,15 @@ public class Configuration {
 	}
 
 	@Bean
-	public TunnelingController getTunnelingController(final ConnectionManager connectionManager, final Device device,
-			final DataSender dataSender) throws SocketException, UnknownHostException {
+	public TunnelingController getTunnelingController(final ConfigurationManager configurationManager,
+			final ConnectionManager connectionManager, final Device device, final DataSender dataSender)
+			throws SocketException, UnknownHostException {
 
-		final TunnelingController tunnelingController = new TunnelingController(NetworkUtils.retrieveLocalIP());
+//		final TunnelingController tunnelingController = new TunnelingController(NetworkUtils.retrieveLocalIP());
+		final TunnelingController tunnelingController = new TunnelingController();
+		tunnelingController.setConfigurationManager(configurationManager);
+		tunnelingController.setLocalInetAddress(
+				configurationManager.getPropertyAsString(ConfigurationManager.LOCAL_IP_CONFIG_KEY));
 		tunnelingController.setDevice(device);
 		tunnelingController.setConnectionManager(connectionManager);
 		tunnelingController.setDataSender(dataSender);
@@ -310,18 +351,16 @@ public class Configuration {
 	public MulticastListenerReaderThread getMulticastListenerReaderThread(final CoreController coreController,
 			final ServerCoreController serverCoreController,
 			final DeviceManagementController deviceManagementController, final TunnelingController tunnelingController,
-			final Pipeline<Object, Object> inwardPipeline) {
+			final Pipeline<Object, Object> inwardPipeline, final ConfigurationManager configurationManager) {
 
 		// reader for multicast messages
-		final MulticastListenerReaderThread multicastListenerThread = new MulticastListenerReaderThread(
-				BaseController.KNX_PORT_DEFAULT);
+		final MulticastListenerReaderThread multicastListenerThread = new MulticastListenerReaderThread();
+		multicastListenerThread.setConfigurationManager(configurationManager);
 		multicastListenerThread.getDatagramPacketCallbacks().add(coreController);
 		multicastListenerThread.getDatagramPacketCallbacks().add(serverCoreController);
 		multicastListenerThread.getDatagramPacketCallbacks().add(deviceManagementController);
 		multicastListenerThread.getDatagramPacketCallbacks().add(tunnelingController);
 		multicastListenerThread.setInputPipeline(inwardPipeline);
-
-		new Thread(multicastListenerThread).start();
 
 		return multicastListenerThread;
 	}
@@ -361,22 +400,24 @@ public class Configuration {
 	@Bean
 	public ObjectServerReaderThread getObjectServerReaderThread(final KNXProject knxProject,
 			final Map<String, DataSerializer<Object>> dataSerializerMap,
-			final Pipeline<Object, Object> objectServerInputPipeline) {
+			final Pipeline<Object, Object> objectServerInputPipeline, final ConfigurationManager configurationManager) {
 
-		ObjectServerReaderThread objectServerReaderThread = null;
-		try {
-			objectServerReaderThread = new ObjectServerReaderThread(NetworkUtils.retrieveLocalIP(),
-					NetworkUtils.OBJECT_SERVER_PROTOCOL_PORT);
-		} catch (UnknownHostException | SocketException e) {
-			LOG.error(e.getMessage(), e);
-		}
+		final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread();
+		objectServerReaderThread.setConfigurationManager(configurationManager);
 		objectServerReaderThread.setKnxProject(knxProject);
 		objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
 		objectServerReaderThread.setInputPipeline(objectServerInputPipeline);
 
-		new Thread(objectServerReaderThread).start();
-
 		return objectServerReaderThread;
+	}
+
+	@Bean
+	public ConfigurationManager getDefaultConfigurationManager() {
+
+		final DefaultConfigurationManager defaultConfigurationManager = new DefaultConfigurationManager();
+		defaultConfigurationManager.setProperty(ConfigurationManager.LOCAL_IP_CONFIG_KEY, ip);
+
+		return defaultConfigurationManager;
 	}
 
 }

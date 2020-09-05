@@ -6,17 +6,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import api.project.KNXComObject;
-import api.project.KNXDatapointSubtype;
-import api.project.KNXDatapointType;
 import api.project.KNXDeviceInstance;
-import api.project.KNXGroupAddress;
 import api.project.KNXProject;
 import project.parsing.knx.KNXProjectParsingContext;
 import project.parsing.steps.ParsingStep;
@@ -39,8 +34,11 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 			return;
 		}
 
+		int index = 0;
 		for (final KNXDeviceInstance knxDeviceInstance : knxProject.getDeviceInstances()) {
 
+			LOG.info("");
+			LOG.info("Device Index: {}", index);
 			LOG.info("KNXDeviceInstance: " + knxDeviceInstance.getId() + " " + knxDeviceInstance.getAddress());
 
 			LOG.info("ManufacturerId: " + knxDeviceInstance.getManufacturerId() + " ("
@@ -67,55 +65,10 @@ public class OutputParsingStep implements ParsingStep<KNXProjectParsingContext> 
 					continue;
 				}
 
-				final StringBuilder stringBuilder = new StringBuilder();
-
-				if (knxComObject.isGroupObject()) {
-					stringBuilder.append("[GroupObject] ");
-				}
-
-				// number
-				stringBuilder.append(knxComObject.getNumber()).append(" (0x")
-						.append(String.format("%1$02X", knxComObject.getNumber())).append(")");
-
-				// id
-				stringBuilder.append(" ").append(knxComObject.getId());
-
-				// text
-				if (StringUtils.isNotBlank(knxComObject.getText())) {
-					stringBuilder.append(" ").append(knxComObject.getText());
-				}
-
-				// hardware information
-				stringBuilder.append(" ").append(knxComObject.getHardwareName()).append(" ")
-						.append(knxComObject.getHardwareText());
-
-				// group address
-				if (knxComObject.getKnxGroupAddress() != null) {
-					stringBuilder.append(" ").append(knxComObject.getKnxGroupAddress().getGroupAddress());
-				}
-
-				// data point type
-				final KNXGroupAddress knxGroupAddress = knxComObject.getKnxGroupAddress();
-				if (knxGroupAddress != null) {
-
-					final String dataPointTypeId = knxGroupAddress.getDataPointType();
-
-					final KNXDatapointSubtype knxDatapointSubtype = knxProject.getDatapointSubtypeMap()
-							.get(dataPointTypeId);
-
-					final Map<String, String> languageMap = knxProject.getLanguageStoreMap().get("de-DE");
-					final KNXDatapointType knxDatapointType = knxDatapointSubtype.getKnxDatapointType();
-					final String datapointTranslated = languageMap.get(knxDatapointType.getId());
-					final String datapointSubtypeTranslated = languageMap.get(knxDatapointSubtype.getId());
-
-					stringBuilder.append(" ").append(knxDatapointType.getName()).append(" ")
-							.append(knxDatapointSubtype.getNumber()).append(" ").append(datapointTranslated)
-							.append(", ").append(datapointSubtypeTranslated).append(" ")
-							.append(knxDatapointSubtype.getFormat());
-				}
-
-				LOG.info(stringBuilder.toString());
+				LOG.info(knxComObject.toString());
 			}
+
+			index++;
 		}
 	}
 

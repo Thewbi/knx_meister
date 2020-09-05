@@ -3,6 +3,7 @@ package project.parsing.knx.steps;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.apache.logging.log4j.LogManager;
@@ -47,9 +48,13 @@ public class ReadProjectParsingStep implements ParsingStep<KNXProjectParsingCont
 			.filter(Files::isRegularFile)
 			.filter(p -> p.getFileName().endsWith("project.xml"))) {
 
-			stream
-				.findFirst()
-				.ifPresent(consumer);
+			final Optional<Path> projectFileOptional = stream.findFirst();
+
+			if (projectFileOptional.isPresent()) {
+				consumer.accept(projectFileOptional.get());
+			} else {
+				throw new IOException("Cannot find a project.xml in any of the project's folders! Cannot parse project!");
+			}
 		}
 
 		// @formatter:on

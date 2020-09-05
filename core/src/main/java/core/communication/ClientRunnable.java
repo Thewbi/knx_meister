@@ -117,7 +117,7 @@ public class ClientRunnable implements Runnable {
 		}
 	}
 
-	public void sendRequest() {
+	public void sendWindowPositionRequest() {
 
 		try {
 
@@ -154,7 +154,7 @@ public class ClientRunnable implements Runnable {
 
 			// DEBUG
 			final String integerToStringNoPrefix = Utils.integerToStringNoPrefix(payload);
-			LOG.info("Sending DatapointValueIndicationRequest: " + integerToStringNoPrefix);
+			LOG.trace("Sending DatapointValueIndicationRequest: " + integerToStringNoPrefix);
 
 			final DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
 			dataOutputStream.write(payload);

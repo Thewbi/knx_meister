@@ -3,6 +3,7 @@ package api.device;
 import java.util.Map;
 
 import api.packets.PropertyId;
+import api.project.KNXComObject;
 import api.project.KNXGroupAddress;
 
 public interface Device {
@@ -26,6 +27,10 @@ public interface Device {
 	short getPropertyValue(final PropertyId propertyId);
 
 	Map<String, KNXGroupAddress> getDeviceProperties();
+
+	Map<String, KNXComObject> getComObjects();
+
+	Map<Integer, KNXComObject> getComObjectsByDatapointType();
 
 //	// DEBUG
 //	void setValue(int value);

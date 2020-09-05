@@ -89,6 +89,9 @@ public class SetDatapointValueRequestProcessor extends BaseRequestProcessor {
 				throw new RuntimeException("Unknown datapoint command value: " + datapointCommand);
 			}
 
+			LOG.info("skip: {}, setValue: {}, sendValue: {}, readNewValue: {}, clearDatapointTransmissionState: {}",
+					skip, setValue, sendValue, readNewValue, clearDatapointTransmissionState);
+
 			// abort and execute no actions at all if the client decided to perform no
 			// actions
 			if (skip) {
@@ -122,15 +125,15 @@ public class SetDatapointValueRequestProcessor extends BaseRequestProcessor {
 			if (knxProject.getValueMap().containsKey(entry.getDatapointId())) {
 				final Object object = knxProject.getValueMap().get(entry.getDatapointId());
 				if (object == null) {
-					LOG.info("DP: " + entry.getDatapointId() + " " + comObject.get().getText()
-							+ " OldValue=n/a NewValue=" + deserializeFromBytes);
+					LOG.info("DP: " + entry.getDatapointId() + " '" + comObject.get().getText()
+							+ "' OldValue=n/a NewValue=" + deserializeFromBytes);
 				} else {
 					oldValue = object;
-					LOG.info("DP: " + entry.getDatapointId() + " " + comObject.get().getText() + " OldValue=" + oldValue
-							+ " NewValue=" + deserializeFromBytes);
+					LOG.info("DP: " + entry.getDatapointId() + " '" + comObject.get().getText() + "' OldValue="
+							+ oldValue + " NewValue=" + deserializeFromBytes);
 				}
 			} else {
-				LOG.info("DP: " + entry.getDatapointId() + " " + comObject.get().getText() + " OldValue=n/a NewValue="
+				LOG.info("DP: " + entry.getDatapointId() + " '" + comObject.get().getText() + "' OldValue=n/a NewValue="
 						+ deserializeFromBytes);
 			}
 

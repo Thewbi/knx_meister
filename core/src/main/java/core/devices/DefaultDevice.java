@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import api.device.Device;
 import api.device.DeviceStatus;
 import api.packets.PropertyId;
+import api.project.KNXComObject;
 import api.project.KNXGroupAddress;
 
 public class DefaultDevice implements Device {
@@ -15,11 +16,15 @@ public class DefaultDevice implements Device {
 
 	private int physicalAddress;
 
-	private final Map<Short, Short> properties = new ConcurrentHashMap<>();
-
 	private DeviceStatus deviceStatus = DeviceStatus.NORMAL_MODE;
 
+	private final Map<Short, Short> properties = new ConcurrentHashMap<>();
+
 	private final Map<String, KNXGroupAddress> deviceProperties = new HashMap<>();
+
+	private final Map<String, KNXComObject> comObjects = new HashMap<>();
+
+	private final Map<Integer, KNXComObject> comObjectsByDatapointType = new HashMap<>();
 
 	/**
 	 * ctor
@@ -75,8 +80,19 @@ public class DefaultDevice implements Device {
 		this.physicalAddress = physicalAddress;
 	}
 
+	@Override
 	public Map<String, KNXGroupAddress> getDeviceProperties() {
 		return deviceProperties;
+	}
+
+	@Override
+	public Map<String, KNXComObject> getComObjects() {
+		return comObjects;
+	}
+
+	@Override
+	public Map<Integer, KNXComObject> getComObjectsByDatapointType() {
+		return comObjectsByDatapointType;
 	}
 
 //	@Override

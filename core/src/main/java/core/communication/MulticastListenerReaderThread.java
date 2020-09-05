@@ -15,6 +15,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.configuration.ConfigurationManager;
 import api.pipeline.Pipeline;
 import common.utils.NetworkUtils;
 import core.packets.KNXPacket;
@@ -24,6 +25,12 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	private static final boolean BIND_TO_IP_AND_PORT = false;
 
 	private static final Logger LOG = LogManager.getLogger(MulticastListenerReaderThread.class);
+
+	private Pipeline<Object, Object> inputPipeline;
+
+	private MulticastSocket multicastSocket;
+
+	private ConfigurationManager configurationManager;
 
 	private boolean running;
 
@@ -35,23 +42,15 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	 */
 	private final List<DatagramPacketCallback> datagramPacketCallbacks = new ArrayList<>();
 
-	private final String localIP;
-
-	private final int bindPort;
-
-	private Pipeline<Object, Object> inputPipeline;
-
-	private MulticastSocket multicastSocket;
-
-	/**
-	 * ctor
-	 *
-	 * @param bindPort
-	 */
-	public MulticastListenerReaderThread(final String localIP, final int bindPort) {
-		this.localIP = localIP;
-		this.bindPort = bindPort;
-	}
+//	/**
+//	 * ctor
+//	 *
+//	 * @param bindPort
+//	 */
+//	public MulticastListenerReaderThread(final String localIP, final int bindPort) {
+//		this.localIP = localIP;
+//		this.bindPort = bindPort;
+//	}
 
 	@Override
 	public void run() {
@@ -81,20 +80,25 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 	private void runMultiCastListener(final DatagramPacketCallback datagramPacketCallback)
 			throws IOException, SocketException, UnknownHostException {
 
+		final String localIP = configurationManager.getPropertyAsString(ConfigurationManager.LOCAL_IP_CONFIG_KEY);
+		final int port = configurationManager.getPropertyAsInt(ConfigurationManager.PORT_CONFIG_KEY);
+
 		LOG.info("Binding " + getClass().getName()
-				+ (BIND_TO_IP_AND_PORT ? (" to IP and Port (" + localIP + ":" + bindPort + ")")
-						: (" to port (" + bindPort + ")")));
+				+ (BIND_TO_IP_AND_PORT ? (" to IP and Port (" + localIP + ":" + port + ")")
+						: (" to port (" + port + ")")));
 
 		if (BIND_TO_IP_AND_PORT) {
 
-			// local environment
-			multicastSocket = new MulticastSocket(bindPort);
+			// for networked environments
+			final InetSocketAddress inetSocketAddress = new InetSocketAddress(localIP, port);
+			multicastSocket = new MulticastSocket(inetSocketAddress);
+			LOG.info("Multicast listener on " + localIP + ":" + port + " started.");
 
 		} else {
 
-			// for networked environments
-			final InetSocketAddress inetSocketAddress = new InetSocketAddress(localIP, bindPort);
-			multicastSocket = new MulticastSocket(inetSocketAddress);
+			// local environment
+			multicastSocket = new MulticastSocket(port);
+			LOG.info("Multicast listener on " + NetworkUtils.KNX_MULTICAST_IP + ":" + port + " started.");
 
 		}
 
@@ -103,19 +107,17 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 		final InetAddress inetAddress = InetAddress.getByName(NetworkUtils.KNX_MULTICAST_IP);
 		multicastSocket.joinGroup(inetAddress);
 
-		LOG.info("Multicast listener on " + NetworkUtils.KNX_MULTICAST_IP + ":" + bindPort + " started.");
-
 		while (running) {
 
 			final byte[] buf = new byte[1024];
 			final DatagramPacket datagramPacket = new DatagramPacket(buf, buf.length);
 
-			LOG.info("MultiCastListener accepting ...");
+			LOG.trace("MultiCastListener accepting ...");
 
 			// blocking call
 			multicastSocket.receive(datagramPacket);
 
-			LOG.info("MultiCastListener received packet ...");
+			LOG.trace("MultiCastListener received packet ...");
 
 			// use the pipeline to convert the input from the socket to a KNXPacket that the
 			// system can use
@@ -223,8 +225,12 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 		return multicastSocket;
 	}
 
-	public String getLocalIP() {
-		return localIP;
+//	public String getLocalIP() {
+//		return localIP;
+//	}
+
+	public void setConfigurationManager(final ConfigurationManager configurationManager) {
+		this.configurationManager = configurationManager;
 	}
 
 }

@@ -13,9 +13,11 @@ import java.net.UnknownHostException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.configuration.ConfigurationManager;
 import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
 import core.communication.Connection;
+import core.communication.thread.DataSenderRunnable;
 import core.packets.ConnectionRequestInformation;
 import core.packets.DescriptionInformationBlockType;
 import core.packets.DeviceInformationDIB;
@@ -32,17 +34,18 @@ public class ServerCoreController extends BaseController {
 
 	private static final Logger LOG = LogManager.getLogger(ServerCoreController.class);
 
-	private Thread dataSenderThread;
+//	private Thread dataSenderThread;
+	private DataSenderRunnable dataSenderRunnable;
 
-	/**
-	 * ctor
-	 *
-	 * @throws SocketException
-	 * @throws UnknownHostException
-	 */
-	public ServerCoreController(final String localInetAddress) throws SocketException, UnknownHostException {
-		super(localInetAddress);
-	}
+//	/**
+//	 * ctor
+//	 *
+//	 * @throws SocketException
+//	 * @throws UnknownHostException
+//	 */
+//	public ServerCoreController(final String localInetAddress) throws SocketException, UnknownHostException {
+//		super(localInetAddress);
+//	}
 
 	@Override
 	public void knxPacket(final Connection connection, final DatagramSocket socket3671,
@@ -106,9 +109,9 @@ public class ServerCoreController extends BaseController {
 					+ knxPacket.getConnectionStatus());
 
 			if (knxPacket.getCommunicationChannelId() > 1) {
-				if (dataSenderThread == null) {
+				if (dataSenderRunnable == null) {
 					LOG.info("Server core controller starts data sender!");
-					dataSenderThread = startThread(getClass().getName() + " CONNECT_RESPONSE",
+					dataSenderRunnable = startThread(getClass().getName() + " CONNECT_RESPONSE",
 							knxPacket.getConnection());
 				}
 			}
@@ -139,11 +142,11 @@ public class ServerCoreController extends BaseController {
 
 		final HPAIStructure controlHPAIStructure = new HPAIStructure();
 		controlHPAIStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-		controlHPAIStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
+		controlHPAIStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
 
 		final HPAIStructure dataHPAIStructure = new HPAIStructure();
 		dataHPAIStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-		dataHPAIStructure.setPort((short) POINT_TO_POINT_DATA_PORT);
+		dataHPAIStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_DATA_PORT);
 
 		final KNXPacket knxPacket = new KNXPacket();
 		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_REQUEST);
@@ -162,7 +165,7 @@ public class ServerCoreController extends BaseController {
 
 		final HPAIStructure hpaiStructure = new HPAIStructure();
 		hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-		hpaiStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
+		hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
 
 		final KNXPacket knxPacket = new KNXPacket();
 		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.DESCRIPTION_REQUEST);
@@ -189,7 +192,7 @@ public class ServerCoreController extends BaseController {
 		// the response on
 		final HPAIStructure hpaiStructure = new HPAIStructure();
 		hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-		hpaiStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
+		hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
 		knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
 
 		final byte[] bytes = knxPacket.getBytes();
@@ -229,12 +232,12 @@ public class ServerCoreController extends BaseController {
 		// the response on
 		HPAIStructure hpaiStructure = new HPAIStructure();
 		hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-		hpaiStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
+		hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
 		knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
 
 		hpaiStructure = new HPAIStructure();
 		hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-		hpaiStructure.setPort((short) POINT_TO_POINT_CONTROL_PORT);
+		hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
 		knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, hpaiStructure);
 
 		final ConnectionRequestInformation connectionRequestInformation = new ConnectionRequestInformation();

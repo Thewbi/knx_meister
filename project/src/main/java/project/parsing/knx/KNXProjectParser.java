@@ -23,7 +23,7 @@ public class KNXProjectParser implements ProjectParser<KNXProjectParsingContext>
 	public KNXProject parse(final File file) throws ProjectParsingException {
 
 		if (CollectionUtils.isEmpty(parsingSteps)) {
-			throw new RuntimeException("There are no parsing steps! The system is illconfigured!");
+			throw new RuntimeException("There are no parsing steps! The system is configured incorrectly!");
 		}
 
 		final KNXProjectParsingContext context = new KNXProjectParsingContext();
