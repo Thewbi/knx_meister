@@ -143,8 +143,8 @@ public class DefaultDataSender implements DataSender {
 		}
 		final byte[] payload = dataSerializer.serializeToBytes(value);
 
-		LOG.info("[DefaultDataSender] sending: '{}' to address: '{}'", Utils.byteArrayToStringNoPrefix(payload),
-				knxGroupAddress.getGroupAddress());
+		LOG.info("[DefaultDataSender] sending value '{}' encoded as '{}' to address: '{}'", value,
+				Utils.byteArrayToStringNoPrefix(payload), knxGroupAddress.getGroupAddress());
 
 		final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
 

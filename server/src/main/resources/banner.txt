@@ -1,0 +1,38 @@
+========================================================================================================
+========================================================================================================
+
+`o    O  o.     O o      O       Oo      oO                                   
+ o   O   Oo     o  O    o        O O    o o       o                           
+ O  O    O O    O   o  O         o  o  O  O                  O                
+ oOo     O  o   o    oO          O   Oo   O                 oOo               
+ o  o    O   o  O    Oo          O        o .oOo. O  .oOo    o   .oOo. `OoOo. 
+ O   O   o    O O   o  o         o        O OooO' o  `Ooo.   O   OooO'  o     
+ o    o  o     Oo  O    O        o        O O     O      O   o   O      O     
+ O     O O     `o O      o       O        o `OoO' o' `OoO'   `oO `OoO'  o     
+ 
+========================================================================================================
+========================================================================================================
+
+Usage:
+This simulator is used for simulating KNX devices
+
+Test the REST API:
+http://localhost:8182/knxmeister/api/system/version
+
+Angular App:
+http://localhost:8182/knxmeister/index.html
+
+Swagger JSON:
+http://localhost:8182/knxmeister/api/swagger.json
+
+Swagger:
+http://localhost:8182/swagger/index.html
+
+Actuator:
+http://localhost:8182/actuator
+
+Spring Boot Documentation:
+https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/
+
+========================================================================================================
+========================================================================================================
