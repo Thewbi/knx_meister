@@ -1,5 +1,6 @@
 package core.data.sending;
 
+import api.device.Device;
 import core.communication.Connection;
 
 public interface DataSender {
@@ -12,8 +13,8 @@ public interface DataSender {
 
     static final int PRIORITY_SYSTEM = 0xB0;
 
-    void send(Connection connection, String physicalAddress, final String groupAddress, int dataPointId, Object value,
-            int deviceIndex);
+    void send(Device device, Connection connection, String physicalAddress, final String groupAddress, int dataPointId,
+            Object value);
 
     Object deserializeByFormat();
 

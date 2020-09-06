@@ -4,27 +4,39 @@ import api.data.serializer.DataSerializer;
 
 public class BitDataSerializer implements DataSerializer<Object> {
 
-	@Override
-	public short[] serialize(final Object data) {
-		throw new RuntimeException("Not implemented!");
-	}
+    @Override
+    public short[] serialize(final Object data) {
+        throw new RuntimeException("Not implemented!");
+    }
 
-	@Override
-	public byte[] serializeToBytes(final Object data) {
+    @Override
+    public byte[] serializeToBytes(final Object data) {
 
-		final int value = (int) data;
+        int result = 0;
 
-		return new byte[] { (byte) value };
-	}
+        if (data instanceof Double) {
 
-	@Override
-	public double deserialize(final short[] data) {
-		throw new RuntimeException("Not implemented!");
-	}
+            final Double doubleObject = (Double) data;
+            result = doubleObject.intValue();
 
-	@Override
-	public double deserializeFromBytes(final byte[] data) {
-		return data[0];
-	}
+        } else if (data instanceof Integer) {
+
+            final Integer integerObject = (Integer) data;
+            result = integerObject.intValue();
+
+        }
+
+        return new byte[] { (byte) result };
+    }
+
+    @Override
+    public double deserialize(final short[] data) {
+        throw new RuntimeException("Not implemented!");
+    }
+
+    @Override
+    public double deserializeFromBytes(final byte[] data) {
+        return data[0];
+    }
 
 }

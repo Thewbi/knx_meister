@@ -24,7 +24,6 @@ import core.packets.ConnectionType;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
 import core.packets.StructureType;
-import main.Main;
 
 public abstract class BaseController extends BaseDatagramPacketCallback {
 
@@ -139,10 +138,11 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
         getLogger().info(label + " Starting Thread");
 
         final DataSenderRunnable dataSenderRunnable = new DataSenderRunnable();
-        dataSenderRunnable.setDeviceIndex(Main.DEVICE_INDEX);
+//        dataSenderRunnable.setDeviceIndex(Main.DEVICE_INDEX);
         dataSenderRunnable.setLabel(label);
         dataSenderRunnable.setDataSender(dataSender);
         dataSenderRunnable.setConnection(connection);
+        dataSenderRunnable.setDeviceService(deviceService);
 
         final Thread thread = new Thread(dataSenderRunnable);
         thread.start();

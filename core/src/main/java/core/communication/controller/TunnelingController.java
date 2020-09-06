@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.datagenerator.DataGenerator;
 import api.device.Device;
 import api.packets.PropertyId;
 import api.project.KNXComObject;
@@ -19,6 +20,7 @@ import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
 import common.utils.Utils;
 import core.communication.Connection;
+import core.communication.thread.DataSenderRunnable;
 import core.data.sending.DataSender;
 import core.packets.CemiTunnelRequest;
 import core.packets.ConnectionType;
@@ -50,9 +52,9 @@ public class TunnelingController extends BaseController {
 
     private KNXPacket indicationKNXPacket;
 
-//	private Thread dataSenderThread;
+//    private Thread dataSenderThread;
 
-//    private DataSenderRunnable dataSenderRunnable;
+    private DataSenderRunnable dataSenderRunnable;
 
 //	/**
 //	 * ctor
@@ -112,16 +114,16 @@ public class TunnelingController extends BaseController {
             // send the acknowledge
             newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
 
-//            LOG.info("Tunneling controller starts data sender for connection " + newConnection.getId());
-//			dataSenderThread = startThread(getClass().getName() + " CONNECT_REQUEST", newConnection);
-//            dataSenderRunnable = startThread(getClass().getName() + " CONNECT_REQUEST", newConnection);
+            LOG.info("Tunneling controller starts data sender for connection " + newConnection.getId());
+            dataSenderRunnable = startThread(getClass().getName() + " CONNECT_REQUEST", newConnection);
 
-//			if (knxPacket.getCommunicationChannelId() >= 1) {
-//				if (dataSenderThread == null) {
-//					LOG.info("Tunneling controller starts data sender!");
-//					dataSenderThread = startThread(getClass().getName() + " CONNECT_REQUEST", newConnection);
-//				}
-//			}
+//          dataSenderThread = startThread(getClass().getName() + " CONNECT_REQUEST", newConnection);
+//            if (knxPacket.getCommunicationChannelId() >= 1) {
+//                if (dataSenderThread == null) {
+//                    LOG.info("Tunneling controller starts data sender!");
+//                    dataSenderThread = startThread(getClass().getName() + " CONNECT_REQUEST", newConnection);
+//                }
+//            }
             break;
 
         case CONNECTIONSTATE_REQUEST:
@@ -520,10 +522,19 @@ public class TunnelingController extends BaseController {
 
         final int dataPointId = knxComObject.getNumber();
 
-        final int deviceIndex = 0;
-        getDataSender().send(knxPacket.getConnection(), Utils.integerToKNXAddress(device.getPhysicalAddress(), "."),
-                groupAddress, dataPointId, knxGroupAddress.getValue() == null ? 0 : knxGroupAddress.getValue(),
-                deviceIndex);
+//        final int deviceIndex = 0;
+//        getDataSender().send(knxPacket.getConnection(), Utils.integerToKNXAddress(device.getPhysicalAddress(), "."),
+//                groupAddress, dataPointId, knxGroupAddress.getValue() == null ? 0 : knxGroupAddress.getValue(),
+//                deviceIndex);
+
+        Double value = 0.0d;
+        final DataGenerator dataGenerator = knxComObject.getDataGenerator();
+        if (dataGenerator != null) {
+            value = (Double) dataGenerator.getNextValue();
+        }
+
+        getDataSender().send(device, knxPacket.getConnection(),
+                Utils.integerToKNXAddress(device.getPhysicalAddress(), "."), groupAddress, dataPointId, value);
     }
 
     @SuppressWarnings("unused")

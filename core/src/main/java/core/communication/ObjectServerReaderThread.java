@@ -70,12 +70,12 @@ public class ObjectServerReaderThread implements Runnable {
             final int bindPort = configurationManager
                     .getPropertyAsInt(ConfigurationManager.OBJECT_SERVER_PORT_CONFIG_KEY);
 
-            final InetSocketAddress inetSocketAddress = new InetSocketAddress(ip, bindPort);
-
-            LOG.info("Binding Object Server Protocol to {}:{}", ip, bindPort);
-
             serverSocket = new ServerSocket();
+
+            LOG.info("Binding Object Server Protocol to {}:{} ...", ip, bindPort);
+            final InetSocketAddress inetSocketAddress = new InetSocketAddress(ip, bindPort);
             serverSocket.bind(inetSocketAddress);
+            LOG.info("Binding Object Server Protocol to {}:{} done.", ip, bindPort);
 
             final KNXProject knxProject = projectService.getProject();
 

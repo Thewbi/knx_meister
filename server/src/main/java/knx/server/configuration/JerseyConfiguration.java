@@ -11,6 +11,8 @@ import io.swagger.jaxrs.config.BeanConfig;
 import io.swagger.jaxrs.listing.ApiListingResource;
 import io.swagger.jaxrs.listing.SwaggerSerializers;
 import knx.server.CorsFilter;
+import knx.server.rest.DataGeneratorResource;
+import knx.server.rest.DevicesResource;
 import knx.server.rest.SystemResource;
 
 @Component
@@ -26,6 +28,8 @@ public class JerseyConfiguration extends ResourceConfig {
         register(CorsFilter.class);
 
         register(SystemResource.class);
+        register(DevicesResource.class);
+        register(DataGeneratorResource.class);
 
         property(ServletProperties.FILTER_FORWARD_ON_404, true);
     }

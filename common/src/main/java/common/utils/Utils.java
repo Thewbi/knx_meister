@@ -111,13 +111,13 @@ public final class Utils {
         return dateTimeFormatter.format(now);
     }
 
-    public static String integerToKNXAddress(final int individualAddress, final String separator) {
+    public static String integerToKNXAddress(final int address, final String separator) {
 
-        final int upperByte = ((individualAddress >> 8) & 0xFF);
+        final int upperByte = ((address >> 8) & 0xFF);
         final int areaAddress = (upperByte & 0xF0) >> 4;
         final int lineAddress = upperByte & 0x0F;
 
-        final int deviceAddress = ((individualAddress) & 0xFF);
+        final int deviceAddress = ((address) & 0xFF);
 
         return areaAddress + separator + lineAddress + separator + deviceAddress;
     }

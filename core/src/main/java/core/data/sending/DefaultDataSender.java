@@ -42,8 +42,8 @@ public class DefaultDataSender implements DataSender {
     private Map<String, DataSerializer<Object>> dataSerializerMap = new HashMap<>();
 
     @Override
-    public void send(final Connection connection, final String physicalAddress, final String groupAddress,
-            final int dataPointId, final Object value, final int deviceIndex) {
+    public void send(final Device device, final Connection connection, final String physicalAddress,
+            final String groupAddress, final int dataPointId, final Object value) {
 
         LOG.info("[DefaultDataSender] send() ...");
 
@@ -67,7 +67,7 @@ public class DefaultDataSender implements DataSender {
 
         // TODO
         LOG.info("Physical Address: '{}', groupAddress: '{}'", physicalAddress, groupAddress);
-        final Device device = deviceService.getDevices().get(physicalAddress);
+//        final Device device = deviceService.getDevices().get(physicalAddress);
         final KNXGroupAddress knxGroupAddress = device.getDeviceProperties().get(groupAddress);
         if (knxGroupAddress == null) {
             LOG.warn(
@@ -102,7 +102,7 @@ public class DefaultDataSender implements DataSender {
 //			value = (double) knxGroupAddress.getValue();
 //		}
 
-        sendViaComObject(connection, device, dataPointId, value, deviceIndex);
+        sendViaComObject(device, connection, dataPointId, value);
 
 //		sendViaFormat(connection, DataSender.BIT, knxGroupAddress, 0);
 //		sendBit(connection, knxGroupAddress, currentValue);
@@ -116,8 +116,8 @@ public class DefaultDataSender implements DataSender {
     }
 
     @SuppressWarnings("unused")
-    private void sendViaComObject(final Connection connection, final Device device, final int datapointId,
-            final Object value, final int deviceIndex) {
+    private void sendViaComObject(final Device device, final Connection connection, final int datapointId,
+            final Object value) {
 
         // TODO
 //        final Device device = deviceService.getDevices().get("");
@@ -125,7 +125,7 @@ public class DefaultDataSender implements DataSender {
         final KNXGroupAddress knxGroupAddress = knxComObject.getKnxGroupAddress();
         final String dataPointType = knxGroupAddress.getDataPointType();
         final KNXDatapointSubtype knxDatapointSubtype = KNXProjectUtils
-                .retrieveDataPointSubType(projectService.getProject(), deviceIndex, datapointId);
+                .retrieveDataPointSubType(projectService.getProject(), device, datapointId);
 
 ////		final int deviceIndex = 0;
 //		final KNXGroupAddress knxGroupAddress = KNXProjectUtils.retrieveGroupAddress(knxProject, deviceIndex,

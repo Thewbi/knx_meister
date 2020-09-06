@@ -3,6 +3,10 @@ package core.communication.thread;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.device.Device;
+import api.device.DeviceService;
+import api.project.KNXComObject;
+import common.utils.Utils;
 import core.communication.Connection;
 import core.data.sending.DataSender;
 
@@ -24,13 +28,15 @@ public class DataSenderRunnable implements Runnable {
 
     private boolean done = false;
 
-    private int deviceIndex;
+//    private int deviceIndex;
 
 //    private final Random random = new Random();
 
-    private int currentValue = MIN_VALUE;
+//    private int currentValue = MIN_VALUE;
+//
+//    private int increment = 1;
 
-    private int increment = 1;
+    private DeviceService deviceService;
 
     @Override
     public void run() {
@@ -93,9 +99,10 @@ public class DataSenderRunnable implements Runnable {
 //			final String physicalAddress = "0/2/0";
 //			final int dataPointId = 547;
 
-            final String devicePhysicalAddress = "1.1.255";
-            final String groupAddress = "0/1/1";
-            final int dataPointId = 325;
+            // this works:
+//            final String devicePhysicalAddress = "1.1.255";
+//            final String groupAddress = "0/1/1";
+//            final int dataPointId = 325;
 //			final int dataPointId = 145;
 
 //			final String physicalAddress = "0/2/1";
@@ -109,15 +116,31 @@ public class DataSenderRunnable implements Runnable {
 //			final double randomValue = rangeMin + (rangeMax - rangeMin) * random.nextDouble();
 //			final double value = randomValue;
 
-            dataSender.send(connection, devicePhysicalAddress, groupAddress, dataPointId, currentValue, deviceIndex);
+            for (final Device device : deviceService.getDevices().values()) {
 
-            currentValue += increment;
-            if (currentValue >= MAX_VALUE) {
-                increment = -1;
+                for (final KNXComObject knxComObject : device.getComObjects().values()) {
+
+                    if (knxComObject.getDataGenerator() == null) {
+                        continue;
+                    }
+
+                    final int address = knxComObject.getKnxGroupAddress().getAddress();
+                    final int dataPointId = knxComObject.getNumber();
+                    final String groupAddress = Utils.integerToKNXAddress(address, "/");
+
+                    dataSender.send(device, connection, Utils.integerToKNXAddress(device.getPhysicalAddress(), "."),
+                            groupAddress, dataPointId, knxComObject.getDataGenerator().getNextValue());
+                }
+
             }
-            if (currentValue <= MIN_VALUE) {
-                increment = 1;
-            }
+
+//            currentValue += increment;
+//            if (currentValue >= MAX_VALUE) {
+//                increment = -1;
+//            }
+//            if (currentValue <= MIN_VALUE) {
+//                increment = 1;
+//            }
 
             try {
                 LOG.info(label + " Sleeping " + SLEEP_AMOUNT_IN_MILLIS + " ...");
@@ -159,12 +182,16 @@ public class DataSenderRunnable implements Runnable {
         this.connection = connection;
     }
 
-    public int getDeviceIndex() {
-        return deviceIndex;
+    public void setDeviceService(final DeviceService deviceService) {
+        this.deviceService = deviceService;
     }
 
-    public void setDeviceIndex(final int deviceIndex) {
-        this.deviceIndex = deviceIndex;
-    }
+//    public int getDeviceIndex() {
+//        return deviceIndex;
+//    }
+//
+//    public void setDeviceIndex(final int deviceIndex) {
+//        this.deviceIndex = deviceIndex;
+//    }
 
 }

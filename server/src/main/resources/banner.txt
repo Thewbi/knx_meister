@@ -17,16 +17,16 @@ Usage:
 This simulator is used for simulating KNX devices
 
 Test the REST API:
-http://localhost:8182/knxmeister/api/system/version
+http://localhost:8189/knxmeister/api/system/version
 
 Angular App:
-http://localhost:8182/knxmeister/index.html
+http://localhost:8189/knxmeister/index.html
 
 Swagger JSON:
-http://localhost:8182/knxmeister/api/swagger.json
+http://localhost:8189/knxmeister/api/swagger.json
 
 Swagger:
-http://localhost:8182/swagger/index.html
+http://localhost:8189/swagger/index.html
 
 Actuator:
 http://localhost:8182/actuator

@@ -15,17 +15,25 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import api.configuration.ConfigurationManager;
+import api.conversion.Converter;
 import api.data.serializer.DataSerializer;
+import api.datagenerator.DataGenerator;
+import api.datagenerator.DefaultDataGeneratorFactory;
+import api.device.Device;
 import api.device.DeviceService;
+import api.device.dto.DeviceDto;
 import api.factory.Factory;
 import api.pipeline.Pipeline;
+import api.project.KNXComObject;
 import api.project.ProjectService;
+import api.project.dto.KNXComObjectDto;
 import common.configuration.DefaultConfigurationManager;
 import common.data.conversion.BitDataSerializer;
 import common.data.conversion.DataConversion;
 import common.data.conversion.Float16DataSerializer;
 import common.data.conversion.UnsignedIntByteSerializer;
 import common.packets.ServiceIdentifier;
+import common.project.conversion.KNXComObjectKNXComObjectDtoConverter;
 import core.common.KNXPacketConverter;
 import core.communication.ConnectionManager;
 import core.communication.DefaultConnectionManager;
@@ -41,6 +49,7 @@ import core.conversion.TunnelKNXPacketConverter;
 import core.data.sending.DataSender;
 import core.data.sending.DefaultDataSender;
 import core.devices.DefaultDeviceService;
+import core.devices.conversion.DefaultDeviceDeviceDtoConverter;
 import core.packets.KNXPacket;
 import core.pipeline.DefaultPipeline;
 import core.pipeline.InwardConnectionPipelineStep;
@@ -422,6 +431,27 @@ public class Configuration {
         defaultConfigurationManager.setProperty(ConfigurationManager.PROJECT_FILE_KEY, projectfile);
 
         return defaultConfigurationManager;
+    }
+
+    @Bean
+    public Converter<Device, DeviceDto> getDefaultDeviceDeviceDtoConverter() {
+
+        final DefaultDeviceDeviceDtoConverter defaultDeviceDeviceDtoConverter = new DefaultDeviceDeviceDtoConverter();
+
+        return defaultDeviceDeviceDtoConverter;
+    }
+
+    @Bean
+    public Converter<KNXComObject, KNXComObjectDto> getKNXComObjectKNXComObjectDtoConverter() {
+
+        final KNXComObjectKNXComObjectDtoConverter knxComObjectKNXComObjectDtoConverter = new KNXComObjectKNXComObjectDtoConverter();
+
+        return knxComObjectKNXComObjectDtoConverter;
+    }
+
+    @Bean
+    public Factory<DataGenerator> getDefaultDataGeneratorFactory() {
+        return new DefaultDataGeneratorFactory();
     }
 
 }
