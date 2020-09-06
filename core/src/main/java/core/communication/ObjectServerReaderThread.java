@@ -15,6 +15,7 @@ import api.configuration.ConfigurationManager;
 import api.data.serializer.DataSerializer;
 import api.pipeline.Pipeline;
 import api.project.KNXProject;
+import api.project.ProjectService;
 import object_server.conversion.ComObjectValueConverter;
 import object_server.requests.processors.GetDatapointDescriptionRequestProcessor;
 import object_server.requests.processors.GetDatapointValueRequestProcessor;
@@ -27,23 +28,25 @@ import object_server.requests.processors.SetDatapointValueRequestProcessor;
  */
 public class ObjectServerReaderThread implements Runnable {
 
-	private static final boolean SEND_WINDOW_POSITION_REQUEST = false;
+    private static final boolean SEND_WINDOW_POSITION_REQUEST = false;
 
-	private static final Logger LOG = LogManager.getLogger(ObjectServerReaderThread.class);
+    private static final Logger LOG = LogManager.getLogger(ObjectServerReaderThread.class);
 
-	private ConfigurationManager configurationManager;
+    private ConfigurationManager configurationManager;
 
-	private final boolean running = true;
+    private final boolean running = true;
 
 //	private final String ip;
 //
 //	private final int bindPort;
 
-	private Pipeline<Object, Object> inputPipeline;
+    private Pipeline<Object, Object> inputPipeline;
 
-	private KNXProject knxProject;
+//	private KNXProject knxProject;
 
-	private Map<String, DataSerializer<Object>> dataSerializerMap;
+    private ProjectService projectService;
+
+    private Map<String, DataSerializer<Object>> dataSerializerMap;
 
 //	/**
 //	 * ctor
@@ -56,109 +59,115 @@ public class ObjectServerReaderThread implements Runnable {
 //		this.bindPort = bindPort;
 //	}
 
-	@Override
-	public void run() {
+    @Override
+    public void run() {
 
-		ServerSocket serverSocket = null;
+        ServerSocket serverSocket = null;
 
-		try {
+        try {
 
-			final String ip = configurationManager.getPropertyAsString(ConfigurationManager.LOCAL_IP_CONFIG_KEY);
-			final int bindPort = configurationManager
-					.getPropertyAsInt(ConfigurationManager.OBJECT_SERVER_PORT_CONFIG_KEY);
+            final String ip = configurationManager.getPropertyAsString(ConfigurationManager.LOCAL_IP_CONFIG_KEY);
+            final int bindPort = configurationManager
+                    .getPropertyAsInt(ConfigurationManager.OBJECT_SERVER_PORT_CONFIG_KEY);
 
-			final InetSocketAddress inetSocketAddress = new InetSocketAddress(ip, bindPort);
+            final InetSocketAddress inetSocketAddress = new InetSocketAddress(ip, bindPort);
 
-			LOG.info("Binding Object Server Protocol to {}:{}", ip, bindPort);
+            LOG.info("Binding Object Server Protocol to {}:{}", ip, bindPort);
 
-			serverSocket = new ServerSocket();
-			serverSocket.bind(inetSocketAddress);
+            serverSocket = new ServerSocket();
+            serverSocket.bind(inetSocketAddress);
 
-			while (running) {
+            final KNXProject knxProject = projectService.getProject();
 
-				// blocking call
-				LOG.info("ObjectServer accepting ...");
-				final Socket clientSocket = serverSocket.accept();
-				LOG.info("ObjectServer packet received.");
+            while (running) {
 
-				final ClientRunnable clientRunnable = new ClientRunnable(clientSocket);
-				clientRunnable.setInputPipeline(inputPipeline);
+                // blocking call
+                LOG.info("ObjectServer accepting ...");
+                final Socket clientSocket = serverSocket.accept();
+                LOG.info("ObjectServer packet received.");
 
-				final GetServerItemRequestProcessor getServerItemRequestProcessor = new GetServerItemRequestProcessor();
-				getServerItemRequestProcessor.setKnxProject(knxProject);
-				clientRunnable.getRequestProcessors().add(getServerItemRequestProcessor);
+                final ClientRunnable clientRunnable = new ClientRunnable(clientSocket);
+                clientRunnable.setInputPipeline(inputPipeline);
 
-				final GetDatapointDescriptionRequestProcessor getDatapointDescriptionRequestProcessor = new GetDatapointDescriptionRequestProcessor();
-				getDatapointDescriptionRequestProcessor.setKnxProject(knxProject);
-				clientRunnable.getRequestProcessors().add(getDatapointDescriptionRequestProcessor);
+                final GetServerItemRequestProcessor getServerItemRequestProcessor = new GetServerItemRequestProcessor();
+                getServerItemRequestProcessor.setKnxProject(knxProject);
+                clientRunnable.getRequestProcessors().add(getServerItemRequestProcessor);
 
-				final ComObjectValueConverter comObjectValueConverter = new ComObjectValueConverter();
-				comObjectValueConverter.setKnxProject(knxProject);
-				comObjectValueConverter.setDataSerializerMap(dataSerializerMap);
+                final GetDatapointDescriptionRequestProcessor getDatapointDescriptionRequestProcessor = new GetDatapointDescriptionRequestProcessor();
+                getDatapointDescriptionRequestProcessor.setKnxProject(knxProject);
+                clientRunnable.getRequestProcessors().add(getDatapointDescriptionRequestProcessor);
 
-				final GetDatapointValueRequestProcessor getDatapointValueRequestProcessor = new GetDatapointValueRequestProcessor();
-				getDatapointValueRequestProcessor.setKnxProject(knxProject);
-				getDatapointValueRequestProcessor.setObjectServerValueConverter(comObjectValueConverter);
-				clientRunnable.getRequestProcessors().add(getDatapointValueRequestProcessor);
+                final ComObjectValueConverter comObjectValueConverter = new ComObjectValueConverter();
+                comObjectValueConverter.setKnxProject(knxProject);
+                comObjectValueConverter.setDataSerializerMap(dataSerializerMap);
 
-				final SetDatapointValueRequestProcessor setDatapointValueRequestProcessor = new SetDatapointValueRequestProcessor();
-				setDatapointValueRequestProcessor.setKnxProject(knxProject);
-				setDatapointValueRequestProcessor.setDataSerializerMap(dataSerializerMap);
-				clientRunnable.getRequestProcessors().add(setDatapointValueRequestProcessor);
+                final GetDatapointValueRequestProcessor getDatapointValueRequestProcessor = new GetDatapointValueRequestProcessor();
+                getDatapointValueRequestProcessor.setKnxProject(knxProject);
+                getDatapointValueRequestProcessor.setObjectServerValueConverter(comObjectValueConverter);
+                clientRunnable.getRequestProcessors().add(getDatapointValueRequestProcessor);
 
-				final Thread clientThread = new Thread(clientRunnable);
-				clientThread.start();
+                final SetDatapointValueRequestProcessor setDatapointValueRequestProcessor = new SetDatapointValueRequestProcessor();
+                setDatapointValueRequestProcessor.setKnxProject(knxProject);
+                setDatapointValueRequestProcessor.setDataSerializerMap(dataSerializerMap);
+                clientRunnable.getRequestProcessors().add(setDatapointValueRequestProcessor);
 
-				try {
-					Thread.sleep(2000);
-				} catch (final InterruptedException e) {
-					// ignored
-				}
+                final Thread clientThread = new Thread(clientRunnable);
+                clientThread.start();
 
-				if (SEND_WINDOW_POSITION_REQUEST) {
-					clientRunnable.sendWindowPositionRequest();
-				}
-			}
+                try {
+                    Thread.sleep(2000);
+                } catch (final InterruptedException e) {
+                    // ignored
+                }
 
-		} catch (final UnknownHostException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (final SocketException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (final IOException e) {
-			LOG.error(e.getMessage(), e);
-		} finally {
-			if (serverSocket != null) {
-				try {
-					serverSocket.close();
-				} catch (final IOException e) {
-					LOG.error(e.getMessage(), e);
-				}
-			}
-		}
-	}
+                if (SEND_WINDOW_POSITION_REQUEST) {
+                    clientRunnable.sendWindowPositionRequest();
+                }
+            }
 
-	public void setInputPipeline(final Pipeline<Object, Object> inputPipeline) {
-		this.inputPipeline = inputPipeline;
-	}
+        } catch (final UnknownHostException e) {
+            LOG.error(e.getMessage(), e);
+        } catch (final SocketException e) {
+            LOG.error(e.getMessage(), e);
+        } catch (final IOException e) {
+            LOG.error(e.getMessage(), e);
+        } finally {
+            if (serverSocket != null) {
+                try {
+                    serverSocket.close();
+                } catch (final IOException e) {
+                    LOG.error(e.getMessage(), e);
+                }
+            }
+        }
+    }
 
-	public void setKnxProject(final KNXProject knxProject) {
-		this.knxProject = knxProject;
-	}
+    public void setInputPipeline(final Pipeline<Object, Object> inputPipeline) {
+        this.inputPipeline = inputPipeline;
+    }
 
-	public Map<String, DataSerializer<Object>> getDataSerializerMap() {
-		return dataSerializerMap;
-	}
+//	public void setKnxProject(final KNXProject knxProject) {
+//		this.knxProject = knxProject;
+//	}
 
-	public void setDataSerializerMap(final Map<String, DataSerializer<Object>> dataSerializerMap) {
-		this.dataSerializerMap = dataSerializerMap;
-	}
+    public Map<String, DataSerializer<Object>> getDataSerializerMap() {
+        return dataSerializerMap;
+    }
+
+    public void setDataSerializerMap(final Map<String, DataSerializer<Object>> dataSerializerMap) {
+        this.dataSerializerMap = dataSerializerMap;
+    }
 
 //	public String getIp() {
 //		return ip;
 //	}
 
-	public void setConfigurationManager(final ConfigurationManager configurationManager) {
-		this.configurationManager = configurationManager;
-	}
+    public void setConfigurationManager(final ConfigurationManager configurationManager) {
+        this.configurationManager = configurationManager;
+    }
+
+    public void setProjectService(final ProjectService projectService) {
+        this.projectService = projectService;
+    }
 
 }

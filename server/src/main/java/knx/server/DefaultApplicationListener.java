@@ -1,5 +1,7 @@
 package knx.server;
 
+import java.io.IOException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,33 +9,45 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
+import api.device.DeviceService;
+import api.exception.ProjectParsingException;
+import api.project.ProjectService;
 import core.communication.MulticastListenerReaderThread;
 import core.communication.ObjectServerReaderThread;
 
 @Component
 public class DefaultApplicationListener implements ApplicationListener<ContextRefreshedEvent> {
 
-	private final static Logger LOG = LoggerFactory.getLogger(DefaultApplicationListener.class);
+    private final static Logger LOG = LoggerFactory.getLogger(DefaultApplicationListener.class);
 
-	@Autowired
-	private MulticastListenerReaderThread multicastListenerThread;
+    @Autowired
+    private MulticastListenerReaderThread multicastListenerThread;
 
-	@Autowired
-	private ObjectServerReaderThread objectServerReaderThread;
+    @Autowired
+    private ObjectServerReaderThread objectServerReaderThread;
 
-//	@Value("${bind.ip}")
-//	private String bindIp;
-//
-//	@Value("${multicast.ip}")
-//	private String multicastIp;
+    @Autowired
+    private ProjectService projectService;
 
-	@Override
-	public void onApplicationEvent(final ContextRefreshedEvent contextRefreshedEvent) {
+    @Autowired
+    DeviceService deviceService;
 
-		LOG.info("DefaultApplicationListener.onApplicationEvent()");
+    @Override
+    public void onApplicationEvent(final ContextRefreshedEvent contextRefreshedEvent) {
 
-		new Thread(objectServerReaderThread).start();
-		new Thread(multicastListenerThread).start();
-	}
+        LOG.info("DefaultApplicationListener.onApplicationEvent()");
+
+        try {
+
+            projectService.parseProjectFile();
+            deviceService.retrieveDevicesFromProject(projectService.getProject());
+
+            new Thread(objectServerReaderThread).start();
+            new Thread(multicastListenerThread).start();
+
+        } catch (IOException | ProjectParsingException e) {
+            LOG.error(e.getMessage(), e);
+        }
+    }
 
 }

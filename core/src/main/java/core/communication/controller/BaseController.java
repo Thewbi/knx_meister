@@ -9,12 +9,15 @@ import java.util.Map;
 
 import api.configuration.ConfigurationManager;
 import api.device.Device;
+import api.device.DeviceService;
 import common.packets.ServiceIdentifier;
+import common.utils.Utils;
 import core.communication.BaseDatagramPacketCallback;
 import core.communication.Connection;
 import core.communication.ConnectionManager;
 import core.communication.thread.DataSenderRunnable;
 import core.data.sending.DataSender;
+import core.packets.CemiTunnelRequest;
 import core.packets.ConnectionResponseDataBlock;
 import core.packets.ConnectionStatus;
 import core.packets.ConnectionType;
@@ -25,158 +28,194 @@ import main.Main;
 
 public abstract class BaseController extends BaseDatagramPacketCallback {
 
-	public static final short INDICATION_PRIMITIVE = 0x29;
+    public static final short INDICATION_PRIMITIVE = 0x29;
 
-	public static final short CONFIRM_PRIMITIVE = 0x2e;
+    public static final short CONFIRM_PRIMITIVE = 0x2e;
 
-	public static final short REQUEST_PRIMITIVE = 0x11;
+    public static final short REQUEST_PRIMITIVE = 0x11;
 
-	/** ??? what is the correct value???????? */
-	public static final short RESPONSE_PRIMITIVE = 0xFF;
+    /** ??? what is the correct value???????? */
+    public static final short RESPONSE_PRIMITIVE = 0xFF;
 
-	private String localInetAddress;
+    private String localInetAddress;
 
-	private final Map<String, HPAIStructure> deviceMap = new HashMap<>();
+    private final Map<String, HPAIStructure> deviceMap = new HashMap<>();
 
-	private ConnectionManager connectionManager;
+    private ConnectionManager connectionManager;
 
-	private ConfigurationManager configurationManager;
+    private ConfigurationManager configurationManager;
 
-	private Device device;
+//	private Device device;
 
-	private DataSender dataSender;
+    private DataSender dataSender;
+
+    private DeviceService deviceService;
 
 //	public BaseController(final String localInetAddress) throws SocketException, UnknownHostException {
 //		this.localInetAddress = localInetAddress;
 //	}
 
-	/**
-	 * 7.8.2 CONNECT_RESPONSE Example: 8.8.6 CONNECT_RESPONSE
-	 *
-	 * @param connectionType
-	 *
-	 * @throws IOException
-	 */
-	protected KNXPacket retrieveConnectionResponse(final ConnectionType connectionType) throws IOException {
+    /**
+     * 7.8.2 CONNECT_RESPONSE Example: 8.8.6 CONNECT_RESPONSE
+     *
+     * @param connectionType
+     *
+     * @throws IOException
+     */
+    protected KNXPacket retrieveConnectionResponse(final ConnectionType connectionType) throws IOException {
 
-		final KNXPacket knxPacket = new KNXPacket();
+        final KNXPacket knxPacket = new KNXPacket();
 
-		// header
-		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_RESPONSE);
+        // header
+        knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_RESPONSE);
 
-		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
+        knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
 
-		final boolean addHPAIStructure = true;
-		if (addHPAIStructure) {
+        final boolean addHPAIStructure = true;
+        if (addHPAIStructure) {
 
-			// HPAI structure
-			final HPAIStructure hpaiStructure = new HPAIStructure();
-			hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-			hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
-			knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
-		}
+            // HPAI structure
+            final HPAIStructure hpaiStructure = new HPAIStructure();
+            hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
+            hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
+            knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
+        }
 
-		final boolean addconnectionResponseDataBlock = true;
-		if (addconnectionResponseDataBlock) {
+        final boolean addconnectionResponseDataBlock = true;
+        if (addconnectionResponseDataBlock) {
 
-			// CRD - Connection Response Data Block
-			final ConnectionResponseDataBlock connectionResponseDataBlock = new ConnectionResponseDataBlock();
-			connectionResponseDataBlock.setConnectionType(connectionType);
-			if (connectionType != ConnectionType.DEVICE_MGMT_CONNECTION) {
-				connectionResponseDataBlock.setDeviceAddress(getDevice().getHostPhysicalAddress());
-			}
+            // CRD - Connection Response Data Block
+            final ConnectionResponseDataBlock connectionResponseDataBlock = new ConnectionResponseDataBlock();
+            connectionResponseDataBlock.setConnectionType(connectionType);
+            if (connectionType != ConnectionType.DEVICE_MGMT_CONNECTION) {
 
-			knxPacket.setConnectionResponseDataBlock(connectionResponseDataBlock);
-		}
+//                // TODO
+//                final Device device = deviceService.getDevices().get("");
+//                connectionResponseDataBlock.setDeviceAddress(device.getHostPhysicalAddress());
 
-		return knxPacket;
-	}
+                // in wireshark, weinzierl BAOS sends a additional physical address in response
+                // to a
+                // tunnel connection request. Additional physical addresses are listed in the
+                // ETS 5 tool.
+                // The Weinzierl does not send the address of a device (e.g. not 1.1.255)
+                connectionResponseDataBlock.setDeviceAddress(Utils.knxAddressToIntegerDeviceAddressFirst("1.1.10"));
+            }
 
-	protected KNXPacket sendConnectionStateResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
-			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
+            knxPacket.setConnectionResponseDataBlock(connectionResponseDataBlock);
+        }
 
-		final KNXPacket knxPacket = new KNXPacket();
+        return knxPacket;
+    }
 
-		// header
-		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECTIONSTATE_RESPONSE);
-		knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
-		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
+    protected KNXPacket sendConnectionStateResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
+            final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
 
-		return knxPacket;
-	}
+        final KNXPacket knxPacket = new KNXPacket();
 
-	protected KNXPacket sendDisconnetResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
-			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
+        // header
+        knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECTIONSTATE_RESPONSE);
+        knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
+        knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
 
-		final KNXPacket knxPacket = new KNXPacket();
+        return knxPacket;
+    }
 
-		// header
-		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.DISCONNECT_RESPONSE);
+    protected KNXPacket sendDisconnetResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
+            final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
 
-		knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
-		knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
+        final KNXPacket knxPacket = new KNXPacket();
 
-		return knxPacket;
-	}
+        // header
+        knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.DISCONNECT_RESPONSE);
 
-	protected DataSenderRunnable startThread(final String label, final Connection connection) {
+        knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
+        knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
 
-		getLogger().info(label + " Starting Thread");
+        return knxPacket;
+    }
 
-		final DataSenderRunnable dataSenderRunnable = new DataSenderRunnable();
-		dataSenderRunnable.setDeviceIndex(Main.DEVICE_INDEX);
-		dataSenderRunnable.setLabel(label);
-		dataSenderRunnable.setDataSender(dataSender);
-		dataSenderRunnable.setConnection(connection);
+    protected DataSenderRunnable startThread(final String label, final Connection connection) {
 
-		final Thread thread = new Thread(dataSenderRunnable);
-		thread.start();
+        getLogger().info(label + " Starting Thread");
 
-		return dataSenderRunnable;
-	}
+        final DataSenderRunnable dataSenderRunnable = new DataSenderRunnable();
+        dataSenderRunnable.setDeviceIndex(Main.DEVICE_INDEX);
+        dataSenderRunnable.setLabel(label);
+        dataSenderRunnable.setDataSender(dataSender);
+        dataSenderRunnable.setConnection(connection);
 
-	public void setConnectionManager(final ConnectionManager connectionManager) {
-		this.connectionManager = connectionManager;
-	}
+        final Thread thread = new Thread(dataSenderRunnable);
+        thread.start();
 
-	public Device getDevice() {
-		return device;
-	}
+        return dataSenderRunnable;
+    }
 
-	public void setDevice(final Device device) {
-		this.device = device;
-	}
+    protected Device retrieveDevice(final KNXPacket knxPacket) {
 
-	public ConnectionManager getConnectionManager() {
-		return connectionManager;
-	}
+        final CemiTunnelRequest cemiTunnelRequest = knxPacket.getCemiTunnelRequest();
 
-	public Map<String, HPAIStructure> getDeviceMap() {
-		return deviceMap;
-	}
+        if (cemiTunnelRequest == null) {
+            return null;
+        }
 
-	public String getLocalInetAddress() {
-		return localInetAddress;
-	}
+        final int destKNXAddress = cemiTunnelRequest.getDestKNXAddress();
+        final String physicalAddress = Utils.integerToKNXAddress(destKNXAddress, ".");
+        final Map<String, Device> devices = getDeviceService().getDevices();
 
-	public void setLocalInetAddress(final String localInetAddress) {
-		this.localInetAddress = localInetAddress;
-	}
+        return devices.get(physicalAddress);
+    }
 
-	public DataSender getDataSender() {
-		return dataSender;
-	}
+    public void setConnectionManager(final ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
 
-	public void setDataSender(final DataSender dataSender) {
-		this.dataSender = dataSender;
-	}
+//    public Device getDevice() {
+////		return device;
+//        return null;
+//    }
+//
+//	public void setDevice(final Device device) {
+//		this.device = device;
+//	}
 
-	public ConfigurationManager getConfigurationManager() {
-		return configurationManager;
-	}
+    public ConnectionManager getConnectionManager() {
+        return connectionManager;
+    }
 
-	public void setConfigurationManager(final ConfigurationManager configurationManager) {
-		this.configurationManager = configurationManager;
-	}
+    public Map<String, HPAIStructure> getDeviceMap() {
+        return deviceMap;
+    }
+
+    public String getLocalInetAddress() {
+        return localInetAddress;
+    }
+
+    public void setLocalInetAddress(final String localInetAddress) {
+        this.localInetAddress = localInetAddress;
+    }
+
+    public DataSender getDataSender() {
+        return dataSender;
+    }
+
+    public void setDataSender(final DataSender dataSender) {
+        this.dataSender = dataSender;
+    }
+
+    public ConfigurationManager getConfigurationManager() {
+        return configurationManager;
+    }
+
+    public void setConfigurationManager(final ConfigurationManager configurationManager) {
+        this.configurationManager = configurationManager;
+    }
+
+    public void setDeviceService(final DeviceService deviceService) {
+        this.deviceService = deviceService;
+    }
+
+    public DeviceService getDeviceService() {
+        return deviceService;
+    }
 
 }

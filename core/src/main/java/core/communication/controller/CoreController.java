@@ -12,6 +12,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import api.configuration.ConfigurationManager;
+import api.device.Device;
 import common.packets.ServiceIdentifier;
 import core.communication.Connection;
 import core.packets.ConnectionRequestInformation;
@@ -38,7 +39,7 @@ import core.packets.SuppSvcFamiliesDIB;
  */
 public class CoreController extends BaseController {
 
-	private static final Logger LOG = LogManager.getLogger(CoreController.class);
+    private static final Logger LOG = LogManager.getLogger(CoreController.class);
 
 //	/**
 //	 * ctor
@@ -50,348 +51,350 @@ public class CoreController extends BaseController {
 //		super(localInetAddress);
 //	}
 
-	@Override
-	public void knxPacket(final Connection connection, final DatagramSocket datagramSocket,
-			final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label) throws IOException {
+    @Override
+    public void knxPacket(final Connection connection, final DatagramSocket datagramSocket,
+            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label) throws IOException {
 
-		HPAIStructure hpaiStructure = null;
-		InetAddress inetAddress = null;
-		int port = -1;
-		DeviceInformationDIB deviceInformationDIB = null;
-		Connection packetConnection = null;
-		int communicationChannelId = 0;
+        HPAIStructure hpaiStructure = null;
+        InetAddress inetAddress = null;
+        int port = -1;
+        DeviceInformationDIB deviceInformationDIB = null;
+        Connection packetConnection = null;
+        int communicationChannelId = 0;
 
-		switch (knxPacket.getHeader().getServiceIdentifier()) {
+        final Device device = retrieveDevice(knxPacket);
 
-		case SEARCH_REQUEST_EXT:
-			getLogger().trace("<<<<<<<<<<<<<<< Ignoring " + ServiceIdentifier.SEARCH_REQUEST_EXT);
-			break;
+        switch (knxPacket.getHeader().getServiceIdentifier()) {
 
-		case SEARCH_REQUEST:
-			hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
-			inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
-			port = hpaiStructure.getPort() & 0xFFFF;
+        case SEARCH_REQUEST_EXT:
+            getLogger().trace("<<<<<<<<<<<<<<< Ignoring " + ServiceIdentifier.SEARCH_REQUEST_EXT);
+            break;
 
-			final KNXPacket searchResponseToAddress = retrieveSearchResponseToAddress(datagramSocket, inetAddress,
-					port);
+        case SEARCH_REQUEST:
+            hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
+            inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
+            port = hpaiStructure.getPort() & 0xFFFF;
 
-			connection.sendResponse(searchResponseToAddress, new InetSocketAddress(inetAddress, port));
-			break;
+            final KNXPacket searchResponseToAddress = retrieveSearchResponseToAddress(device, datagramSocket,
+                    inetAddress, port);
 
-		case DESCRIPTION_REQUEST:
-			hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
-			inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
-			port = hpaiStructure.getPort() & 0xFFFF;
+            connection.sendResponse(searchResponseToAddress, new InetSocketAddress(inetAddress, port));
+            break;
 
-			final KNXPacket sendDescriptionResponse = retrieveDescriptionResponse(datagramSocket, datagramPacket,
-					inetAddress, port);
+        case DESCRIPTION_REQUEST:
+            hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
+            inetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
+            port = hpaiStructure.getPort() & 0xFFFF;
 
-			connection.sendResponse(sendDescriptionResponse, datagramPacket.getSocketAddress());
-			break;
+            final KNXPacket sendDescriptionResponse = retrieveDescriptionResponse(device, datagramSocket,
+                    datagramPacket, inetAddress, port);
 
-		case DESCRIPTION_RESPONSE:
-			deviceInformationDIB = (DeviceInformationDIB) knxPacket.getDibMap()
-					.get(DescriptionInformationBlockType.DEVICE_INFO);
-			hpaiStructure = getDeviceMap().get(deviceInformationDIB.getDeviceSerialNumberAsString());
+            connection.sendResponse(sendDescriptionResponse, datagramPacket.getSocketAddress());
+            break;
 
-			final KNXPacket sendConnectionRequest = retrieveConnectionRequest(datagramPacket, knxPacket,
-					hpaiStructure.getIpAddressAsObject(), hpaiStructure.getPort());
+        case DESCRIPTION_RESPONSE:
+            deviceInformationDIB = (DeviceInformationDIB) knxPacket.getDibMap()
+                    .get(DescriptionInformationBlockType.DEVICE_INFO);
+            hpaiStructure = getDeviceMap().get(deviceInformationDIB.getDeviceSerialNumberAsString());
 
-			final InetSocketAddress inetSocketAddress = new InetSocketAddress(hpaiStructure.getIpAddressAsObject(),
-					hpaiStructure.getPort());
-			connection.sendResponse(sendConnectionRequest, inetSocketAddress);
-			break;
+            final KNXPacket sendConnectionRequest = retrieveConnectionRequest(datagramPacket, knxPacket,
+                    hpaiStructure.getIpAddressAsObject(), hpaiStructure.getPort());
 
-		// 0x0205
-		case CONNECT_REQUEST:
-			// if the connect request contains a CRI Tunneling Connection, this connection
-			// should be handled by the tunneling controller
-			if (knxPacket.getStructureMap().containsKey(StructureType.TUNNELING_CONNECTION)) {
-				break;
-			}
+            final InetSocketAddress inetSocketAddress = new InetSocketAddress(hpaiStructure.getIpAddressAsObject(),
+                    hpaiStructure.getPort());
+            connection.sendResponse(sendConnectionRequest, inetSocketAddress);
+            break;
 
-			final Connection newConnection = getConnectionManager().createNewConnection(datagramSocket,
-					knxPacket.getConnectionType());
+        // 0x0205
+        case CONNECT_REQUEST:
+            // if the connect request contains a CRI Tunneling Connection, this connection
+            // should be handled by the tunneling controller
+            if (knxPacket.getStructureMap().containsKey(StructureType.TUNNELING_CONNECTION)) {
+                break;
+            }
 
-			hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
-			final InetAddress controlInetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
-			final int controlPort = hpaiStructure.getPort() & 0xFFFF;
+            final Connection newConnection = getConnectionManager().createNewConnection(datagramSocket,
+                    knxPacket.getConnectionType());
 
-			final KNXPacket sendConnectionResponse = retrieveConnectionResponse(knxPacket.getConnectionType());
-			sendConnectionResponse.setCommunicationChannelId(newConnection.getId());
+            hpaiStructure = (HPAIStructure) knxPacket.getStructureMap().get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
+            final InetAddress controlInetAddress = InetAddress.getByAddress(hpaiStructure.getIpAddress());
+            final int controlPort = hpaiStructure.getPort() & 0xFFFF;
 
-			newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
+            final KNXPacket sendConnectionResponse = retrieveConnectionResponse(knxPacket.getConnectionType());
+            sendConnectionResponse.setCommunicationChannelId(newConnection.getId());
+
+            newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
 
 //			startThread(getClass().getName() + " CONNECTION_REQUEST", newConnection);
-			break;
+            break;
 
-		case CONNECTIONSTATE_REQUEST:
-			// make sure this is not a tunneling connection
-			communicationChannelId = knxPacket.getCommunicationChannelId();
-			packetConnection = getConnectionManager().retrieveConnection(communicationChannelId);
-			if (packetConnection.getConnectionType() == ConnectionType.TUNNEL_CONNECTION) {
-				return;
-			}
+        case CONNECTIONSTATE_REQUEST:
+            // make sure this is not a tunneling connection
+            communicationChannelId = knxPacket.getCommunicationChannelId();
+            packetConnection = getConnectionManager().retrieveConnection(communicationChannelId);
+            if (packetConnection.getConnectionType() == ConnectionType.TUNNEL_CONNECTION) {
+                return;
+            }
 
-			final KNXPacket sendConnectionStateResponse = sendConnectionStateResponse(datagramSocket, datagramPacket,
-					knxPacket, inetAddress, port);
+            final KNXPacket sendConnectionStateResponse = sendConnectionStateResponse(datagramSocket, datagramPacket,
+                    knxPacket, inetAddress, port);
 
-			final HPAIStructure controlEndpointHPAIStructure = (HPAIStructure) knxPacket.getStructureMap()
-					.get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
+            final HPAIStructure controlEndpointHPAIStructure = (HPAIStructure) knxPacket.getStructureMap()
+                    .get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
 
-			final InetSocketAddress socketAddr = new InetSocketAddress(
-					controlEndpointHPAIStructure.getIpAddressAsObject(), controlEndpointHPAIStructure.getPort());
+            final InetSocketAddress socketAddr = new InetSocketAddress(
+                    controlEndpointHPAIStructure.getIpAddressAsObject(), controlEndpointHPAIStructure.getPort());
 
-			connection.sendResponse(sendConnectionStateResponse, socketAddr);
-			break;
+            connection.sendResponse(sendConnectionStateResponse, socketAddr);
+            break;
 
-		case DISCONNECT_REQUEST:
-			// make sure this is not a tunneling connection
-			communicationChannelId = knxPacket.getCommunicationChannelId();
-			packetConnection = getConnectionManager().retrieveConnection(communicationChannelId);
-			if (packetConnection == null || packetConnection.getConnectionType() == ConnectionType.TUNNEL_CONNECTION) {
-				return;
-			}
+        case DISCONNECT_REQUEST:
+            // make sure this is not a tunneling connection
+            communicationChannelId = knxPacket.getCommunicationChannelId();
+            packetConnection = getConnectionManager().retrieveConnection(communicationChannelId);
+            if (packetConnection == null || packetConnection.getConnectionType() == ConnectionType.TUNNEL_CONNECTION) {
+                return;
+            }
 
-			getConnectionManager().closeConnection(knxPacket.getCommunicationChannelId());
+            getConnectionManager().closeConnection(knxPacket.getCommunicationChannelId());
 
-			final KNXPacket sendDisconnetResponse = sendDisconnetResponse(datagramSocket, datagramPacket, knxPacket,
-					inetAddress, port);
+            final KNXPacket sendDisconnetResponse = sendDisconnetResponse(datagramSocket, datagramPacket, knxPacket,
+                    inetAddress, port);
 
-			connection.sendResponse(sendDisconnetResponse, datagramPacket.getSocketAddress());
-			break;
+            connection.sendResponse(sendDisconnetResponse, datagramPacket.getSocketAddress());
+            break;
 
-		default:
-			getLogger().warn("Ignoring: " + knxPacket.getHeader().getServiceIdentifier().name());
-			break;
-		}
-	}
+        default:
+            getLogger().warn("Ignoring: " + knxPacket.getHeader().getServiceIdentifier().name());
+            break;
+        }
+    }
 
-	private KNXPacket retrieveSearchResponseToAddress(final DatagramSocket socket3671, final InetAddress inetAddress,
-			final int port) throws IOException {
-		return retrieveSearchResponseKNXPacket();
-	}
+    private KNXPacket retrieveSearchResponseToAddress(final Device device, final DatagramSocket socket3671,
+            final InetAddress inetAddress, final int port) throws IOException {
+        return retrieveSearchResponseKNXPacket(device);
+    }
 
-	@SuppressWarnings("unused")
-	private void sendSearchResponseToSender(final DatagramSocket socket, final DatagramPacket datagramPacket)
-			throws IOException {
+    @SuppressWarnings("unused")
+    private void sendSearchResponseToSender(final Device device, final DatagramSocket socket,
+            final DatagramPacket datagramPacket) throws IOException {
 
-		final KNXPacket knxPacket = retrieveSearchResponseKNXPacket();
+        final KNXPacket knxPacket = retrieveSearchResponseKNXPacket(device);
 
-		final byte[] bytes = knxPacket.getBytes();
+        final byte[] bytes = knxPacket.getBytes();
 
-		final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
-				datagramPacket.getSocketAddress());
+        final DatagramPacket outDatagramPacket = new DatagramPacket(bytes, bytes.length,
+                datagramPacket.getSocketAddress());
 
-		socket.send(outDatagramPacket);
-	}
+        socket.send(outDatagramPacket);
+    }
 
-	/**
-	 * Factory that creates a search response packet.
-	 *
-	 * @return
-	 * @throws UnknownHostException
-	 */
-	private KNXPacket retrieveSearchResponseKNXPacket() throws UnknownHostException {
+    /**
+     * Factory that creates a search response packet.
+     *
+     * @return
+     * @throws UnknownHostException
+     */
+    private KNXPacket retrieveSearchResponseKNXPacket(final Device device) throws UnknownHostException {
 
-		final KNXPacket knxPacket = new KNXPacket();
+        final KNXPacket knxPacket = new KNXPacket();
 
-		// header
-		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.SEARCH_RESPONSE);
+        // header
+        knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.SEARCH_RESPONSE);
 
-		// HPAI structure
-		final HPAIStructure hpaiStructure = new HPAIStructure();
-		hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-		hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
-		knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
+        // HPAI structure
+        final HPAIStructure hpaiStructure = new HPAIStructure();
+        hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
+        hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
+        knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
 
-		// Device Information DIB
-		final DeviceInformationDIB deviceInformationDIB = retrieveDeviceInformationDIB();
-		knxPacket.getDibMap().put(deviceInformationDIB.getType(), deviceInformationDIB);
+        // Device Information DIB
+        final DeviceInformationDIB deviceInformationDIB = retrieveDeviceInformationDIB(device);
+        knxPacket.getDibMap().put(deviceInformationDIB.getType(), deviceInformationDIB);
 
-		// Supported Service Families DIB
-		final SuppSvcFamiliesDIB suppSvcFamiliesDIB = retrieveServiceFamiliesDIB();
-		knxPacket.getDibMap().put(suppSvcFamiliesDIB.getType(), suppSvcFamiliesDIB);
+        // Supported Service Families DIB
+        final SuppSvcFamiliesDIB suppSvcFamiliesDIB = retrieveServiceFamiliesDIB();
+        knxPacket.getDibMap().put(suppSvcFamiliesDIB.getType(), suppSvcFamiliesDIB);
 
-		// Mft DIB
-		final MfrDataDIB mfrDataDIB = retrieveMfrDataDIB();
-		knxPacket.getDibMap().put(mfrDataDIB.getType(), mfrDataDIB);
+        // Mft DIB
+        final MfrDataDIB mfrDataDIB = retrieveMfrDataDIB();
+        knxPacket.getDibMap().put(mfrDataDIB.getType(), mfrDataDIB);
 
-		return knxPacket;
-	}
+        return knxPacket;
+    }
 
-	/**
-	 * Factory that creates a description response packet.
-	 *
-	 * @param socket
-	 * @param datagramPacket
-	 * @param inetAddress
-	 * @param port
-	 * @return
-	 * @throws IOException
-	 */
-	private KNXPacket retrieveDescriptionResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
-			final InetAddress inetAddress, final int port) throws IOException {
+    /**
+     * Factory that creates a description response packet.
+     *
+     * @param socket
+     * @param datagramPacket
+     * @param inetAddress
+     * @param port
+     * @return
+     * @throws IOException
+     */
+    private KNXPacket retrieveDescriptionResponse(final Device device, final DatagramSocket socket,
+            final DatagramPacket datagramPacket, final InetAddress inetAddress, final int port) throws IOException {
 
-		final KNXPacket knxPacket = new KNXPacket();
-		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.DESCRIPTION_RESPONSE);
+        final KNXPacket knxPacket = new KNXPacket();
+        knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.DESCRIPTION_RESPONSE);
 
-		final DeviceInformationDIB deviceInformationDIB = retrieveDeviceInformationDIB();
-		knxPacket.getDibMap().put(deviceInformationDIB.getType(), deviceInformationDIB);
+        final DeviceInformationDIB deviceInformationDIB = retrieveDeviceInformationDIB(device);
+        knxPacket.getDibMap().put(deviceInformationDIB.getType(), deviceInformationDIB);
 
-		// supported service families - SuppSvcFamilies DescriptionInformationBlock
-		// (DIB)
-		final SuppSvcFamiliesDIB suppSvcFamiliesDIB = retrieveServiceFamiliesDIB();
-		knxPacket.getDibMap().put(suppSvcFamiliesDIB.getType(), suppSvcFamiliesDIB);
+        // supported service families - SuppSvcFamilies DescriptionInformationBlock
+        // (DIB)
+        final SuppSvcFamiliesDIB suppSvcFamiliesDIB = retrieveServiceFamiliesDIB();
+        knxPacket.getDibMap().put(suppSvcFamiliesDIB.getType(), suppSvcFamiliesDIB);
 
-		return knxPacket;
-	}
+        return knxPacket;
+    }
 
-	private MfrDataDIB retrieveMfrDataDIB() {
+    private MfrDataDIB retrieveMfrDataDIB() {
 
-		final MfrDataDIB mfrDataDIB = new MfrDataDIB();
-		mfrDataDIB.setLength(8);
-		mfrDataDIB.setManufacturerId(0x00c5);
+        final MfrDataDIB mfrDataDIB = new MfrDataDIB();
+        mfrDataDIB.setLength(8);
+        mfrDataDIB.setManufacturerId(0x00c5);
 
-		return mfrDataDIB;
-	}
+        return mfrDataDIB;
+    }
 
-	/**
-	 * Factory that creates a connection request packet.
-	 *
-	 * @param originalDatagramPacket
-	 * @param originalKNXPacket
-	 * @param inetAddress
-	 * @param port
-	 * @return
-	 * @throws IOException
-	 */
-	private KNXPacket retrieveConnectionRequest(final DatagramPacket originalDatagramPacket,
-			final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
+    /**
+     * Factory that creates a connection request packet.
+     *
+     * @param originalDatagramPacket
+     * @param originalKNXPacket
+     * @param inetAddress
+     * @param port
+     * @return
+     * @throws IOException
+     */
+    private KNXPacket retrieveConnectionRequest(final DatagramPacket originalDatagramPacket,
+            final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
 
-		final HPAIStructure controlHPAIStructure = new HPAIStructure();
-		controlHPAIStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-		controlHPAIStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
+        final HPAIStructure controlHPAIStructure = new HPAIStructure();
+        controlHPAIStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
+        controlHPAIStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
 
-		final HPAIStructure dataHPAIStructure = new HPAIStructure();
-		dataHPAIStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
-		dataHPAIStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_DATA_PORT);
+        final HPAIStructure dataHPAIStructure = new HPAIStructure();
+        dataHPAIStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
+        dataHPAIStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_DATA_PORT);
 
-		final KNXPacket knxPacket = new KNXPacket();
-		knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_REQUEST);
-		knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, controlHPAIStructure);
-		knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataHPAIStructure);
+        final KNXPacket knxPacket = new KNXPacket();
+        knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_REQUEST);
+        knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, controlHPAIStructure);
+        knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataHPAIStructure);
 
-		final ConnectionRequestInformation connectionRequestInformation = new ConnectionRequestInformation();
-		connectionRequestInformation.setStructureType(StructureType.TUNNELING_CONNECTION);
-		connectionRequestInformation.setKnxLayer(KNXLayer.TUNNEL_LINKLAYER.getValue());
-		knxPacket.getStructureMap().put(connectionRequestInformation.getStructureType(), connectionRequestInformation);
+        final ConnectionRequestInformation connectionRequestInformation = new ConnectionRequestInformation();
+        connectionRequestInformation.setStructureType(StructureType.TUNNELING_CONNECTION);
+        connectionRequestInformation.setKnxLayer(KNXLayer.TUNNEL_LINKLAYER.getValue());
+        knxPacket.getStructureMap().put(connectionRequestInformation.getStructureType(), connectionRequestInformation);
 
-		return knxPacket;
-	}
+        return knxPacket;
+    }
 
-	/**
-	 * device info DescriptionInformationBlock (DIB)
-	 */
-	private DeviceInformationDIB retrieveDeviceInformationDIB() {
+    /**
+     * device info DescriptionInformationBlock (DIB)
+     */
+    private DeviceInformationDIB retrieveDeviceInformationDIB(final Device device) {
 
-		final DeviceInformationDIB deviceInformationDIB = new DeviceInformationDIB();
-		deviceInformationDIB.setDeviceStatus(getDevice().getDeviceStatus());
-		deviceInformationDIB.setIndividualAddress(getDevice().getHostPhysicalAddress());
-		deviceInformationDIB.setMedium(KNXMedium.TP1);
-		deviceInformationDIB.setProjectInstallationIdentifier(0);
+        final DeviceInformationDIB deviceInformationDIB = new DeviceInformationDIB();
+        deviceInformationDIB.setDeviceStatus(device.getDeviceStatus());
+        deviceInformationDIB.setIndividualAddress(device.getHostPhysicalAddress());
+        deviceInformationDIB.setMedium(KNXMedium.TP1);
+        deviceInformationDIB.setProjectInstallationIdentifier(0);
 
-		// serial number
+        // serial number
 //		System.arraycopy(new byte[] { (byte) 0x03, (byte) 0x03, (byte) 0x03, (byte) 0x03, (byte) 0x03, (byte) 0x03 }, 0,
 //				deviceInformationDIB.getDeviceSerialNumber(), 0, deviceInformationDIB.getDeviceSerialNumber().length);
-		System.arraycopy(new byte[] { (byte) 0x00, (byte) 0xC5, (byte) 0x01, (byte) 0x02, (byte) 0xD8, (byte) 0x4D }, 0,
-				deviceInformationDIB.getDeviceSerialNumber(), 0, deviceInformationDIB.getDeviceSerialNumber().length);
-		// real serial
+        System.arraycopy(new byte[] { (byte) 0x00, (byte) 0xC5, (byte) 0x01, (byte) 0x02, (byte) 0xD8, (byte) 0x4D }, 0,
+                deviceInformationDIB.getDeviceSerialNumber(), 0, deviceInformationDIB.getDeviceSerialNumber().length);
+        // real serial
 //		System.arraycopy(new byte[] { (byte) 0x00, (byte) 0xC5, (byte) 0x01, (byte) 0x02, (byte) 0xD8, (byte) 0x4C }, 0,
 //				deviceInformationDIB.getDeviceSerialNumber(), 0, deviceInformationDIB.getDeviceSerialNumber().length);
 
-		// multicast address - 224.0.23.12
-		System.arraycopy(new byte[] { (byte) 0xE0, (byte) 0x00, (byte) 0x17, (byte) 0x0C }, 0,
-				deviceInformationDIB.getDeviceRoutingMulticastAddress(), 0,
-				deviceInformationDIB.getDeviceRoutingMulticastAddress().length);
+        // multicast address - 224.0.23.12
+        System.arraycopy(new byte[] { (byte) 0xE0, (byte) 0x00, (byte) 0x17, (byte) 0x0C }, 0,
+                deviceInformationDIB.getDeviceRoutingMulticastAddress(), 0,
+                deviceInformationDIB.getDeviceRoutingMulticastAddress().length);
 
-		// mac address
+        // mac address
 //		System.arraycopy(new byte[] { (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04, (byte) 0x05, (byte) 0x06 }, 0,
 //				deviceInformationDIB.getDeviceMacAddress(), 0, deviceInformationDIB.getDeviceMacAddress().length);
 //		System.arraycopy(new byte[] { (byte) 0x09, (byte) 0x09, (byte) 0x09, (byte) 0x09, (byte) 0x09, (byte) 0x09 }, 0,
 //				deviceInformationDIB.getDeviceMacAddress(), 0, deviceInformationDIB.getDeviceMacAddress().length);
-		// D0-C6-37-A1-2A-E8
+        // D0-C6-37-A1-2A-E8
 //		System.arraycopy(new byte[] { (byte) 0xD0, (byte) 0xC6, (byte) 0x37, (byte) 0xA1, (byte) 0x2A, (byte) 0xE8 }, 0,
 //				deviceInformationDIB.getDeviceMacAddress(), 0, deviceInformationDIB.getDeviceMacAddress().length);
-		// 6c:40:08:97:d1:12
-		System.arraycopy(new byte[] { (byte) 0x6C, (byte) 0x40, (byte) 0x08, (byte) 0x97, (byte) 0xD1, (byte) 0x12 }, 0,
-				deviceInformationDIB.getDeviceMacAddress(), 0, deviceInformationDIB.getDeviceMacAddress().length);
+        // 6c:40:08:97:d1:12
+        System.arraycopy(new byte[] { (byte) 0x6C, (byte) 0x40, (byte) 0x08, (byte) 0x97, (byte) 0xD1, (byte) 0x12 }, 0,
+                deviceInformationDIB.getDeviceMacAddress(), 0, deviceInformationDIB.getDeviceMacAddress().length);
 
-		// friendly name
+        // friendly name
 //		final String friendlyName = "test_object1";
-		final String friendlyName = "KNX IP BAOS 777";
-		final byte[] friendlyNameAsByteArray = friendlyName.getBytes(StandardCharsets.US_ASCII);
-		System.arraycopy(friendlyNameAsByteArray, 0, deviceInformationDIB.getDeviceFriendlyName(), 0,
-				friendlyNameAsByteArray.length);
+        final String friendlyName = "KNX IP BAOS 777";
+        final byte[] friendlyNameAsByteArray = friendlyName.getBytes(StandardCharsets.US_ASCII);
+        System.arraycopy(friendlyNameAsByteArray, 0, deviceInformationDIB.getDeviceFriendlyName(), 0,
+                friendlyNameAsByteArray.length);
 
-		deviceInformationDIB.setLength(54);
+        deviceInformationDIB.setLength(54);
 
-		return deviceInformationDIB;
-	}
+        return deviceInformationDIB;
+    }
 
-	private SuppSvcFamiliesDIB retrieveServiceFamiliesDIB() {
+    private SuppSvcFamiliesDIB retrieveServiceFamiliesDIB() {
 
-		final SuppSvcFamiliesDIB suppSvcFamiliesDIB = new SuppSvcFamiliesDIB();
-		suppSvcFamiliesDIB.setLength(8);
+        final SuppSvcFamiliesDIB suppSvcFamiliesDIB = new SuppSvcFamiliesDIB();
+        suppSvcFamiliesDIB.setLength(8);
 
-		ProtocolDescriptor protocoDescriptor = new ProtocolDescriptor();
-		suppSvcFamiliesDIB.getProtocolDescriptors().add(protocoDescriptor);
-		protocoDescriptor.setProtocol(ServiceFamily.KNXNET_IP_CORE.getValue());
-		protocoDescriptor.setVersion(1);
+        ProtocolDescriptor protocoDescriptor = new ProtocolDescriptor();
+        suppSvcFamiliesDIB.getProtocolDescriptors().add(protocoDescriptor);
+        protocoDescriptor.setProtocol(ServiceFamily.KNXNET_IP_CORE.getValue());
+        protocoDescriptor.setVersion(1);
 
-		protocoDescriptor = new ProtocolDescriptor();
-		suppSvcFamiliesDIB.getProtocolDescriptors().add(protocoDescriptor);
-		protocoDescriptor.setProtocol(ServiceFamily.KNXNET_DEVICE_MGMT.getValue());
-		protocoDescriptor.setVersion(2);
+        protocoDescriptor = new ProtocolDescriptor();
+        suppSvcFamiliesDIB.getProtocolDescriptors().add(protocoDescriptor);
+        protocoDescriptor.setProtocol(ServiceFamily.KNXNET_DEVICE_MGMT.getValue());
+        protocoDescriptor.setVersion(2);
 
-		protocoDescriptor = new ProtocolDescriptor();
-		suppSvcFamiliesDIB.getProtocolDescriptors().add(protocoDescriptor);
-		protocoDescriptor.setProtocol(ServiceFamily.KNXNET_IP_TUNNELLING.getValue());
-		protocoDescriptor.setVersion(1);
+        protocoDescriptor = new ProtocolDescriptor();
+        suppSvcFamiliesDIB.getProtocolDescriptors().add(protocoDescriptor);
+        protocoDescriptor.setProtocol(ServiceFamily.KNXNET_IP_TUNNELLING.getValue());
+        protocoDescriptor.setVersion(1);
 
-		return suppSvcFamiliesDIB;
-	}
+        return suppSvcFamiliesDIB;
+    }
 
-	/**
-	 * Does not accept datagram packets.
-	 */
-	@Override
-	public boolean accepts(final DatagramPacket datagramPacket) {
-		return false;
-	}
+    /**
+     * Does not accept datagram packets.
+     */
+    @Override
+    public boolean accepts(final DatagramPacket datagramPacket) {
+        return false;
+    }
 
-	/**
-	 * Accepts all of the KNX packets specified below.
-	 */
-	@Override
-	public boolean accepts(final KNXPacket knxPacket) {
-		switch (knxPacket.getHeader().getServiceIdentifier()) {
-		case SEARCH_REQUEST_EXT:
-		case SEARCH_REQUEST:
-		case DESCRIPTION_REQUEST:
-		case CONNECT_REQUEST:
-		case CONNECTIONSTATE_REQUEST:
-		case DISCONNECT_REQUEST:
-			return true;
+    /**
+     * Accepts all of the KNX packets specified below.
+     */
+    @Override
+    public boolean accepts(final KNXPacket knxPacket) {
+        switch (knxPacket.getHeader().getServiceIdentifier()) {
+        case SEARCH_REQUEST_EXT:
+        case SEARCH_REQUEST:
+        case DESCRIPTION_REQUEST:
+        case CONNECT_REQUEST:
+        case CONNECTIONSTATE_REQUEST:
+        case DISCONNECT_REQUEST:
+            return true;
 
-		default:
-			return false;
-		}
-	}
+        default:
+            return false;
+        }
+    }
 
-	@Override
-	protected Logger getLogger() {
-		return LOG;
-	}
+    @Override
+    protected Logger getLogger() {
+        return LOG;
+    }
 
 }
