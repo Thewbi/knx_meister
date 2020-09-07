@@ -34,10 +34,12 @@ ifc on your local machine that is connected to the cockpit.
 * knx.projectfile - the ETS projectfile that the server will parse and load.
 * There is no configuration for a port because KNX will initially establish communications over the well-known port 3671 
 
-
 Building:
 Run the aggregator pom file which is located in the root folder of this software package: 
 mvn clean install
+
+Running the server:
+java -jar server-1.0.0.jar --knx.projectfile=C:/Users/username/Documents/knxproj/KNX_IP_BAOS_777.knxproj
 
 Test the REST API:
 http://localhost:8189/knxmeister/api/system/version
