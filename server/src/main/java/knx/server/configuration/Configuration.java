@@ -85,7 +85,7 @@ public class Configuration {
     @Value("${knx.projectfile}")
     private String projectfile;
 
-    @Value("${ip}")
+    @Value("${knx.ip}")
     private String ip;
 
     @Bean

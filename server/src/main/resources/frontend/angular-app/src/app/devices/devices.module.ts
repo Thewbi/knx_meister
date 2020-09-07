@@ -6,6 +6,9 @@ import { DeviceComponent } from './device/device.component';
   declarations: [DeviceComponent],
   imports: [
     CommonModule
+  ],
+  exports: [
+    DeviceComponent
   ]
 })
 export class DevicesModule { }

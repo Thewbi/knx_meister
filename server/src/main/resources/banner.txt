@@ -14,7 +14,30 @@
 ========================================================================================================
 
 Usage:
-This simulator is used for simulating KNX devices
+This simulator is used for simulating KNX devices defined in ETS 5 project files.
+1. You need to create a ETS 5 project using the ETS Software
+2. Upload the Project into this simulator / configure the file in application.properties
+3. Assign DataGenerators to the CommunicationObjects located inside the devices
+4. Connect the cockpit to the ip and port the KNX simulator is bound to
+
+Configuration:
+Note: This application runs a spring boot server that host a angular webapp, swagger for the REST api 
+and spring boot actuators. This server is configured via:
+/server/src/main/resources/application.properties
+* server.address - the ip address the spring boot server binds to (0.0.0.0 is the standard interface as defined by the OS)
+* server.port - the port that the spring boot server binds to
+
+Within that spring boot server, a KNX Server is started which is configured via:
+/server/src/main/resources/application.properties
+* knx.ip - the ip that the KNX server binds to (Usually, in a local setup, you want to use 192.168.2.1 which is the
+ifc on your local machine that is connected to the cockpit.
+* knx.projectfile - the ETS projectfile that the server will parse and load.
+* There is no configuration for a port because KNX will initially establish communications over the well-known port 3671 
+
+
+Building:
+Run the aggregator pom file which is located in the root folder of this software package: 
+mvn clean install
 
 Test the REST API:
 http://localhost:8189/knxmeister/api/system/version
@@ -29,7 +52,7 @@ Swagger:
 http://localhost:8189/swagger/index.html
 
 Actuator:
-http://localhost:8182/actuator
+http://localhost:8189/actuator
 
 Spring Boot Documentation:
 https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/
