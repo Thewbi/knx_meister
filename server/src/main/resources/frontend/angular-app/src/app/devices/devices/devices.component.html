@@ -1,0 +1,4 @@
+<h1>Devices</h1>
+<div *ngFor="let device of devices">Device <button
+    (click)="navigate(device.physicalAddressAsString);">{{ device.physicalAddressAsString }}</button>
+</div>

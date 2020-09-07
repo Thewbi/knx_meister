@@ -1,2 +1,4 @@
-<h1>Devices</h1>
-<div *ngFor="let device of devices">Device {{ device.physicalAddressAsString }}</div>
+<h1>Device</h1> Device: {{ physicalAddress }} <div *ngFor="let comObj of communicationObjectDto">
+  <button (click)="navigate(physicalAddress, comObj.id, comObj.knxGroupAddress);">Edit</button> CommunicationObject
+  {{ comObj.id }} - {{ comObj.text}} - {{ comObj.number }} - {{ comObj.knxGroupAddress }}
+</div>

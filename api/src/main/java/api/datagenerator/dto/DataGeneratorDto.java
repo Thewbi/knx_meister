@@ -54,4 +54,10 @@ public class DataGeneratorDto {
         this.constant = constant;
     }
 
+    @Override
+    public String toString() {
+        return "DataGeneratorDto [id=" + id + ", dataGeneratorType=" + dataGeneratorType + ", upperBound=" + upperBound
+                + ", lowerBound=" + lowerBound + ", constant=" + constant + "]";
+    }
+
 }

@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
 
 import { DeviceDto } from './devicedto';
+import { CommunicationObjectDto } from './communicationobjectdto';
 
 @Injectable({
   providedIn: 'root'
@@ -10,22 +12,16 @@ export class DeviceServiceService {
 
   private devices: DeviceDto[];
 
-  constructor(private http: HttpClient) {
-
-    // this.http.get<DeviceDto[]>('http://localhost:8189/knxmeister/api/devices/all')
-    //   .subscribe(
-    //     res => {
-    //       console.log('HTTP response', res);
-    //       this.devices = res;
-    //     },
-    //     err => console.log('HTTP Error', err),
-    //     () => console.log('complete')
-    //   );
-  }
+  constructor(private http: HttpClient) { }
 
   getDevices() {
-    //return this.devices;
     return this.http.get<DeviceDto[]>('http://localhost:8189/knxmeister/api/devices/all');
+  }
+
+  getCommunicationObjectsByDevicePhysicalAddress(physicalAddress: string) {
+    console.log('Service - physicalAddress:' + physicalAddress);
+    // return of(physicalAddress);
+    return this.http.get<CommunicationObjectDto[]>('http://localhost:8189/knxmeister/api/devices/' + physicalAddress + '/communicationobjects');
   }
 
 }

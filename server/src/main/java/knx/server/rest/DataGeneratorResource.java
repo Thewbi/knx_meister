@@ -11,6 +11,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.google.gson.Gson;
+
 import api.datagenerator.DataGenerator;
 import api.datagenerator.dto.DataGeneratorDto;
 import api.device.Device;
@@ -51,7 +53,7 @@ public class DataGeneratorResource {
     @ApiResponses({ @ApiResponse(code = 200, message = "OK", response = String.class) })
     @POST
     @Path("/add/{deviceAddress}/{groupAddress}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response addDataGenerator(@PathParam("deviceAddress") final String deviceAddress,
             @PathParam("groupAddress") final String groupAddress, final DataGeneratorDto dataGeneratorDto) {
 
@@ -69,7 +71,12 @@ public class DataGeneratorResource {
 
             knxComObject.setDataGenerator(dataGenerator);
 
-            return Response.status(200).entity("OK").build();
+            final Status status = new Status();
+            status.setStatus("OK");
+
+            final Gson gson = new Gson();
+
+            return Response.status(201, MediaType.APPLICATION_JSON).entity(gson.toJson(status)).build();
 
         } catch (final FactoryException e) {
             LOG.error(e.getMessage(), e);

@@ -2,6 +2,8 @@ package api.datagenerator;
 
 public interface DataGenerator {
 
-    public Object getNextValue();
+    Object getNextValue();
+
+    DataGeneratorType getDataGeneratorType();
 
 }

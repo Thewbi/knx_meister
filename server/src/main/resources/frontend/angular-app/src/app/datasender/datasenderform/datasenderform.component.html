@@ -1,0 +1,27 @@
+<!--{{diagnostic}}-->
+<form (ngSubmit)="onSubmit()" #dataSenderForm="ngForm">
+  <div class="form-group">
+    <label for="type">DataSender Type</label>
+    <select [(ngModel)]="model.dataGeneratorType" name="dataGeneratorType" #dataGeneratorType="ngModel"
+      class="form-control" id="Type" required>
+      <option *ngFor="let type of types" [value]="type">{{type}}</option>
+    </select>
+  </div>
+  <div class="form-group" *ngIf="model.dataGeneratorType == 'SAW' || model.dataGeneratorType == 'RANDOM'">
+    <label for="upperBound">UpperBound</label>
+    <input [(ngModel)]="model.upperBound" name="upperBound" #upperBound="ngModel" class="form-control" id="upperBound"
+      required />
+  </div>
+  <div class="form-group" *ngIf="model.dataGeneratorType == 'SAW' || model.dataGeneratorType == 'RANDOM'">
+    <label for="lowerBound">LowerBound</label>
+    <input [(ngModel)]="model.lowerBound" name="lowerBound" #lowerBound="ngModel" class="form-control" id="lowerBound"
+      required />
+  </div>
+  <div class="form-group" *ngIf="model.dataGeneratorType == 'CONSTANT'">
+    <label for="constant">Constant</label>
+    <input [(ngModel)]="model.constant" name="constant" #constant="ngModel" class="form-control" id="constant"
+      required />
+  </div>
+  <button type="submit" class="btn btn-success" [disabled]="!dataSenderForm.form.valid">Submit</button>
+</form>
+<div *ngIf="submitted">The DataGenerator was created!</div>

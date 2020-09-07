@@ -1,7 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { DeviceServiceService } from '../device-service.service';
+import { ActivatedRoute } from '@angular/router';
+import { Observable, of } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
+import { Router, NavigationExtras } from '@angular/router';
 
 import { DeviceDto } from '../devicedto';
+import { CommunicationObjectDto } from '../communicationobjectdto';
 
 @Component({
   selector: 'app-device',
@@ -10,14 +15,33 @@ import { DeviceDto } from '../devicedto';
 })
 export class DeviceComponent implements OnInit {
 
-  devices: DeviceDto[];
+  physicalAddress: string;
+  communicationObjectDto: CommunicationObjectDto[];
 
-  constructor(private deviceService: DeviceServiceService) { }
+  constructor(private router: Router, private route: ActivatedRoute, private deviceService: DeviceServiceService) {
 
-  ngOnInit() {
-    this.deviceService.getDevices().subscribe((devices: DeviceDto[]) => {
-      this.devices = devices;
+    this.route.queryParams.subscribe(params => {
+      this.physicalAddress = params.physicalAddress;
+
+      this.deviceService.getCommunicationObjectsByDevicePhysicalAddress(params.physicalAddress)
+        .subscribe((communicationObjectDto: CommunicationObjectDto[]) => {
+          this.communicationObjectDto = communicationObjectDto;
+        });
     });
+
+  }
+
+  ngOnInit() { }
+
+  navigate(pyhsicalAddressValue: string, comObjectIdValue: string, groupAddressValue: string) {
+    const navigationExtras: NavigationExtras = {
+      queryParams: {
+        physicalAddress: pyhsicalAddressValue,
+        comObjectId: comObjectIdValue,
+        groupAddress: groupAddressValue,
+      }
+    };
+    this.router.navigate(['/comobject'], navigationExtras);
   }
 
 }
