@@ -6,14 +6,15 @@ public abstract class BaseDataGenerator implements DataGenerator {
 
     private DataGeneratorType dataGeneratorType;
 
-    private double upperBound;
-
-    private double lowerBound;
-
-    private double constant;
+    private DataGeneratorState dataGeneratorState = DataGeneratorState.RUNNING;
 
     @Override
     public abstract Object getNextValue();
+
+    @Override
+    public boolean isPaused() {
+        return dataGeneratorState == DataGeneratorState.PAUSED;
+    }
 
     public int getId() {
         return id;
@@ -23,6 +24,7 @@ public abstract class BaseDataGenerator implements DataGenerator {
         this.id = id;
     }
 
+    @Override
     public DataGeneratorType getDataGeneratorType() {
         return dataGeneratorType;
     }
@@ -31,28 +33,12 @@ public abstract class BaseDataGenerator implements DataGenerator {
         this.dataGeneratorType = dataGeneratorType;
     }
 
-    public double getUpperBound() {
-        return upperBound;
+    public DataGeneratorState getDataGeneratorState() {
+        return dataGeneratorState;
     }
 
-    public void setUpperBound(final double upperBound) {
-        this.upperBound = upperBound;
-    }
-
-    public double getLowerBound() {
-        return lowerBound;
-    }
-
-    public void setLowerBound(final double lowerBound) {
-        this.lowerBound = lowerBound;
-    }
-
-    public double getConstant() {
-        return constant;
-    }
-
-    public void setConstant(final double constant) {
-        this.constant = constant;
+    public void setDataGeneratorState(final DataGeneratorState dataGeneratorState) {
+        this.dataGeneratorState = dataGeneratorState;
     }
 
 }

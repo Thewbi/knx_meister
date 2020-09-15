@@ -36,28 +36,11 @@ public class ObjectServerReaderThread implements Runnable {
 
     private final boolean running = true;
 
-//	private final String ip;
-//
-//	private final int bindPort;
-
     private Pipeline<Object, Object> inputPipeline;
-
-//	private KNXProject knxProject;
 
     private ProjectService projectService;
 
     private Map<String, DataSerializer<Object>> dataSerializerMap;
-
-//	/**
-//	 * ctor
-//	 *
-//	 * @param ip       the IP address to bind to
-//	 * @param bindPort the port on the IP to bind to
-//	 */
-//	public ObjectServerReaderThread(final String ip, final int bindPort) {
-//		this.ip = ip;
-//		this.bindPort = bindPort;
-//	}
 
     @Override
     public void run() {
@@ -146,10 +129,6 @@ public class ObjectServerReaderThread implements Runnable {
         this.inputPipeline = inputPipeline;
     }
 
-//	public void setKnxProject(final KNXProject knxProject) {
-//		this.knxProject = knxProject;
-//	}
-
     public Map<String, DataSerializer<Object>> getDataSerializerMap() {
         return dataSerializerMap;
     }
@@ -157,10 +136,6 @@ public class ObjectServerReaderThread implements Runnable {
     public void setDataSerializerMap(final Map<String, DataSerializer<Object>> dataSerializerMap) {
         this.dataSerializerMap = dataSerializerMap;
     }
-
-//	public String getIp() {
-//		return ip;
-//	}
 
     public void setConfigurationManager(final ConfigurationManager configurationManager) {
         this.configurationManager = configurationManager;

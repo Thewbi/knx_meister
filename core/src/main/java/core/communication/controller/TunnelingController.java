@@ -30,6 +30,9 @@ import core.packets.StructureType;
 
 public class TunnelingController extends BaseController {
 
+//    private static final int SLEEP_TIME_IN_MILLIS = 100;
+    private static final int SLEEP_TIME_IN_MILLIS = 0;
+
     private static final int TUNNELING_DISCONNECT_REQUEST = 0x81;
 
     private static final int TUNNELING_CONNECTION_REQUEST = 0x80;
@@ -280,7 +283,7 @@ public class TunnelingController extends BaseController {
                 knxPacket.getConnection().sendResponse(ackKnxPacket, datagramPacket.getSocketAddress());
 
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(SLEEP_TIME_IN_MILLIS);
                 } catch (final InterruptedException e) {
                     LOG.error(e.getMessage(), e);
                 }
@@ -318,7 +321,7 @@ public class TunnelingController extends BaseController {
                 knxPacket.getConnection().sendResponse(response, datagramPacket.getSocketAddress());
 
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(SLEEP_TIME_IN_MILLIS);
                 } catch (final InterruptedException e) {
                     LOG.error(e.getMessage(), e);
                 }
@@ -508,8 +511,6 @@ public class TunnelingController extends BaseController {
 
     private void sendData(final KNXPacket knxPacket, final Device device) throws IOException {
 
-//        final String devicePhysicalAddress = "1.1.255";
-//        final String devicePhysicalAddress = Utils.integerToKNXAddress(knxPacket.getCemiPropReadRequest(), ".");
         final String groupAddress = Utils.integerToKNXAddress(knxPacket.getCemiTunnelRequest().getDestKNXAddress(),
                 "/");
         final KNXGroupAddress knxGroupAddress = device.getDeviceProperties().get(groupAddress);
@@ -519,22 +520,15 @@ public class TunnelingController extends BaseController {
         }
 
         final KNXComObject knxComObject = device.getComObjects().get(groupAddress);
-
         final int dataPointId = knxComObject.getNumber();
 
-//        final int deviceIndex = 0;
-//        getDataSender().send(knxPacket.getConnection(), Utils.integerToKNXAddress(device.getPhysicalAddress(), "."),
-//                groupAddress, dataPointId, knxGroupAddress.getValue() == null ? 0 : knxGroupAddress.getValue(),
-//                deviceIndex);
-
-        Double value = 0.0d;
         final DataGenerator dataGenerator = knxComObject.getDataGenerator();
-        if (dataGenerator != null) {
-            value = (Double) dataGenerator.getNextValue();
-        }
+        if (dataGenerator != null && dataGenerator.isNotPaused()) {
 
-        getDataSender().send(device, knxPacket.getConnection(),
-                Utils.integerToKNXAddress(device.getPhysicalAddress(), "."), groupAddress, dataPointId, value);
+            final Double value = (Double) dataGenerator.getNextValue();
+            getDataSender().send(device, knxPacket.getConnection(),
+                    Utils.integerToKNXAddress(device.getPhysicalAddress(), "."), groupAddress, dataPointId, value);
+        }
     }
 
     @SuppressWarnings("unused")

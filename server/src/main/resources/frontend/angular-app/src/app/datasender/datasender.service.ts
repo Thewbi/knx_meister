@@ -18,7 +18,7 @@ export class DatasenderService {
 
     const url = 'http://localhost:8189/knxmeister/api/datagenerator/add/' + physialAddress + '/' + tempGroupAddress;
 
-    console.log(url);
+    //console.log(url);
 
     // const httpHeaders = new HttpHeaders({
     //   'Content-Type': 'application/json'

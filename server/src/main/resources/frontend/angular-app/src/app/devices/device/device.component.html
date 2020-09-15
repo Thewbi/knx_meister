@@ -1,4 +1,48 @@
-<h1>Device</h1> Device: {{ physicalAddress }} <div *ngFor="let comObj of communicationObjectDto">
-  <button (click)="navigate(physicalAddress, comObj.id, comObj.knxGroupAddress);">Edit</button> CommunicationObject
-  {{ comObj.id }} - {{ comObj.text}} - {{ comObj.number }} - {{ comObj.knxGroupAddress }}
+<h1>
+Device: {{ physicalAddress }}
+</h1>
+
+
+
+
+<!--
+<div *ngFor="let comObj of communicationObjectDto">
+  <button (click)="navigate(physicalAddress, comObj.id,
+    comObj.knxGroupAddress);">Edit</button>
+
+  CommunicationObject
+  {{ comObj.id }} - {{ comObj.text}} - {{ comObj.number }} - {{
+  comObj.knxGroupAddress }}
+
+</div>
+-->
+<div class="wrapper">
+
+  <div class="horizontally-centered">
+
+<table>
+
+  <tr>
+    <th>ID</th>
+    <th>Description</th>
+    <th>DatapointId</th>
+    <th>GroupAddress</th>
+    <th>Edit</th>
+  </tr>
+
+  <tr *ngFor="let comObj of communicationObjectDto">
+    
+    <td>{{ comObj.id }}</td>
+    <td>{{ comObj.text}}</td>
+    <td>{{ comObj.number }}</td>
+    <td>{{ comObj.knxGroupAddress }}</td>
+    <td><button (click)="navigate(physicalAddress, comObj.id,
+      comObj.knxGroupAddress);">Edit</button></td>
+
+  </tr>
+
+</table>
+
+</div>
+
 </div>

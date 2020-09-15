@@ -5,7 +5,7 @@ package api.datagenerator;
  * framework because the value is constant and does not change. Only changes in
  * value trigger a PROPERT_CHANGE event.
  */
-public class ConstantDataGenerator implements DataGenerator {
+public class ConstantDataGenerator extends BaseDataGenerator {
 
     private double constant;
 

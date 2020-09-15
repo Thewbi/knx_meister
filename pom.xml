@@ -16,6 +16,7 @@
         <module>project</module>
         <module>common</module>
         <module>core</module>
+        <module>server</module>
 		<!--
         <module>object_server</module>
 		-->

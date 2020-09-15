@@ -107,18 +107,6 @@ public class Configuration {
         return deviceService;
     }
 
-//    @Bean
-//    public KNXProject getKnxProject(final ProjectParser<KNXProjectParsingContext> projectParser)
-//            throws IOException, ProjectParsingException {
-//
-//        final File projectFile = new File(projectfile);
-//
-//        LOG.info("Parsing file: '{}'", projectFile.getAbsoluteFile());
-//        final KNXProject knxProject = projectParser.parse(projectFile);
-//
-//        return knxProject;
-//    }
-
     @Bean
     public OutwardOutputPipelineStep getOutwardOutputPipelineStep() {
 
@@ -285,9 +273,7 @@ public class Configuration {
         dataSerializerMap.put(DataConversion.UNSIGNED_INTEGER_8, new UnsignedIntByteSerializer());
 
         final DefaultDataSender dataSender = new DefaultDataSender();
-//        dataSender.setDevice(device);
         dataSender.setDeviceService(deviceService);
-//        dataSender.setKnxProject(knxProject);
         dataSender.setProjectService(projectService);
         dataSender.setDataSerializerMap(dataSerializerMap);
 
@@ -299,7 +285,6 @@ public class Configuration {
             final ConnectionManager connectionManager, final DeviceService deviceService)
             throws SocketException, UnknownHostException {
 
-//		final CoreController coreController = new CoreController(NetworkUtils.retrieveLocalIP());
         final CoreController coreController = new CoreController();
         coreController.setConfigurationManager(configurationManager);
         coreController.setDeviceService(deviceService);
@@ -313,10 +298,8 @@ public class Configuration {
             final ConnectionManager connectionManager, final DeviceService deviceService)
             throws SocketException, UnknownHostException {
 
-//		final ServerCoreController serverCoreController = new ServerCoreController(NetworkUtils.retrieveLocalIP());
         final ServerCoreController serverCoreController = new ServerCoreController();
         serverCoreController.setConfigurationManager(configurationManager);
-//        serverCoreController.setDevice(device);
         serverCoreController.setDeviceService(deviceService);
         serverCoreController.setConnectionManager(connectionManager);
 
@@ -328,8 +311,6 @@ public class Configuration {
             final ConnectionManager connectionManager, final DeviceService deviceService)
             throws SocketException, UnknownHostException {
 
-//		final DeviceManagementController deviceManagementController = new DeviceManagementController(
-//				NetworkUtils.retrieveLocalIP());
         final DeviceManagementController deviceManagementController = new DeviceManagementController();
         deviceManagementController.setConfigurationManager(configurationManager);
         deviceManagementController.setLocalInetAddress(
@@ -345,7 +326,6 @@ public class Configuration {
             final ConnectionManager connectionManager, final DeviceService deviceService, final DataSender dataSender)
             throws SocketException, UnknownHostException {
 
-//		final TunnelingController tunnelingController = new TunnelingController(NetworkUtils.retrieveLocalIP());
         final TunnelingController tunnelingController = new TunnelingController();
         tunnelingController.setConfigurationManager(configurationManager);
         tunnelingController.setLocalInetAddress(
@@ -379,7 +359,6 @@ public class Configuration {
     public Factory<BaseRequest> getRequestFactory(final ProjectService projectService) {
 
         final DefaultRequestFactory requestFactory = new DefaultRequestFactory();
-//        requestFactory.setKnxProject(knxProject);
         requestFactory.setProjectService(projectService);
 
         return requestFactory;
@@ -415,7 +394,6 @@ public class Configuration {
 
         final ObjectServerReaderThread objectServerReaderThread = new ObjectServerReaderThread();
         objectServerReaderThread.setConfigurationManager(configurationManager);
-//        objectServerReaderThread.setKnxProject(knxProject);
         objectServerReaderThread.setProjectService(projectService);
         objectServerReaderThread.setDataSerializerMap(dataSerializerMap);
         objectServerReaderThread.setInputPipeline(objectServerInputPipeline);
@@ -435,17 +413,13 @@ public class Configuration {
 
     @Bean
     public Converter<Device, DeviceDto> getDefaultDeviceDeviceDtoConverter() {
-
         final DefaultDeviceDeviceDtoConverter defaultDeviceDeviceDtoConverter = new DefaultDeviceDeviceDtoConverter();
-
         return defaultDeviceDeviceDtoConverter;
     }
 
     @Bean
     public Converter<KNXComObject, KNXComObjectDto> getKNXComObjectKNXComObjectDtoConverter() {
-
         final KNXComObjectKNXComObjectDtoConverter knxComObjectKNXComObjectDtoConverter = new KNXComObjectKNXComObjectDtoConverter();
-
         return knxComObjectKNXComObjectDtoConverter;
     }
 

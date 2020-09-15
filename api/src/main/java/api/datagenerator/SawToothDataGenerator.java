@@ -9,6 +9,10 @@ public class SawToothDataGenerator extends BoundedDataGenerator {
     @Override
     public Object getNextValue() {
 
+        if (this.getDataGeneratorState() == DataGeneratorState.PAUSED) {
+            return currentValue;
+        }
+
         final double currentReturnValue = currentValue;
 
         currentValue += increment;

@@ -6,4 +6,10 @@ public interface DataGenerator {
 
     DataGeneratorType getDataGeneratorType();
 
+    boolean isPaused();
+
+    default boolean isNotPaused() {
+        return !isPaused();
+    }
+
 }

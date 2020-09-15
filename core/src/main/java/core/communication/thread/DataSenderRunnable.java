@@ -71,9 +71,9 @@ public class DataSenderRunnable implements Runnable {
             // partner
             // has send a connection state request but some partners do never send a
             // communication state request
-            LOG.info(label + " Sleeping 5000 ...");
-            Thread.sleep(5000);
-            LOG.info(label + " Sleeping 5000 done.");
+            LOG.info(label + " Sleeping " + SLEEP_AMOUNT_IN_MILLIS + " ...");
+            Thread.sleep(SLEEP_AMOUNT_IN_MILLIS);
+            LOG.info(label + " Sleeping " + SLEEP_AMOUNT_IN_MILLIS + " done.");
         } catch (final InterruptedException e) {
             LOG.error(e.getMessage(), e);
         }

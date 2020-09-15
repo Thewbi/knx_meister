@@ -1,6 +1,6 @@
 package api.datagenerator;
 
-public abstract class BoundedDataGenerator implements DataGenerator {
+public abstract class BoundedDataGenerator extends BaseDataGenerator {
 
     private double upperBound = 50;
 

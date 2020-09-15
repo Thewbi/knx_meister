@@ -9,9 +9,18 @@ public class RandomDataGenerator extends BoundedDataGenerator {
 
     private final Random random = new Random();
 
+    private double lastValue = 0.0d;
+
     @Override
     public Object getNextValue() {
-        return getLowerBound() + (getUpperBound() - getLowerBound()) * random.nextDouble();
+
+        if (this.getDataGeneratorState() == DataGeneratorState.PAUSED) {
+            return lastValue;
+        }
+
+        lastValue = getLowerBound() + (getUpperBound() - getLowerBound()) * random.nextDouble();
+
+        return lastValue;
     }
 
     @Override
