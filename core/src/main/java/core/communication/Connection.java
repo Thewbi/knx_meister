@@ -6,46 +6,61 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 
+import api.exception.CommunicationException;
+import api.exception.SequenceCounterException;
 import core.packets.ConnectionType;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
 
 public interface Connection {
 
-	DatagramSocket getDatagramSocket();
+    DatagramSocket getDatagramSocket();
 
-	// TODO: change to KNXPacket and insert a output pipeline that converts a
-	// DatagramPacket to a KNX packet
-	void sendResponse(DatagramPacket datagramPacket) throws IOException;
+    // TODO: change to KNXPacket and insert a output pipeline that converts a
+    // DatagramPacket to a KNX packet
+    void sendResponse(DatagramPacket datagramPacket) throws IOException;
 
-	void sendRequest(KNXPacket knxPacket) throws IOException;
+    void sendRequest(KNXPacket knxPacket) throws IOException, CommunicationException;
 
-	void sendResponse(KNXPacket knxPacket, SocketAddress socketAddress) throws IOException;
+    void sendResponse(KNXPacket knxPacket) throws IOException, SequenceCounterException;
 
-	void sendResponse(DatagramPacket datagramPacket, InetAddress inetAddress, int port) throws IOException;
+    void sendResponse(KNXPacket knxPacket, SocketAddress socketAddress) throws IOException;
 
-//	int getSequenceCounter();
-//
-//	void setSequenceCounter(int sequenceCounter);
+    void sendResponse(DatagramPacket datagramPacket, InetAddress inetAddress, int port) throws IOException;
 
-	void setReceiveSequenceCounter(int receiveSequenceCounter);
+    ConnectionType getConnectionType();
 
-	ConnectionType getConnectionType();
+    void setConnectionType(ConnectionType connectionType);
 
-	void setConnectionType(ConnectionType connectionType);
+    int getId();
 
-	int getId();
+    void setId(int id);
 
-	void setId(int id);
+    HPAIStructure getControlEndpoint();
 
-	HPAIStructure getControlEndpoint();
+    void setControlEndpoint(HPAIStructure controlEndpoint);
 
-	void setControlEndpoint(HPAIStructure controlEndpoint);
+    HPAIStructure getDataEndpoint();
 
-	HPAIStructure getDataEndpoint();
+    void setDataEndpoint(HPAIStructure dataEndpoint);
 
-	void setDataEndpoint(HPAIStructure dataEndpoint);
+    void sendData(KNXPacket knxPacket) throws IOException, CommunicationException;
 
-	void sendData(KNXPacket knxPacket) throws IOException;
+    int getSendSequenceCounter();
+
+    void setSendSequenceCounter(int sendSequenceCounter);
+
+    int getReceiveSequenceCounter();
+
+    void setReceiveSequenceCounter(int receiveSequenceCounter);
+
+    long getTimestampLastUsed();
+
+    /**
+     * Touch the connection so it is deemed alive and should not be purged
+     * 
+     * @param timestampLastUsed
+     */
+    void setTimestampLastUsed(long timestampLastUsed);
 
 }

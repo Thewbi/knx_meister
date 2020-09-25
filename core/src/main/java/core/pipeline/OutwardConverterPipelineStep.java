@@ -19,21 +19,22 @@ import core.packets.KNXPacket;
  */
 public class OutwardConverterPipelineStep implements PipelineStep<Object, Object> {
 
-	private static final Logger LOG = LogManager.getLogger(OutwardConverterPipelineStep.class);
+    private static final Logger LOG = LogManager.getLogger(OutwardConverterPipelineStep.class);
 
-	@Override
-	public Object execute(final Object source) throws Exception {
+    @Override
+    public Object execute(final Object source) throws Exception {
 
-		final Object[] objectArray = (Object[]) source;
+        final Object[] objectArray = (Object[]) source;
 
-		final KNXPacket knxPacket = (KNXPacket) objectArray[0];
-		final SocketAddress socketAddress = (SocketAddress) objectArray[1];
+        final KNXPacket knxPacket = (KNXPacket) objectArray[0];
+        final SocketAddress socketAddress = (SocketAddress) objectArray[1];
 
-		final byte[] bytes = knxPacket.getBytes();
+        final byte[] bytes = knxPacket.getBytes();
 
-		LOG.trace(Utils.integerToStringNoPrefix(bytes));
+        // DEBUG - output the bytes
+        LOG.trace(Utils.integerToStringNoPrefix(bytes));
 
-		return new DatagramPacket(bytes, bytes.length, socketAddress);
-	}
+        return new DatagramPacket(bytes, bytes.length, socketAddress);
+    }
 
 }

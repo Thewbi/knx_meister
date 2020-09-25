@@ -5,58 +5,85 @@ package core.packets;
  */
 public enum ConnectionStatus {
 
-	/** The connection is established successfully. */
-	E_NO_ERROR(0x00),
+    /** The connection is established successfully. */
+    E_NO_ERROR(0x00),
 
-	/**
-	 * The requested connection type is not supported by the KNXnet/IP Server
-	 * device.
-	 */
-	E_CONNECTION_TYPE(0x22),
+    /** 1 The requested host protocol is not supported by the KNXnet/IP device. */
+    E_HOST_PROTOCOL_TYPE(0x01),
 
-	/**
-	 * One or more requested connection options are not supported by the KNXnet/IP
-	 * Server device.
-	 */
-	E_CONNECTION_OPTION(0x23),
+    /** The requested protocol version is not supported by the KNXnet/IP device. */
+    E_VERSION_NOT_SUPPORTED(0x02),
 
-	/**
-	 * The KNXnet/IP Server device cannot accept the new data connection because its
-	 * maximum amount of concurrent connections is already occupied.
-	 */
-	E_NO_MORE_CONNECTIONS(0x24),
+    /** The received sequence number is out of order. */
+    E_SEQUENCE_NUMBER(0x04),
 
-	/** No Value */
-	UNSET(0x99);
+    /**
+     * The KNXnet/IP Server device cannot find an active data connection with the
+     * specified ID.
+     */
+    E_CONNECTION_ID(0x21),
 
-	private final int id;
+    /**
+     * The KNXnet/IP Server device detects an error concerning the data connection
+     * with the specified ID.
+     */
+    E_DATA_CONNECTION(0x26),
 
-	ConnectionStatus(final int id) {
-		this.id = id;
-	}
+    /**
+     * The KNXnet/IP Server device detects an error concerning the KNX connection
+     * with the specified ID.
+     */
+    E_KNX_CONNECTION(0x27),
 
-	public static ConnectionStatus fromInt(final int id) {
+    /**
+     * The requested connection type is not supported by the KNXnet/IP Server
+     * device.
+     */
+    E_CONNECTION_TYPE(0x22),
 
-		switch (id) {
-		case 0x00:
-			return E_NO_ERROR;
+    /**
+     * One or more requested connection options are not supported by the KNXnet/IP
+     * Server device.
+     */
+    E_CONNECTION_OPTION(0x23),
 
-		case 0x22:
-			return E_CONNECTION_TYPE;
+    /**
+     * The KNXnet/IP Server device cannot accept the new data connection because its
+     * maximum amount of concurrent connections is already occupied.
+     */
+    E_NO_MORE_CONNECTIONS(0x24),
 
-		case 0x23:
-			return E_CONNECTION_OPTION;
+    /** No Value */
+    UNSET(0x99);
 
-		case 0x24:
-			return E_NO_MORE_CONNECTIONS;
+    private final int id;
 
-		default:
-			throw new RuntimeException("Unkown id " + id);
-		}
-	}
+    ConnectionStatus(final int id) {
+        this.id = id;
+    }
 
-	public int getValue() {
-		return id;
-	}
+    public static ConnectionStatus fromInt(final int id) {
+
+        switch (id) {
+        case 0x00:
+            return E_NO_ERROR;
+
+        case 0x22:
+            return E_CONNECTION_TYPE;
+
+        case 0x23:
+            return E_CONNECTION_OPTION;
+
+        case 0x24:
+            return E_NO_MORE_CONNECTIONS;
+
+        default:
+            throw new RuntimeException("Unkown id " + id);
+        }
+    }
+
+    public int getValue() {
+        return id;
+    }
 
 }

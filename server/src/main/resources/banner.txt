@@ -13,22 +13,32 @@
 ========================================================================================================
 ========================================================================================================
 
+Current settings:
+
+knx.ip=${knx.ip}
+knx.projectfile=${knx.projectfile}
+
+========================================================================================================
+========================================================================================================
+
 Usage:
 This simulator is used for simulating KNX devices defined in ETS 5 project files.
 1. You need to create a ETS 5 project using the ETS Software
-2. Upload the Project into this simulator / configure the file in application.properties
+2. Specify the project via the command line parameter 'knx.projectfile' or configure the file in application.properties
 3. Assign DataGenerators to the CommunicationObjects located inside the devices
 4. Connect the cockpit to the ip and port the KNX simulator is bound to
 
 Configuration:
 Note: This application runs a spring boot server that host a angular webapp, swagger for the REST api 
-and spring boot actuators. This server is configured via:
-/server/src/main/resources/application.properties
+and spring boot actuators. 
+This server is configured via the file /server/src/main/resources/application.properties
+Parameters are:
 * server.address - the ip address the spring boot server binds to (0.0.0.0 is the standard interface as defined by the OS)
 * server.port - the port that the spring boot server binds to
 
 Within that spring boot server, a KNX Server is started which is configured via:
 /server/src/main/resources/application.properties
+Parameters are:
 * knx.ip - the ip that the KNX server binds to (Usually, in a local setup, you want to use 192.168.2.1 which is the
 ifc on your local machine that is connected to the cockpit.
 * knx.projectfile - the ETS projectfile that the server will parse and load.
@@ -38,8 +48,18 @@ Building:
 Run the aggregator pom file which is located in the root folder of this software package: 
 mvn clean install
 
-Running the server:
-java -jar server-1.0.0.jar --knx.projectfile=C:/Users/username/Documents/knxproj/KNX_IP_BAOS_777.knxproj
+Running the server from the command line (example command):
+java -jar server-1.0.0.jar --knx.ip=<IP_FOR_KNX> --knx.projectfile=<PATH_TO_KNX_PROJECT>
+java -jar server-1.0.0.jar --knx.ip=192.168.2.1 --knx.projectfile=C:/Users/username/Documents/knxproj/KNX_IP_BAOS_777.knxproj
+Currently you are running: 
+java -jar server-1.0.0.jar --knx.ip=${knx.ip} --knx.projectfile=${knx.projectfile}
+
+Running the server from within eclipse:
+Create a normal Java run or debug configuration and run the main method in the class knx.server.ServerApplication.
+That way you can abort the app without any problems at any time and no ports keep being bound. You can 
+specify parameters (--knx.ip=<IP_FOR_KNX> --knx.projectfile=<PATH_TO_KNX_PROJECT>) in the run or debug configuration.
+Do not use a run or debug configuration that executes the Maven mvn spring-boot:run command because this
+way of starting the server suffers from an issue where ports keep being bound even after terminating the server!
 
 Test the REST API:
 http://localhost:8189/knxmeister/api/system/version

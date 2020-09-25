@@ -1,10 +1,15 @@
 package core.communication;
 
 import java.net.DatagramSocket;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.collections4.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,91 +19,196 @@ import core.packets.KNXPacket;
 
 public class DefaultConnectionManager implements ConnectionManager {
 
-	private static final Logger LOG = LogManager.getLogger(DefaultConnectionManager.class);
+    private static final Logger LOG = LogManager.getLogger(DefaultConnectionManager.class);
 
-	private final Map<Integer, Connection> connectionMap = new ConcurrentHashMap<>();
+    private final Map<Integer, Connection> connectionMap = new ConcurrentHashMap<>();
 
-	private final AtomicInteger connectionIdAtomicInteger = new AtomicInteger();
+    private final AtomicInteger connectionIdAtomicInteger = new AtomicInteger();
 
-	private Pipeline<Object, Object> outputPipeline;
+    private Pipeline<Object, Object> outputPipeline;
 
-	/**
-	 * Connection via the knxPacket.getCommunicationChannelId() property.
-	 */
-	@Override
-	public Connection retrieveConnection(final KNXPacket knxPacket, final DatagramSocket datagramSocket) {
+    /**
+     * ctor
+     */
+    public DefaultConnectionManager() {
+        startDumpConnectionsThread(OUTPUT_PERIOD_IN_MILLIS);
+        startPurgeConnectionsThread(PURGE_PERIOD_IN_MILLIS);
+    }
 
-		final int communicationChannelId = knxPacket.getCommunicationChannelId();
+    @SuppressWarnings("unlikely-arg-type")
+    private void startPurgeConnectionsThread(final int periodInMillis) {
 
-		// if the packet has a specific communicationChannelId, try to find that
-		// connection
-		if (communicationChannelId > 0) {
-			return connectionMap.get(communicationChannelId);
-		}
+        // output connections
+        final Runnable runnable = () -> {
 
-		// if the packet has no communicationChannelId, return the basic 0 connection,
-		// if that connection exists already
-		if (connectionMap.containsKey(0)) {
-			return connectionMap.get(0);
-		}
+            while (true) {
 
-		// create a new connection and return it. Because connectionIdAtomicInteger
-		// starts with 0, this will create the basic 0 connection
-		return createNewConnection(datagramSocket, connectionIdAtomicInteger.getAndIncrement(), ConnectionType.UNKNOWN);
-	}
+                try {
+                    Thread.sleep(periodInMillis);
+                } catch (final InterruptedException e) {
+                    // ignored
+                }
 
-	@Override
-	public Connection retrieveConnection(final int communicationChannelId) {
-		return connectionMap.get(communicationChannelId);
-	}
+                if (MapUtils.isEmpty(connectionMap)) {
+                    LOG.trace("No connections yet!");
+                    continue;
+                }
 
-	@Override
-	public Connection createNewConnection(final DatagramSocket datagramSocket, final ConnectionType connectionType) {
-		return createNewConnection(datagramSocket, connectionIdAtomicInteger.getAndIncrement(), connectionType);
-	}
+                final long currentTimeMillis = System.currentTimeMillis();
 
-	@Override
-	public Connection createNewConnection(final DatagramSocket datagramSocket, final int id,
-			final ConnectionType connectionType) {
+                final List<Connection> removeList = new ArrayList<>();
 
-		// when the application is closed and restarted, the connection map is empty and
-		// the connectionIdAtomicInteger is initialized to 0. Meanwhile the
-		// communication partner might still keep the connections alive. That means a
-		// restarted application might be confronted with a connection id larger then
-		// the connectionidAtomicInteger value.
-		//
-		// In this case, increment the connectionidAtomicInteger until it has caught up.
-		while (connectionIdAtomicInteger.get() <= id) {
-			connectionIdAtomicInteger.getAndIncrement();
-		}
+                // @formatter:off
 
-		LOG.info("Creating new connection " + connectionType + " with id {}", id);
+                connectionMap.values()
+                    .stream()
+                    .filter(c -> {
+                        final long idle = currentTimeMillis - c.getTimestampLastUsed();
+                        return idle > CONNECTION_TIMEOUT;
+                    })
+                    .forEach(c -> removeList.add(c));
 
-		final DefaultConnection connection = new DefaultConnection();
-		connection.setId(id);
-		connection.setDatagramSocket(datagramSocket);
-		connection.setConnectionType(connectionType);
-		connection.setOutputPipeline(outputPipeline);
+                removeList.stream().forEach(c -> {
+                    LOG.info("Removing connection '{}' because is not used for {} ms.", c, CONNECTION_TIMEOUT);
+                    connectionMap.remove(c.getId());
+                });
 
-		connectionMap.put(id, connection);
+                // @formatter:on
+            }
 
-		return connection;
-	}
+        };
+        final Thread thread = new Thread(runnable);
+        thread.start();
+    }
 
-	@Override
-	public void closeConnection(final int id) {
+    private void startDumpConnectionsThread(final int periodInMillis) {
+        // output connections
+        final Runnable runnable = () -> {
 
-		LOG.info("Removing connnection with id {}", id);
+            while (true) {
 
-		if (!connectionMap.containsKey(id)) {
-			return;
-		}
-		connectionMap.remove(id);
-	}
+                try {
+                    Thread.sleep(periodInMillis);
+                } catch (final InterruptedException e) {
+                    // ignored
+                }
 
-	@Override
-	public void setOutputPipeline(final Pipeline<Object, Object> outputPipeline) {
-		this.outputPipeline = outputPipeline;
-	}
+                if (MapUtils.isEmpty(connectionMap)) {
+                    LOG.trace("No connections yet!");
+                    continue;
+                }
+
+                LOG.info("\n");
+                LOG.info("-------------------------------- CONNECTIONS --------------------------------");
+
+                connectionMap.values().stream().forEach(c -> LOG.info(c.toString()));
+
+                LOG.info("-----------------------------------------------------------------------------");
+            }
+
+        };
+        final Thread thread = new Thread(runnable);
+        thread.start();
+    }
+
+    /**
+     * Connection via the knxPacket.getCommunicationChannelId() property.
+     */
+    @Override
+    public Connection retrieveConnection(final KNXPacket knxPacket, final DatagramSocket datagramSocket) {
+
+        final int communicationChannelId = knxPacket.getCommunicationChannelId();
+
+        // if the packet has a specific communicationChannelId, try to find that
+        // connection
+        if (communicationChannelId > 0) {
+            return connectionMap.get(communicationChannelId);
+        }
+
+        // if the packet has no communicationChannelId, return the basic 0 connection,
+        // if that connection exists already
+        if (connectionMap.containsKey(0)) {
+            return connectionMap.get(0);
+        }
+
+        // create a new connection and return it. Because connectionIdAtomicInteger
+        // starts with 0, this will create the basic 0 connection
+        return createNewConnection(datagramSocket, connectionIdAtomicInteger.getAndIncrement(), ConnectionType.UNKNOWN);
+    }
+
+    @Override
+    public Connection retrieveConnection(final int communicationChannelId) {
+        return connectionMap.get(communicationChannelId);
+    }
+
+    @Override
+    public Optional<Connection> getLiveConnection() {
+
+        if (MapUtils.isEmpty(connectionMap)) {
+            return null;
+        }
+
+        // @formatter:off
+
+        final Optional<Connection> mostRecentlyUsedOptional = connectionMap.values()
+                .stream()
+                .filter(c -> c.getConnectionType() == ConnectionType.TUNNEL_CONNECTION)
+                .max(Comparator.comparing(Connection::getTimestampLastUsed));
+
+        // @formatter:on
+
+        return mostRecentlyUsedOptional;
+    }
+
+    @Override
+    public Connection createNewConnection(final DatagramSocket datagramSocket, final ConnectionType connectionType) {
+        return createNewConnection(datagramSocket, connectionIdAtomicInteger.getAndIncrement(), connectionType);
+    }
+
+    @Override
+    public Connection createNewConnection(final DatagramSocket datagramSocket, final int id,
+            final ConnectionType connectionType) {
+
+        // when the application is closed and restarted, the connection map is empty and
+        // the connectionIdAtomicInteger is initialized to 0. Meanwhile the
+        // communication partner might still keep the connections alive. That means a
+        // restarted application might be confronted with a connection id larger then
+        // the connectionidAtomicInteger value.
+        //
+        // In this case, increment the connectionidAtomicInteger until it has caught up.
+        while (connectionIdAtomicInteger.get() <= id) {
+            connectionIdAtomicInteger.getAndIncrement();
+        }
+
+        LOG.info("Creating new connection " + connectionType + " with id {}", id);
+
+        final DefaultConnection connection = new DefaultConnection();
+        connection.setId(id);
+        connection.setDatagramSocket(datagramSocket);
+        connection.setConnectionType(connectionType);
+        connection.setOutputPipeline(outputPipeline);
+
+        connectionMap.put(id, connection);
+
+        LOG.info(connection.toString());
+
+        return connection;
+    }
+
+    @Override
+    public void closeConnection(final int id) {
+
+        LOG.info("Removing connnection with id {}", id);
+
+        if (!connectionMap.containsKey(id)) {
+            return;
+        }
+        connectionMap.remove(id);
+    }
+
+    @Override
+    public void setOutputPipeline(final Pipeline<Object, Object> outputPipeline) {
+        this.outputPipeline = outputPipeline;
+    }
 
 }

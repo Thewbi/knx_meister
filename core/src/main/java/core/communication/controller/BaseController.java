@@ -106,15 +106,16 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
         return knxPacket;
     }
 
-    protected KNXPacket sendConnectionStateResponse(final DatagramSocket socket, final DatagramPacket datagramPacket,
-            final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
+    protected KNXPacket createConnectionStateResponse(final ConnectionStatus connectionStatus,
+            final DatagramSocket socket, final DatagramPacket datagramPacket, final KNXPacket originalKNXPacket,
+            final InetAddress inetAddress, final int port) throws IOException {
 
         final KNXPacket knxPacket = new KNXPacket();
 
         // header
         knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECTIONSTATE_RESPONSE);
         knxPacket.setCommunicationChannelId(originalKNXPacket.getCommunicationChannelId());
-        knxPacket.setConnectionStatus(ConnectionStatus.E_NO_ERROR);
+        knxPacket.setConnectionStatus(connectionStatus);
 
         return knxPacket;
     }
@@ -159,7 +160,7 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
         }
 
         final int destKNXAddress = cemiTunnelRequest.getDestKNXAddress();
-        final String physicalAddress = Utils.integerToKNXAddress(destKNXAddress, ".");
+        final String physicalAddress = Utils.integerToKNXAddress(destKNXAddress, Utils.SEPARATOR);
         final Map<String, Device> devices = getDeviceService().getDevices();
 
         return devices.get(physicalAddress);

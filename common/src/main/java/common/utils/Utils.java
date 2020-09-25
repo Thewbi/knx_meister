@@ -8,6 +8,8 @@ import org.apache.commons.lang3.StringUtils;
 
 public final class Utils {
 
+    public static final String SEPARATOR = ".";
+
     private static final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
 
     private Utils() {

@@ -10,213 +10,294 @@ import java.net.SocketAddress;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import api.exception.CommunicationException;
+import api.exception.SequenceCounterException;
 import api.pipeline.Pipeline;
+import common.utils.Utils;
 import core.packets.ConnectionType;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
 
 public class DefaultConnection implements Connection {
 
-	private static final Logger LOG = LogManager.getLogger(DefaultConnection.class);
+    private static final Logger LOG = LogManager.getLogger(DefaultConnection.class);
 
-	private int id;
+    private long timestampLastUsed = System.currentTimeMillis();
 
-	/**
-	 * The sequenceCounter is not a number used to order UDP packets received out of
-	 * order. The sequenceCounter correlates several UDP packets to a unit of work.
-	 *
-	 * For example the Tunneling DEVICE_DESCRIPTION_READ_APCI unit of work consists
-	 * of four packets all belonging to the same sequenceCounter value req+OK,
-	 * ind+OK.
-	 */
-	private int sendSequenceCounter = -1;
+    private int id;
 
-	@SuppressWarnings("unused")
-	private int receiveSequenceCounter = -1;
+    /**
+     * The sequenceCounter is not a number used to order UDP packets received out of
+     * order. The sequenceCounter correlates several UDP packets to a unit of work.
+     * <br />
+     * <br />
+     * For example the Tunneling DEVICE_DESCRIPTION_READ_APCI unit of work consists
+     * of four packets all belonging to the same sequenceCounter value req+OK,
+     * ind+OK.
+     */
+    private int sendSequenceCounter = -1;
 
-	private DatagramSocket datagramSocket;
+    @SuppressWarnings("unused")
+    private int receiveSequenceCounter = -1;
 
-	private ConnectionType connectionType;
+    private DatagramSocket datagramSocket;
 
-	private Pipeline<Object, Object> outputPipeline;
+    private ConnectionType connectionType;
 
-	private HPAIStructure controlEndpoint;
+    private Pipeline<Object, Object> outputPipeline;
 
-	private HPAIStructure dataEndpoint;
+    private HPAIStructure controlEndpoint;
 
-	@Override
-	public void sendResponse(final DatagramPacket datagramPacket) throws IOException {
-		datagramSocket.send(datagramPacket);
-	}
+    private HPAIStructure dataEndpoint;
 
-	@Override
-	public void sendResponse(final KNXPacket knxPacket, final SocketAddress socketAddress) throws IOException {
-		DatagramPacket datagramPacket;
-		try {
-			final Object[] objectArray = new Object[2];
-			objectArray[0] = knxPacket;
-			objectArray[1] = socketAddress;
+    @Override
+    public void sendResponse(final DatagramPacket datagramPacket) throws IOException {
+        timestampLastUsed = System.currentTimeMillis();
+        datagramSocket.send(datagramPacket);
+    }
 
-			datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
-		} catch (final Exception e) {
-			LOG.error(e.getMessage(), e);
-			throw new IOException(e);
-		}
+    @Override
+    public void sendResponse(final KNXPacket knxPacket) throws IOException, SequenceCounterException {
 
-		LOG.trace("Connection {} is sending packet over socketAddress {}", id, socketAddress);
+        // touch the connection because it is alive and should not be purged
+        timestampLastUsed = System.currentTimeMillis();
 
-		datagramSocket.send(datagramPacket);
-	}
+        final InetSocketAddress inetSocketAddress = new InetSocketAddress(dataEndpoint.getIpAddressAsObject(),
+                dataEndpoint.getPort());
 
-	@Override
-	public void sendRequest(final KNXPacket knxPacket) throws IOException {
+//        final int sequenceCounter = 69;
+        final int sequenceCounter = receiveSequenceCounter + 1;
+//        final int sequenceCounter = receiveSequenceCounter + 2;
 
-		sendSequenceCounter++;
-		knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
-		knxPacket.getConnectionHeader().setChannel((short) id);
+//        knxPacket.getConnectionHeader().setSequenceCounter(receiveSequenceCounter + 1);
+        knxPacket.getConnectionHeader().setSequenceCounter(sequenceCounter);
 
-		final InetSocketAddress inetSocketAddress = new InetSocketAddress(datagramSocket.getInetAddress(),
-				datagramSocket.getPort());
-		DatagramPacket datagramPacket;
-		try {
-			final Object[] objectArray = new Object[2];
-			objectArray[0] = knxPacket;
-			objectArray[1] = inetSocketAddress;
+        LOG.info(">>>>>>>> " + sequenceCounter + " >>>>>>> " + this);
 
-			datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
-		} catch (final Exception e) {
-			LOG.error(e.getMessage(), e);
-			throw new IOException(e);
-		}
+        sendResponse(knxPacket, inetSocketAddress);
+    }
 
-		LOG.trace("Connection {} is sending packet over socketAddress {}", id, inetSocketAddress);
+    /**
+     * Convert a domain specific KNX Payload into a java.net.DatagramPacket and send
+     * it out to the connected communication partner.
+     *
+     * <ol>
+     * <li/>Construct an object array containing the KNXPacket which is then put
+     * into the outward pipeline.
+     * <li/>The outward pipeline converts the payload into a byte buffer
+     * <li/>Send the byte buffer as payload via a java.net.DatagramPacket
+     * </ol>
+     */
+    @Override
+    public void sendResponse(final KNXPacket knxPacket, final SocketAddress socketAddress) throws IOException {
 
-		datagramSocket.send(datagramPacket);
-	}
+        timestampLastUsed = System.currentTimeMillis();
 
-	@Override
-	public void sendResponse(final DatagramPacket datagramPacket, final InetAddress inetAddress, final int port)
-			throws IOException {
-		datagramSocket.send(datagramPacket);
-	}
+        DatagramPacket datagramPacket;
+        try {
+            // domain specific payload data
+            final Object[] objectArray = new Object[2];
+            objectArray[0] = knxPacket;
+            objectArray[1] = socketAddress;
 
-	/**
-	 * Sends Data to the data HPAI endpoint of the communication partner. Increments
-	 * the own sendSequenceCounter (!= receiveSequenceCounter) and uses that
-	 * sequence counter as the sequence counter for the packet.
-	 */
-	@Override
-	public void sendData(final KNXPacket knxPacket) throws IOException {
+            // pipeline serializes the payload and puts it into a java.net.DatagramPacket
+            // ready for sending
+            datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
+        } catch (final Exception e) {
+            LOG.error(e.getMessage(), e);
+            throw new IOException(e);
+        }
 
-		// TODO: remove hardcoded
-//		final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
-//				InetAddress.getByName("192.168.0.241"), 3671);
+        LOG.trace("Connection {} is sending packet over socketAddress {}", id, socketAddress);
 
-//		final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
-//				InetAddress.getByName("192.168.0.24"), 3671);
+        // send the datagramPacket over the socket
+        datagramSocket.send(datagramPacket);
+    }
 
-		if (dataEndpoint == null) {
-			LOG.warn("DataEndpoint is null!");
-			return;
-		}
+    @Override
+    public void sendRequest(final KNXPacket knxPacket) throws IOException, CommunicationException {
 
-		final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
-				dataEndpoint.getIpAddressAsObject(), dataEndpoint.getPort());
+        timestampLastUsed = System.currentTimeMillis();
 
-		sendSequenceCounter++;
-		knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
-		knxPacket.getConnectionHeader().setChannel((short) id);
+        sendSequenceCounter++;
+        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
+        knxPacket.getConnectionHeader().setChannel((short) id);
 
-//		final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
-//				getDataEndpoint().getIpAddressAsObject(), getDataEndpoint().getPort());
+        final InetSocketAddress inetSocketAddress = new InetSocketAddress(datagramSocket.getInetAddress(),
+                datagramSocket.getPort());
+        DatagramPacket datagramPacket;
+        try {
+            final Object[] objectArray = new Object[2];
+            objectArray[0] = knxPacket;
+            objectArray[1] = inetSocketAddress;
 
-		// use the pipeline to retrieve a DatagramPacket from a KNX packet
-		final DatagramPacket datagramPacket = retrieveDatagramPacket(knxPacket, destinationInetSocketAddress);
+            datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
+        } catch (final Exception e) {
+            LOG.error(e.getMessage(), e);
+            throw new IOException(e);
+        }
 
-		LOG.trace("Connection {} is sending packet to socketAddress {}", id, destinationInetSocketAddress);
+        LOG.trace("Connection {} is sending packet over socketAddress {}", id, inetSocketAddress);
 
-		LOG.trace("SendSequenceCounter: " + sendSequenceCounter + ") Sending Data to "
-				+ destinationInetSocketAddress.getHostString() + ":" + destinationInetSocketAddress.getPort());
+        datagramSocket.send(datagramPacket);
+    }
 
-		datagramSocket.send(datagramPacket);
-	}
+    @Override
+    public void sendResponse(final DatagramPacket datagramPacket, final InetAddress inetAddress, final int port)
+            throws IOException {
+        timestampLastUsed = System.currentTimeMillis();
+        datagramSocket.send(datagramPacket);
+    }
 
-	private DatagramPacket retrieveDatagramPacket(final KNXPacket knxPacket, final InetSocketAddress inetSocketAddress)
-			throws IOException {
+    /**
+     * Sends Data to the data HPAI endpoint of the communication partner. Increments
+     * the own sendSequenceCounter (!= receiveSequenceCounter) and uses that
+     * sequence counter as the sequence counter for the packet.
+     *
+     * @throws CommunicationException
+     */
+    @Override
+    public void sendData(final KNXPacket knxPacket) throws IOException, CommunicationException {
 
-		DatagramPacket datagramPacket;
-		try {
-			// parameter 0 is the KNX packet to convert into a datagram packet
-			// parameter 1 is the destination IP address to send the datagram packet to
-			final Object[] objectArray = new Object[2];
-			objectArray[0] = knxPacket;
-			objectArray[1] = inetSocketAddress;
+        timestampLastUsed = System.currentTimeMillis();
 
-			datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
-		} catch (final Exception e) {
-			LOG.error(e.getMessage(), e);
-			throw new IOException(e);
-		}
+        if (dataEndpoint == null) {
+            LOG.warn("DataEndpoint is null!");
+            return;
+        }
 
-		return datagramPacket;
-	}
+        final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
+                dataEndpoint.getIpAddressAsObject(), dataEndpoint.getPort());
 
-	@Override
-	public int getId() {
-		return id;
-	}
+        // increment the connections sequence counter and set the incremented value into
+        // the knxPacket
+        sendSequenceCounter++;
+        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
 
-	@Override
-	public void setId(final int id) {
-		this.id = id;
-	}
+        knxPacket.getConnectionHeader().setChannel((short) id);
 
-	@Override
-	public DatagramSocket getDatagramSocket() {
-		return datagramSocket;
-	}
+        // use the pipeline to retrieve a DatagramPacket from a KNX packet
+        final DatagramPacket datagramPacket = retrieveDatagramPacket(knxPacket, destinationInetSocketAddress);
 
-	public void setDatagramSocket(final DatagramSocket socket) {
-		this.datagramSocket = socket;
-	}
+        LOG.trace("Connection {} is sending packet to socketAddress {}", id, destinationInetSocketAddress);
+        LOG.trace("SendSequenceCounter: " + sendSequenceCounter + ") Sending Data to "
+                + destinationInetSocketAddress.getHostString() + ":" + destinationInetSocketAddress.getPort());
 
-	@Override
-	public ConnectionType getConnectionType() {
-		return connectionType;
-	}
+        datagramSocket.send(datagramPacket);
+    }
 
-	@Override
-	public void setConnectionType(final ConnectionType connectionType) {
-		this.connectionType = connectionType;
-	}
+    private DatagramPacket retrieveDatagramPacket(final KNXPacket knxPacket, final InetSocketAddress inetSocketAddress)
+            throws IOException {
 
-	public void setOutputPipeline(final Pipeline<Object, Object> outputPipeline) {
-		this.outputPipeline = outputPipeline;
-	}
+        DatagramPacket datagramPacket;
+        try {
+            // parameter 0 is the KNX packet to convert into a datagram packet
+            // parameter 1 is the destination IP address to send the datagram packet to
+            final Object[] objectArray = new Object[2];
+            objectArray[0] = knxPacket;
+            objectArray[1] = inetSocketAddress;
 
-	@Override
-	public HPAIStructure getControlEndpoint() {
-		return controlEndpoint;
-	}
+            datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
+        } catch (final Exception e) {
+            LOG.error(e.getMessage(), e);
+            throw new IOException(e);
+        }
 
-	@Override
-	public void setControlEndpoint(final HPAIStructure controlEndpoint) {
-		this.controlEndpoint = controlEndpoint;
-	}
+        return datagramPacket;
+    }
 
-	@Override
-	public HPAIStructure getDataEndpoint() {
-		return dataEndpoint;
-	}
+    @Override
+    public int getId() {
+        return id;
+    }
 
-	@Override
-	public void setDataEndpoint(final HPAIStructure dataEndpoint) {
-		this.dataEndpoint = dataEndpoint;
-	}
+    @Override
+    public void setId(final int id) {
+        this.id = id;
+    }
 
-	@Override
-	public void setReceiveSequenceCounter(final int receiveSequenceCounter) {
-		this.receiveSequenceCounter = receiveSequenceCounter;
-	}
+    @Override
+    public DatagramSocket getDatagramSocket() {
+        return datagramSocket;
+    }
+
+    public void setDatagramSocket(final DatagramSocket socket) {
+        this.datagramSocket = socket;
+    }
+
+    @Override
+    public ConnectionType getConnectionType() {
+        return connectionType;
+    }
+
+    @Override
+    public void setConnectionType(final ConnectionType connectionType) {
+        this.connectionType = connectionType;
+    }
+
+    public void setOutputPipeline(final Pipeline<Object, Object> outputPipeline) {
+        this.outputPipeline = outputPipeline;
+    }
+
+    @Override
+    public HPAIStructure getControlEndpoint() {
+        return controlEndpoint;
+    }
+
+    @Override
+    public void setControlEndpoint(final HPAIStructure controlEndpoint) {
+        this.controlEndpoint = controlEndpoint;
+    }
+
+    @Override
+    public HPAIStructure getDataEndpoint() {
+        return dataEndpoint;
+    }
+
+    @Override
+    public void setDataEndpoint(final HPAIStructure dataEndpoint) {
+        this.dataEndpoint = dataEndpoint;
+    }
+
+    @Override
+    public int getSendSequenceCounter() {
+        return sendSequenceCounter;
+    }
+
+    @Override
+    public void setSendSequenceCounter(final int sendSequenceCounter) {
+        this.sendSequenceCounter = sendSequenceCounter;
+    }
+
+    @Override
+    public int getReceiveSequenceCounter() {
+        return receiveSequenceCounter;
+    }
+
+    @Override
+    public void setReceiveSequenceCounter(final int receiveSequenceCounter) {
+        LOG.trace("setReceiveSequenceCounter() newValue:" + receiveSequenceCounter);
+        this.receiveSequenceCounter = receiveSequenceCounter;
+    }
+
+    @Override
+    public String toString() {
+
+        final long idleInSeconds = (System.currentTimeMillis() - timestampLastUsed) / 1000;
+
+        return "DefaultConnection [id: #" + id + " #" + Utils.integerToString(id) + ", sendSequenceCounter="
+                + sendSequenceCounter + ", receiveSequenceCounter=" + receiveSequenceCounter + ", connectionType="
+                + connectionType + " Idle for: " + idleInSeconds + " seconds ]";
+    }
+
+    @Override
+    public long getTimestampLastUsed() {
+        return timestampLastUsed;
+    }
+
+    @Override
+    public void setTimestampLastUsed(final long timestampLastUsed) {
+        this.timestampLastUsed = timestampLastUsed;
+    }
 
 }

@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import api.device.Device;
 import api.device.DeviceService;
+import api.exception.CommunicationException;
 import api.project.KNXComObject;
 import common.utils.Utils;
 import core.communication.Connection;
@@ -12,9 +13,9 @@ import core.data.sending.DataSender;
 
 public class DataSenderRunnable implements Runnable {
 
-    private static final int MAX_VALUE = 40;
-
-    private static final int MIN_VALUE = 0;
+//    private static final int MAX_VALUE = 40;
+//
+//    private static final int MIN_VALUE = 0;
 
     private static final int SLEEP_AMOUNT_IN_MILLIS = 5000;
 
@@ -47,10 +48,8 @@ public class DataSenderRunnable implements Runnable {
         try {
 
             // in order to be compatible with the ETS5 Bus-Monitor, the tunnel requests can
-            // only be send
-            // to the ETS5 Bus-Monitor after the Bus-Monitor did ask for the ConnectionState
-            // and that
-            // request was answered with the answer OK.
+            // only be send to the ETS5 Bus-Monitor after the Bus-Monitor did ask for the
+            // ConnectionState and that request was answered with the answer OK.
             //
             // The sequence is:
             // 1. The Bus-Monitor establishes a tunneling connection with the device.
@@ -68,8 +67,7 @@ public class DataSenderRunnable implements Runnable {
             // check, the Bus-Monitor will disconnect the tunneling connection immediately.
             //
             // An alternative would be to start this thread only after the communication
-            // partner
-            // has send a connection state request but some partners do never send a
+            // partner has send a connection state request but some partners do never send a
             // communication state request
             LOG.info(label + " Sleeping " + SLEEP_AMOUNT_IN_MILLIS + " ...");
             Thread.sleep(SLEEP_AMOUNT_IN_MILLIS);
@@ -82,7 +80,7 @@ public class DataSenderRunnable implements Runnable {
 
         while (!done) {
 
-            LOG.info(label + " Sending data ...");
+            LOG.info("{} Sending data via connection '{}' ...", label, connection);
 
 //			final String physicalAddress = "0/0/9";
 //			final int dataPointId = 17;
@@ -120,6 +118,7 @@ public class DataSenderRunnable implements Runnable {
 
                 for (final KNXComObject knxComObject : device.getComObjects().values()) {
 
+                    // if there is no data generator, skip
                     if (knxComObject.getDataGenerator() == null) {
                         continue;
                     }
@@ -128,10 +127,17 @@ public class DataSenderRunnable implements Runnable {
                     final int dataPointId = knxComObject.getNumber();
                     final String groupAddress = Utils.integerToKNXAddress(address, "/");
 
-                    dataSender.send(device, connection, Utils.integerToKNXAddress(device.getPhysicalAddress(), "."),
-                            groupAddress, dataPointId, knxComObject.getDataGenerator().getNextValue());
-                }
+                    try {
+                        dataSender.send(device, connection,
+                                Utils.integerToKNXAddress(device.getPhysicalAddress(), Utils.SEPARATOR), groupAddress,
+                                dataPointId, knxComObject.getDataGenerator().getNextValue());
 
+//                        done = true;
+                    } catch (final CommunicationException e) {
+                        LOG.error(e.getMessage(), e);
+                        done = true;
+                    }
+                }
             }
 
 //            currentValue += increment;
@@ -143,7 +149,7 @@ public class DataSenderRunnable implements Runnable {
 //            }
 
             try {
-                LOG.info(label + " Sleeping " + SLEEP_AMOUNT_IN_MILLIS + " ...");
+                LOG.trace(label + " Sleeping " + SLEEP_AMOUNT_IN_MILLIS + " ...");
                 Thread.sleep(SLEEP_AMOUNT_IN_MILLIS);
                 LOG.trace(label + " Sleeping \" + SLEEP_AMOUNT + \" done.");
             } catch (final InterruptedException e) {

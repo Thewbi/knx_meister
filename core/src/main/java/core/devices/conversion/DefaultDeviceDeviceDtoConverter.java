@@ -12,7 +12,7 @@ public class DefaultDeviceDeviceDtoConverter implements Converter<Device, Device
 
         final DeviceDto deviceDto = new DeviceDto();
         deviceDto.setPhysicalAddress(device.getPhysicalAddress());
-        deviceDto.setPhysicalAddressAsString(Utils.integerToKNXAddress(device.getPhysicalAddress(), "."));
+        deviceDto.setPhysicalAddressAsString(Utils.integerToKNXAddress(device.getPhysicalAddress(), Utils.SEPARATOR));
 
         return deviceDto;
     }

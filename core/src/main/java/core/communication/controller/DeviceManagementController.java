@@ -8,6 +8,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import api.device.Device;
+import api.exception.SequenceCounterException;
 import api.packets.PropertyId;
 import common.packets.KNXConnectionHeader;
 import common.packets.ServiceIdentifier;
@@ -48,7 +49,8 @@ public class DeviceManagementController extends BaseController {
 
     @Override
     public void knxPacket(final Connection connection, final DatagramSocket socket3671,
-            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label) throws IOException {
+            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label)
+            throws IOException, SequenceCounterException {
 
         KNXPacket knxPacketAck = null;
         KNXPacket knxPacketIndication = null;

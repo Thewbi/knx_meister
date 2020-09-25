@@ -11,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import api.data.serializer.DataSerializer;
 import api.device.Device;
 import api.device.DeviceService;
+import api.exception.CommunicationException;
 import api.project.KNXComObject;
 import api.project.KNXDatapointSubtype;
 import api.project.KNXGroupAddress;
@@ -43,9 +44,9 @@ public class DefaultDataSender implements DataSender {
 
     @Override
     public void send(final Device device, final Connection connection, final String physicalAddress,
-            final String groupAddress, final int dataPointId, final Object value) {
+            final String groupAddress, final int dataPointId, final Object value) throws CommunicationException {
 
-        LOG.info("[DefaultDataSender] send() ...");
+        LOG.trace("[DefaultDataSender] send() ...");
 
 //		final String comObjectId = "O-145_R-1849";
 //		final double value = 100.0d;
@@ -66,7 +67,7 @@ public class DefaultDataSender implements DataSender {
 //		final String physicalAddress = "0/0/9";
 
         // TODO
-        LOG.info("Physical Address: '{}', groupAddress: '{}'", physicalAddress, groupAddress);
+        LOG.trace("Physical Address: '{}', groupAddress: '{}'", physicalAddress, groupAddress);
 //        final Device device = deviceService.getDevices().get(physicalAddress);
         final KNXGroupAddress knxGroupAddress = device.getDeviceProperties().get(groupAddress);
         if (knxGroupAddress == null) {
@@ -117,7 +118,7 @@ public class DefaultDataSender implements DataSender {
 
     @SuppressWarnings("unused")
     private void sendViaComObject(final Device device, final Connection connection, final int datapointId,
-            final Object value) {
+            final Object value) throws CommunicationException {
 
         // TODO
 //        final Device device = deviceService.getDevices().get("");
@@ -140,7 +141,7 @@ public class DefaultDataSender implements DataSender {
     }
 
     private void sendViaFormat(final Connection connection, final Device device, final String format,
-            final KNXGroupAddress knxGroupAddress, final Object value) {
+            final KNXGroupAddress knxGroupAddress, final Object value) throws CommunicationException {
 
         // retrieve the data serializer that can convert the data into the datapoint
         // type's format
@@ -156,9 +157,7 @@ public class DefaultDataSender implements DataSender {
                 Utils.byteArrayToStringNoPrefix(payload), knxGroupAddress.getGroupAddress());
 
         final KNXConnectionHeader connectionHeader = new KNXConnectionHeader();
-
-        // TODO
-//        final Device device = deviceService.getDevices().get("");
+        connectionHeader.setChannel((short) connection.getId());
 
         final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
         cemiTunnelRequest.setMessageCode(BaseController.INDICATION_PRIMITIVE);
@@ -227,14 +226,16 @@ public class DefaultDataSender implements DataSender {
         knxPacket.setCemiTunnelRequest(cemiTunnelRequest);
 
         try {
-            connection.sendData(knxPacket);
+//            connection.sendData(knxPacket);
+            connection.sendResponse(knxPacket);
         } catch (final IOException e) {
             LOG.error(e.getMessage(), e);
         }
     }
 
     @SuppressWarnings("unused")
-    private void sendBit(final Connection connection, final KNXGroupAddress knxGroupAddress, final int value) {
+    private void sendBit(final Connection connection, final KNXGroupAddress knxGroupAddress, final int value)
+            throws CommunicationException {
 
         LOG.info("Sending BIT Value: " + value);
 

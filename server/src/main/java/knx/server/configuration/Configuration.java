@@ -24,6 +24,7 @@ import api.device.DeviceService;
 import api.device.dto.DeviceDto;
 import api.factory.Factory;
 import api.pipeline.Pipeline;
+import api.pipeline.PipelineStep;
 import api.project.KNXComObject;
 import api.project.ProjectService;
 import api.project.dto.KNXComObjectDto;
@@ -58,6 +59,7 @@ import core.pipeline.InwardOutputPipelineStep;
 import core.pipeline.IpFilterPipelineStep;
 import core.pipeline.OutwardConverterPipelineStep;
 import core.pipeline.OutwardOutputPipelineStep;
+import core.pipeline.SequenceNumberOutwardOutputPipelineStep;
 import object_server.pipeline.ConverterPipelineStep;
 import object_server.requests.BaseRequest;
 import object_server.requests.DefaultRequestFactory;
@@ -108,10 +110,31 @@ public class Configuration {
     }
 
     @Bean
+    @Qualifier("defaultOutwardOutput")
     public OutwardOutputPipelineStep getOutwardOutputPipelineStep() {
 
         final OutwardOutputPipelineStep outwardOutputPipelineStep = new OutwardOutputPipelineStep();
         outwardOutputPipelineStep.setPrefix("MULTICAST");
+
+        outwardOutputPipelineStep.getIgnorePackets()
+                .add(ServiceIdentifier.SEARCH_REQUEST.name().toLowerCase(Locale.getDefault()));
+        outwardOutputPipelineStep.getIgnorePackets()
+                .add(ServiceIdentifier.SEARCH_REQUEST_EXT.name().toLowerCase(Locale.getDefault()));
+        outwardOutputPipelineStep.getIgnorePackets()
+                .add(ServiceIdentifier.SEARCH_RESPONSE.name().toLowerCase(Locale.getDefault()));
+        outwardOutputPipelineStep.getIgnorePackets()
+                .add(ServiceIdentifier.SEARCH_RESPONSE_EXT.name().toLowerCase(Locale.getDefault()));
+
+        return outwardOutputPipelineStep;
+    }
+
+    @Bean
+    @Qualifier("sequenceOutwardOutput")
+    public SequenceNumberOutwardOutputPipelineStep getSequenceNumberOutwardOutputPipelineStep() {
+
+        final SequenceNumberOutwardOutputPipelineStep outwardOutputPipelineStep = new SequenceNumberOutwardOutputPipelineStep();
+//        outwardOutputPipelineStep.setPrefix("MULTICAST");
+
         outwardOutputPipelineStep.getIgnorePackets()
                 .add(ServiceIdentifier.SEARCH_REQUEST.name().toLowerCase(Locale.getDefault()));
         outwardOutputPipelineStep.getIgnorePackets()
@@ -133,11 +156,12 @@ public class Configuration {
 
     @Bean("outwardPipeline")
     @Qualifier("outwardPipeline")
-    public Pipeline<Object, Object> getOutwardPipeline(final OutwardOutputPipelineStep outwardOutputPipelineStep,
+    public Pipeline<Object, Object> getOutwardPipeline(
+            @Qualifier("sequenceOutwardOutput") final PipelineStep<Object, Object> outwardOutputPipelineStep,
             final OutwardConverterPipelineStep outwardConverterPipelineStep) {
 
         final Pipeline<Object, Object> outwardPipeline = new DefaultPipeline();
-//		outwardPipeline.addStep(outwardOutputPipelineStep);
+        outwardPipeline.addStep(outwardOutputPipelineStep);
         outwardPipeline.addStep(outwardConverterPipelineStep);
 
         return outwardPipeline;

@@ -1,5 +1,7 @@
 package knx.server.rest;
 
+import java.util.Optional;
+
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -20,6 +22,10 @@ import api.device.DeviceService;
 import api.factory.Factory;
 import api.factory.exception.FactoryException;
 import api.project.KNXComObject;
+import core.communication.Connection;
+import core.communication.ConnectionManager;
+import core.communication.thread.DataSenderRunnable;
+import core.data.sending.DataSender;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
@@ -33,6 +39,12 @@ public class DataGeneratorResource {
 
     @Autowired
     private DeviceService deviceService;
+
+    @Autowired
+    private ConnectionManager connectionManager;
+
+    @Autowired
+    private DataSender dataSender;
 
     @Autowired
     private Factory<DataGenerator> defaultDataGeneratorFactory;
@@ -71,11 +83,26 @@ public class DataGeneratorResource {
 
             knxComObject.setDataGenerator(dataGenerator);
 
+            final Optional<Connection> connection = connectionManager.getLiveConnection();
+            if (connection.isPresent()) {
+
+                LOG.info("Tunneling controller starts data sender for connection " + connection.get().getId());
+//                DatasenderRunnable dataSenderRunnable = startThread(getClass().getName() + " CONNECT_REQUEST", connection);
+
+                final DataSenderRunnable dataSenderRunnable = new DataSenderRunnable();
+//              dataSenderRunnable.setDeviceIndex(Main.DEVICE_INDEX);
+                dataSenderRunnable.setLabel("bla");
+                dataSenderRunnable.setDataSender(dataSender);
+                dataSenderRunnable.setConnection(connection.get());
+                dataSenderRunnable.setDeviceService(deviceService);
+
+                final Thread thread = new Thread(dataSenderRunnable);
+                thread.start();
+            }
+
             final Status status = new Status();
             status.setStatus("OK");
-
             final Gson gson = new Gson();
-
             return Response.status(201, MediaType.APPLICATION_JSON).entity(gson.toJson(status)).build();
 
         } catch (final FactoryException e) {

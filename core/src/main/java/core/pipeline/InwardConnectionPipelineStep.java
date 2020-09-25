@@ -12,61 +12,69 @@ import core.packets.KNXPacket;
 
 public class InwardConnectionPipelineStep implements PipelineStep<Object, Object> {
 
-	private static final Logger LOG = LogManager.getLogger(InwardConnectionPipelineStep.class);
+    private static final Logger LOG = LogManager.getLogger(InwardConnectionPipelineStep.class);
 
-	private ConnectionManager connectionManager;
+    private ConnectionManager connectionManager;
 
-	@Override
-	public Object execute(final Object dataAsObject) throws Exception {
+    @Override
+    public Object execute(final Object dataAsObject) throws Exception {
 
-		if (dataAsObject == null) {
-			return null;
-		}
+        if (dataAsObject == null) {
+            return null;
+        }
 
-		final Object[] data = (Object[]) dataAsObject;
+        final Object[] data = (Object[]) dataAsObject;
 
-		final DatagramSocket datagramSocket = (DatagramSocket) data[0];
-		final KNXPacket knxPacket = (KNXPacket) data[1];
+        final DatagramSocket datagramSocket = (DatagramSocket) data[0];
+        final KNXPacket knxPacket = (KNXPacket) data[1];
 
-		Connection connection = null;
+        Connection connection = null;
 
-		// try to retrieve the connection via the connection header
-		if (knxPacket.getConnectionHeader() != null) {
-			connection = connectionManager.retrieveConnection(knxPacket.getConnectionHeader().getChannel());
-			if (connection == null) {
-				connection = connectionManager.createNewConnection(datagramSocket, knxPacket.getConnectionType());
-			}
-		}
+        // try to retrieve the connection via the connection header
+        if (knxPacket.getConnectionHeader() != null) {
+            connection = connectionManager.retrieveConnection(knxPacket.getConnectionHeader().getChannel());
+            if (connection == null) {
+                connection = connectionManager.createNewConnection(datagramSocket, knxPacket.getConnectionType());
+            }
+        }
 
-		final int communicationChannelId = knxPacket.getCommunicationChannelId();
+        final int communicationChannelId = knxPacket.getCommunicationChannelId();
 
-		// try to retrieve the connection via the communicationChannelId
-		if (connection == null) {
-			connection = connectionManager.retrieveConnection(knxPacket, datagramSocket);
-			if (connection == null && communicationChannelId > 0) {
-				connection = connectionManager.createNewConnection(datagramSocket, communicationChannelId,
-						knxPacket.getConnectionType());
-			}
-		}
+        // try to retrieve the connection via the communicationChannelId
+        if (connection == null) {
+            connection = connectionManager.retrieveConnection(knxPacket, datagramSocket);
+            if (connection == null && communicationChannelId > 0) {
+                connection = connectionManager.createNewConnection(datagramSocket, communicationChannelId,
+                        knxPacket.getConnectionType());
+            }
+        }
 
-		if (connection == null) {
-			LOG.warn("Connection with communicationChannelId = {} is not known! No response is sent!",
-					communicationChannelId);
-		} else {
+        if (connection == null) {
+            LOG.warn("Connection with communicationChannelId = {} is not known! No response is sent!",
+                    communicationChannelId);
+        } else {
 
-			// set the counter so that a response including a valid sequence number can be
-			// send as a response to a packet
-			if (knxPacket.getConnectionHeader() != null) {
-				connection.setReceiveSequenceCounter(knxPacket.getConnectionHeader().getSequenceCounter());
-			}
-			knxPacket.setConnection(connection);
-		}
+            // set the counter so that a response including a valid sequence number can be
+            // send as a response to a packet
+            if (knxPacket.getConnectionHeader() != null) {
 
-		return dataAsObject;
-	}
+                final int incomingSequenceCounter = knxPacket.getConnectionHeader().getSequenceCounter();
 
-	public void setConnectionManager(final ConnectionManager connectionManager) {
-		this.connectionManager = connectionManager;
-	}
+                if ((connection.getReceiveSequenceCounter() < incomingSequenceCounter) || incomingSequenceCounter == 0) {
+                    connection.setReceiveSequenceCounter(incomingSequenceCounter);
+                }
+            }
+            knxPacket.setConnection(connection);
+
+            // touch the connection because it is alive and should not be purged
+            connection.setTimestampLastUsed(System.currentTimeMillis());
+        }
+
+        return dataAsObject;
+    }
+
+    public void setConnectionManager(final ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
 
 }

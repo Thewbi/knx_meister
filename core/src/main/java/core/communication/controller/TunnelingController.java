@@ -5,6 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -12,6 +13,8 @@ import org.apache.logging.log4j.Logger;
 
 import api.datagenerator.DataGenerator;
 import api.device.Device;
+import api.exception.CommunicationException;
+import api.exception.SequenceCounterException;
 import api.packets.PropertyId;
 import api.project.KNXComObject;
 import api.project.KNXGroupAddress;
@@ -20,9 +23,9 @@ import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
 import common.utils.Utils;
 import core.communication.Connection;
-import core.communication.thread.DataSenderRunnable;
 import core.data.sending.DataSender;
 import core.packets.CemiTunnelRequest;
+import core.packets.ConnectionStatus;
 import core.packets.ConnectionType;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
@@ -57,7 +60,8 @@ public class TunnelingController extends BaseController {
 
 //    private Thread dataSenderThread;
 
-    private DataSenderRunnable dataSenderRunnable;
+//    @SuppressWarnings("unused")
+//    private DataSenderRunnable dataSenderRunnable;
 
 //	/**
 //	 * ctor
@@ -71,13 +75,14 @@ public class TunnelingController extends BaseController {
 
     @Override
     public void knxPacket(final Connection connection, final DatagramSocket datagramSocket,
-            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label) throws IOException {
+            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label)
+            throws IOException, CommunicationException {
 
-        HPAIStructure hpaiStructure = null;
         final InetAddress inetAddress = null;
         final int port = -1;
         Connection packetConnection = null;
         int communicationChannelId = 0;
+        HPAIStructure hpaiStructure = null;
         HPAIStructure controlEndpointHPAIStructure = null;
         HPAIStructure dataEndpointHPAIStructure = null;
 
@@ -117,8 +122,10 @@ public class TunnelingController extends BaseController {
             // send the acknowledge
             newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
 
-            LOG.info("Tunneling controller starts data sender for connection " + newConnection.getId());
-            dataSenderRunnable = startThread(getClass().getName() + " CONNECT_REQUEST", newConnection);
+//            if (dataSenderRunnable == null) {
+//                LOG.info("Tunneling controller starts data sender for connection " + newConnection.getId());
+//                dataSenderRunnable = startThread(getClass().getName() + " CONNECT_REQUEST", newConnection);
+//            }
 
 //          dataSenderThread = startThread(getClass().getName() + " CONNECT_REQUEST", newConnection);
 //            if (knxPacket.getCommunicationChannelId() >= 1) {
@@ -133,22 +140,24 @@ public class TunnelingController extends BaseController {
             // make sure this is a tunneling connection
             communicationChannelId = knxPacket.getCommunicationChannelId();
             packetConnection = getConnectionManager().retrieveConnection(communicationChannelId);
+
+            if (packetConnection == null) {
+                sendConnectionStateResponse(ConnectionStatus.E_KNX_CONNECTION, connection, datagramSocket,
+                        datagramPacket, knxPacket, inetAddress, port);
+                break;
+            }
+
             if (packetConnection.getConnectionType() != ConnectionType.TUNNEL_CONNECTION) {
                 return;
             }
 
+            // touch the connection because it is alive and should not be purged
+            packetConnection.setTimestampLastUsed(System.currentTimeMillis());
+
             LOG.info("CONNECTIONSTATE_REQUEST connection: " + communicationChannelId);
 
-            final KNXPacket sendConnectionStateResponse = sendConnectionStateResponse(datagramSocket, datagramPacket,
+            sendConnectionStateResponse(ConnectionStatus.E_NO_ERROR, connection, datagramSocket, datagramPacket,
                     knxPacket, inetAddress, port);
-
-            controlEndpointHPAIStructure = (HPAIStructure) knxPacket.getStructureMap()
-                    .get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
-
-            final InetSocketAddress socketAddr = new InetSocketAddress(
-                    controlEndpointHPAIStructure.getIpAddressAsObject(), controlEndpointHPAIStructure.getPort());
-
-            connection.sendResponse(sendConnectionStateResponse, socketAddr);
             break;
 
         case DISCONNECT_REQUEST:
@@ -177,11 +186,37 @@ public class TunnelingController extends BaseController {
             processTunnelingRequest(connection, datagramSocket, datagramPacket, knxPacket, label);
             break;
 
-        // 0x0421
+        // 0x0421 - ACK
         case TUNNEL_RESPONSE:
-            if (knxPacket.getConnectionHeader() != null && knxPacket.getConnectionHeader().getReserved() == 0x21) {
-                final String msg = "E_CONNECTION_ID: 0x21 - The KNXnet/IP server device could not find an active data connection with the given ID";
-                LOG.error(msg);
+//            if (knxPacket.getConnectionHeader() != null && knxPacket.getConnectionHeader().getReserved() == 0x21) {
+//                final String msg = "E_CONNECTION_ID: 0x21 - The KNXnet/IP server device could not find an active data connection with the given ID";
+//                LOG.error(msg);
+//            }
+
+            if (knxPacket.getConnectionHeader() != null) {
+
+                final KNXConnectionHeader connectionHeader = knxPacket.getConnectionHeader();
+                LOG.info("ACK ConnectionHeader: " + connectionHeader);
+
+                /**
+                 * Bosch IoT Gateway does the following: If you keep sending data to it via a
+                 * connection (say channel #0) that the Bosch IoT Gateway has already abandoned,
+                 * it will acknowledge with the next channel in line that is actually alive. For
+                 * example it will send the acknowledge with channel #1 instead of the dead
+                 * channel #0.<br />
+                 * <br />
+                 *
+                 * For this alive channel, it will increment the sequence id and it forces you
+                 * to use the current sequence id when talking to it over the alive channel next
+                 * time. That means the correct channel's sequence id has to be incremented
+                 * during processing the acknowledge.<br />
+                 * <br />
+                 *
+                 * Here, the sequence id is read from the acknowledge and it is written into the
+                 */
+                final Connection acknowledgedConnection = getConnectionManager()
+                        .retrieveConnection(connectionHeader.getChannel());
+                acknowledgedConnection.setReceiveSequenceCounter(connectionHeader.getSequenceCounter());
             }
             break;
 
@@ -191,7 +226,25 @@ public class TunnelingController extends BaseController {
         }
     }
 
-    public void sendTunnelRequestConnect(final Connection connection) {
+    private void sendConnectionStateResponse(final ConnectionStatus connectionStatus, final Connection connection,
+            final DatagramSocket datagramSocket, final DatagramPacket datagramPacket, final KNXPacket knxPacket,
+            final InetAddress inetAddress, final int port) throws IOException, UnknownHostException {
+
+        HPAIStructure controlEndpointHPAIStructure;
+        final KNXPacket sendConnectionStateResponse = createConnectionStateResponse(connectionStatus, datagramSocket,
+                datagramPacket, knxPacket, inetAddress, port);
+        sendConnectionStateResponse.setConnection(connection);
+
+        controlEndpointHPAIStructure = (HPAIStructure) knxPacket.getStructureMap()
+                .get(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
+
+        final InetSocketAddress socketAddr = new InetSocketAddress(controlEndpointHPAIStructure.getIpAddressAsObject(),
+                controlEndpointHPAIStructure.getPort());
+
+        connection.sendResponse(sendConnectionStateResponse, socketAddr);
+    }
+
+    public void sendTunnelRequestConnect(final Connection connection) throws CommunicationException {
 
         LOG.info("sendTunnelRequestConnect() ...");
 
@@ -226,7 +279,8 @@ public class TunnelingController extends BaseController {
     }
 
     private void processTunnelingRequest(final Connection connection, final DatagramSocket datagramSocket,
-            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label) throws IOException {
+            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label)
+            throws IOException, CommunicationException {
 
         KNXPacket tunnelResponse = null;
         KNXPacket confirmKNXPacket = null;
@@ -237,12 +291,16 @@ public class TunnelingController extends BaseController {
 
         switch (knxPacket.getCemiTunnelRequest().getTpci()) {
 
+        // this is for reading and writing group values! If acpi is zero => read, else
+        // write.
         case GROUP_VALUE_WRITE:
 
-            // if APCI has the value zero, someone tries to read data from the group
+            // if APCI has the value zero, someone tries to READ data from the group
             if (knxPacket.getCemiTunnelRequest().getApci() == 0) {
 
-                LOG.info("GroupValue read: {}",
+                // this is GROUP_VALUE_READ
+
+                LOG.trace("GroupValue read: {}",
                         Utils.integerToKNXAddress(knxPacket.getCemiTunnelRequest().getDestKNXAddress(), "/"));
 
                 //
@@ -339,6 +397,8 @@ public class TunnelingController extends BaseController {
 
             } else {
 
+                // this is GROUP_VALUE_WRITE
+
                 // TODO: write a data extractor that knows the datatype of the group address and
                 // can correctly retrieve the data send inside the KNXPacket Tunneling Request
 
@@ -346,9 +406,7 @@ public class TunnelingController extends BaseController {
                 // for some reason.
                 // It is encoded into the lower six bit = 0x3F.
                 final int value = ((byte) knxPacket.getCemiTunnelRequest().getApci().intValue()) & 0x3F;
-                LOG.info("GROUP_VALUE_WRITE From External Client: Value: " + value);
-
-                LOG.info("GroupValue write. Value = " + value);
+                LOG.info("GROUP_VALUE_WRITE from external client: Value: " + value);
 
                 // TODO: set value into the device
 //				getDevice().setValue(value);
@@ -358,33 +416,36 @@ public class TunnelingController extends BaseController {
                 ackKnxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
                 ackKnxPacket.setCemiTunnelRequest(null);
 
+                LOG.info(knxPacket.getConnection());
                 knxPacket.getConnection().sendResponse(ackKnxPacket, datagramPacket.getSocketAddress());
 
                 // send confirm
                 final KNXPacket response = new KNXPacket(knxPacket);
-
 //				response.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
                 response.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);
-
                 response.getCemiTunnelRequest().setMessageCode(BaseController.INDICATION_PRIMITIVE);
                 response.getCemiTunnelRequest().setAdditionalInfoLength(0);
                 response.getCemiTunnelRequest().setLength(1);
                 // set GroupValueResponse and value
                 // bitmask 01000001 (lower 6 bit are the value, upper two are the type, 01 is
                 // response)
-
                 // TODO: hardcoded magic number!
 //				response.getCemiTunnelRequest().setSourceKNXAddress(0x11FF);
                 response.getCemiTunnelRequest().setSourceKNXAddress(0x110B);
-
                 // TODO: hardcoded magic number!
                 response.getCemiTunnelRequest().setDestKNXAddress(Utils.knxAddressToInteger("0/3/4"));
-
 //				response.getCemiTunnelRequest().setApci(0x41);
                 response.getCemiTunnelRequest().setApci(0x80 | ((byte) (value & 0xFF)));
 
-                // increment sequence
-                response.getConnectionHeader().setSequenceCounter(response.getConnectionHeader().getSequenceCounter());
+//                // increment sequence
+//                response.getConnectionHeader()
+//                        .setSequenceCounter(response.getConnectionHeader().getSequenceCounter() + 1);
+
+                // not working
+//              final int sequenceCounter = knxPacket.getConnection().getReceiveSequenceCounter();
+//                response.getConnectionHeader().setSequenceCounter(sequenceCounter + 1);
+
+//                final int sequenceCounter = knxPacket.getConnection().getSendSequenceCounter();
 
                 knxPacket.getConnection().sendResponse(response, datagramPacket.getSocketAddress());
 
@@ -415,6 +476,9 @@ public class TunnelingController extends BaseController {
             confirmKNXPacket.getCemiTunnelRequest().setLength(1);
             // <------- FIX for different application services!
             confirmKNXPacket.getCemiTunnelRequest().setApci(DEVICE_DESCRIPTION_READ_APCI);
+
+            confirmKNXPacket.getConnectionHeader()
+                    .setSequenceCounter(knxPacket.getConnection().getReceiveSequenceCounter());
 
             knxPacket.getConnection().sendResponse(confirmKNXPacket, datagramPacket.getSocketAddress());
 
@@ -466,7 +530,8 @@ public class TunnelingController extends BaseController {
             indicationKNXPacket.getCemiTunnelRequest().setMessageCode(BaseController.INDICATION_PRIMITIVE);
 
             // send back indication
-            knxPacket.getConnection().sendData(indicationKNXPacket);
+//            knxPacket.getConnection().sendData(indicationKNXPacket);
+            knxPacket.getConnection().sendResponse(indicationKNXPacket, datagramPacket.getSocketAddress());
             break;
 
         // Example Wireshark: TunnelReq #01:0 L_Data.req 0.0.0->1.1.255 Connect
@@ -491,7 +556,8 @@ public class TunnelingController extends BaseController {
             confirmKNXPacket.getCemiTunnelRequest().setSourceKNXAddress(Utils.knxAddressToInteger("1.1.10"));
 
             // send back confirmation
-            knxPacket.getConnection().sendData(confirmKNXPacket);
+//            knxPacket.getConnection().sendData(confirmKNXPacket);
+            knxPacket.getConnection().sendResponse(confirmKNXPacket, datagramPacket.getSocketAddress());
 
 //			// send response
 //			// Example Wireshark: TunnelReq #02:0 L_Data.con 1.1.10->1.1.255 Connect
@@ -509,7 +575,7 @@ public class TunnelingController extends BaseController {
         }
     }
 
-    private void sendData(final KNXPacket knxPacket, final Device device) throws IOException {
+    private void sendData(final KNXPacket knxPacket, final Device device) throws IOException, CommunicationException {
 
         final String groupAddress = Utils.integerToKNXAddress(knxPacket.getCemiTunnelRequest().getDestKNXAddress(),
                 "/");
@@ -527,12 +593,13 @@ public class TunnelingController extends BaseController {
 
             final Double value = (Double) dataGenerator.getNextValue();
             getDataSender().send(device, knxPacket.getConnection(),
-                    Utils.integerToKNXAddress(device.getPhysicalAddress(), "."), groupAddress, dataPointId, value);
+                    Utils.integerToKNXAddress(device.getPhysicalAddress(), Utils.SEPARATOR), groupAddress, dataPointId,
+                    value);
         }
     }
 
     @SuppressWarnings("unused")
-    private void sendData2(final KNXPacket knxPacket, final Device device) throws IOException {
+    private void sendData2(final KNXPacket knxPacket, final Device device) throws IOException, CommunicationException {
 
         final String integerToKNXAddress = Utils
                 .integerToKNXAddress(knxPacket.getCemiTunnelRequest().getDestKNXAddress(), "/");
@@ -606,7 +673,8 @@ public class TunnelingController extends BaseController {
         knxPacket.getConnection().sendData(requestIndication);
     }
 
-    private KNXPacket retrieveDeviceReadAPCIIndicationPacket(final KNXPacket knxPacket, final Device device) {
+    private KNXPacket retrieveDeviceReadAPCIIndicationPacket(final KNXPacket knxPacket, final Device device)
+            throws CommunicationException {
 
         final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
         // 0x29 == ind (the application layer sends response, the network layer converts
@@ -640,10 +708,11 @@ public class TunnelingController extends BaseController {
      * @param knxPacket
      * @param sequenceCounter
      * @return
+     * @throws SequenceCounterException
      */
     @SuppressWarnings("unused")
     private KNXPacket retrieveDeviceDescriptionReadAPCIAcknowledgePacket(final KNXPacket knxPacket,
-            final int sequenceCounter, final Device device) {
+            final int sequenceCounter, final Device device) throws SequenceCounterException {
 
         final CemiTunnelRequest cemiTunnelRequest = new CemiTunnelRequest();
         // 0x29 == ind (the application layer sends response, the network layer converts
@@ -681,10 +750,11 @@ public class TunnelingController extends BaseController {
      * @param sequenceCounter
      *
      * @return
+     * @throws SequenceCounterException
      */
     @SuppressWarnings("unused")
     private KNXPacket retrieveDeviceDescriptionReadAPCIIndicationPacket(final KNXPacket knxPacket,
-            final int sequenceCounter, final Device device) {
+            final int sequenceCounter, final Device device) throws SequenceCounterException {
 
         // retrieve the device descriptor property and put it into the packet as payload
         final short deviceDescriptor = device.getProperties().get((short) PropertyId.PID_DEVICE_DESCRIPTOR.getValue());
@@ -716,7 +786,7 @@ public class TunnelingController extends BaseController {
     }
 
     private KNXPacket sendTunnelResponse(final KNXPacket knxPacket, final DatagramSocket socket3671,
-            final DatagramPacket datagramPacket) {
+            final DatagramPacket datagramPacket) throws CommunicationException {
 
         final KNXPacket outKNXPacket = new KNXPacket();
         outKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
