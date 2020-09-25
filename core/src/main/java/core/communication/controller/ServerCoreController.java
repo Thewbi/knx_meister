@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import api.configuration.ConfigurationManager;
+import api.exception.SequenceCounterException;
 import common.packets.ServiceIdentifier;
 import common.utils.NetworkUtils;
 import core.communication.Connection;
@@ -48,7 +49,8 @@ public class ServerCoreController extends BaseController {
 
     @Override
     public void knxPacket(final Connection connection, final DatagramSocket socket3671,
-            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label) throws IOException {
+            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label)
+            throws IOException, SequenceCounterException {
 
         HPAIStructure hpaiStructure = null;
         InetAddress inetAddress = null;

@@ -226,8 +226,8 @@ public class DefaultDataSender implements DataSender {
         knxPacket.setCemiTunnelRequest(cemiTunnelRequest);
 
         try {
-//            connection.sendData(knxPacket);
-            connection.sendResponse(knxPacket);
+            connection.sendData(knxPacket);
+//            connection.sendResponse(knxPacket);
         } catch (final IOException e) {
             LOG.error(e.getMessage(), e);
         }

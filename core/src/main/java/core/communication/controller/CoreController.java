@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 
 import api.configuration.ConfigurationManager;
 import api.device.Device;
+import api.exception.SequenceCounterException;
 import common.packets.ServiceIdentifier;
 import core.communication.Connection;
 import core.packets.ConnectionRequestInformation;
@@ -54,7 +55,8 @@ public class CoreController extends BaseController {
 
     @Override
     public void knxPacket(final Connection connection, final DatagramSocket datagramSocket,
-            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label) throws IOException {
+            final DatagramPacket datagramPacket, final KNXPacket knxPacket, final String label)
+            throws IOException, SequenceCounterException {
 
         HPAIStructure hpaiStructure = null;
         InetAddress inetAddress = null;
@@ -174,7 +176,8 @@ public class CoreController extends BaseController {
 
     private void sendConnectionStateResponse(final ConnectionStatus connectionStatus, final Connection connection,
             final DatagramSocket datagramSocket, final DatagramPacket datagramPacket, final KNXPacket knxPacket,
-            final InetAddress inetAddress, final int port) throws IOException, UnknownHostException {
+            final InetAddress inetAddress, final int port)
+            throws IOException, UnknownHostException, SequenceCounterException {
 
         final KNXPacket sendConnectionStateResponse = createConnectionStateResponse(connectionStatus, datagramSocket,
                 datagramPacket, knxPacket, inetAddress, port);

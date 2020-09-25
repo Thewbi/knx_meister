@@ -37,7 +37,6 @@ public class DefaultConnection implements Connection {
      */
     private int sendSequenceCounter = -1;
 
-    @SuppressWarnings("unused")
     private int receiveSequenceCounter = -1;
 
     private DatagramSocket datagramSocket;
@@ -50,6 +49,15 @@ public class DefaultConnection implements Connection {
 
     private HPAIStructure dataEndpoint;
 
+    private void prepare() throws IOException {
+        if (getConnectionType() != ConnectionType.TUNNEL_CONNECTION) {
+            throw new IOException("This is not a tunnel connection! Cannot send data");
+        }
+
+        // touch the connection because it is alive and should not be purged
+        timestampLastUsed = System.currentTimeMillis();
+    }
+
     @Override
     public void sendResponse(final DatagramPacket datagramPacket) throws IOException {
         timestampLastUsed = System.currentTimeMillis();
@@ -59,20 +67,18 @@ public class DefaultConnection implements Connection {
     @Override
     public void sendResponse(final KNXPacket knxPacket) throws IOException, SequenceCounterException {
 
-        // touch the connection because it is alive and should not be purged
-        timestampLastUsed = System.currentTimeMillis();
+        prepare();
+
+//        // increment the connections sequence counter and set the incremented value into
+//        // the knxPacket
+//        sendSequenceCounter++;
+//        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
+//        knxPacket.getConnectionHeader().setChannel((short) id);
 
         final InetSocketAddress inetSocketAddress = new InetSocketAddress(dataEndpoint.getIpAddressAsObject(),
                 dataEndpoint.getPort());
 
-//        final int sequenceCounter = 69;
-        final int sequenceCounter = receiveSequenceCounter + 1;
-//        final int sequenceCounter = receiveSequenceCounter + 2;
-
-//        knxPacket.getConnectionHeader().setSequenceCounter(receiveSequenceCounter + 1);
-        knxPacket.getConnectionHeader().setSequenceCounter(sequenceCounter);
-
-        LOG.info(">>>>>>>> " + sequenceCounter + " >>>>>>> " + this);
+//        LOG.info(">>>>>>>> " + sequenceCounter + " >>>>>>> " + this);
 
         sendResponse(knxPacket, inetSocketAddress);
     }
@@ -87,11 +93,52 @@ public class DefaultConnection implements Connection {
      * <li/>The outward pipeline converts the payload into a byte buffer
      * <li/>Send the byte buffer as payload via a java.net.DatagramPacket
      * </ol>
+     *
+     * @throws SequenceCounterException
      */
     @Override
-    public void sendResponse(final KNXPacket knxPacket, final SocketAddress socketAddress) throws IOException {
+    public void sendResponse(final KNXPacket knxPacket, final SocketAddress socketAddress)
+            throws IOException, SequenceCounterException {
 
-        timestampLastUsed = System.currentTimeMillis();
+        prepare();
+
+        // increment the connections sequence counter and set the incremented value into
+        // the knxPacket
+        sendSequenceCounter++;
+        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
+        knxPacket.getConnectionHeader().setChannel((short) id);
+
+        DatagramPacket datagramPacket;
+        try {
+            // domain specific payload data
+            final Object[] objectArray = new Object[2];
+            objectArray[0] = knxPacket;
+            objectArray[1] = socketAddress;
+
+            // pipeline serializes the payload and puts it into a java.net.DatagramPacket
+            // ready for sending
+            datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
+        } catch (final Exception e) {
+            LOG.error(e.getMessage(), e);
+            throw new IOException(e);
+        }
+
+        LOG.trace("Connection {} is sending packet over socketAddress {}", id, socketAddress);
+
+        // send the datagramPacket over the socket
+        datagramSocket.send(datagramPacket);
+    }
+
+    @Override
+    public void sendAcknowledge(final KNXPacket knxPacket, final SocketAddress socketAddress) throws IOException {
+
+        prepare();
+
+        // an acknowledge uses the sequence number of the incoming message
+        // So do not change the knxPacket
+//        sendSequenceCounter++;
+//        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
+//        knxPacket.getConnectionHeader().setChannel((short) id);
 
         DatagramPacket datagramPacket;
         try {
@@ -117,8 +164,10 @@ public class DefaultConnection implements Connection {
     @Override
     public void sendRequest(final KNXPacket knxPacket) throws IOException, CommunicationException {
 
-        timestampLastUsed = System.currentTimeMillis();
+        prepare();
 
+        // increment the connections sequence counter and set the incremented value into
+        // the knxPacket
         sendSequenceCounter++;
         knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
         knxPacket.getConnectionHeader().setChannel((short) id);
@@ -145,7 +194,7 @@ public class DefaultConnection implements Connection {
     @Override
     public void sendResponse(final DatagramPacket datagramPacket, final InetAddress inetAddress, final int port)
             throws IOException {
-        timestampLastUsed = System.currentTimeMillis();
+        prepare();
         datagramSocket.send(datagramPacket);
     }
 
@@ -159,7 +208,13 @@ public class DefaultConnection implements Connection {
     @Override
     public void sendData(final KNXPacket knxPacket) throws IOException, CommunicationException {
 
-        timestampLastUsed = System.currentTimeMillis();
+        prepare();
+
+        // increment the connections sequence counter and set the incremented value into
+        // the knxPacket
+        sendSequenceCounter++;
+        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
+        knxPacket.getConnectionHeader().setChannel((short) id);
 
         if (dataEndpoint == null) {
             LOG.warn("DataEndpoint is null!");
@@ -169,15 +224,14 @@ public class DefaultConnection implements Connection {
         final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
                 dataEndpoint.getIpAddressAsObject(), dataEndpoint.getPort());
 
-        // increment the connections sequence counter and set the incremented value into
-        // the knxPacket
-        sendSequenceCounter++;
-        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
-
-        knxPacket.getConnectionHeader().setChannel((short) id);
+//        // increment the connections sequence counter and set the incremented value into
+//        // the knxPacket
+//        sendSequenceCounter++;
+//        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
+//        knxPacket.getConnectionHeader().setChannel((short) id);
 
         // use the pipeline to retrieve a DatagramPacket from a KNX packet
-        final DatagramPacket datagramPacket = retrieveDatagramPacket(knxPacket, destinationInetSocketAddress);
+        final DatagramPacket datagramPacket = createDatagramPacket(knxPacket, destinationInetSocketAddress);
 
         LOG.trace("Connection {} is sending packet to socketAddress {}", id, destinationInetSocketAddress);
         LOG.trace("SendSequenceCounter: " + sendSequenceCounter + ") Sending Data to "
@@ -186,7 +240,7 @@ public class DefaultConnection implements Connection {
         datagramSocket.send(datagramPacket);
     }
 
-    private DatagramPacket retrieveDatagramPacket(final KNXPacket knxPacket, final InetSocketAddress inetSocketAddress)
+    private DatagramPacket createDatagramPacket(final KNXPacket knxPacket, final InetSocketAddress inetSocketAddress)
             throws IOException {
 
         DatagramPacket datagramPacket;

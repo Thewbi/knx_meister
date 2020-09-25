@@ -120,7 +120,9 @@ public class TunnelingController extends BaseController {
             sendConnectionResponse.setCommunicationChannelId(newConnection.getId());
 
             // send the acknowledge
-            newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
+//            newConnection.sendResponse(sendConnectionResponse, new InetSocketAddress(controlInetAddress, controlPort));
+            newConnection.sendAcknowledge(sendConnectionResponse,
+                    new InetSocketAddress(controlInetAddress, controlPort));
 
 //            if (dataSenderRunnable == null) {
 //                LOG.info("Tunneling controller starts data sender for connection " + newConnection.getId());
@@ -178,7 +180,8 @@ public class TunnelingController extends BaseController {
             final KNXPacket sendDisconnetResponse = sendDisconnetResponse(datagramSocket, datagramPacket, knxPacket,
                     inetAddress, port);
 
-            connection.sendResponse(sendDisconnetResponse, datagramPacket.getSocketAddress());
+//            connection.sendResponse(sendDisconnetResponse, datagramPacket.getSocketAddress());
+            connection.sendAcknowledge(sendDisconnetResponse, datagramPacket.getSocketAddress());
             break;
 
         // 0x0420
@@ -193,31 +196,31 @@ public class TunnelingController extends BaseController {
 //                LOG.error(msg);
 //            }
 
-            if (knxPacket.getConnectionHeader() != null) {
-
-                final KNXConnectionHeader connectionHeader = knxPacket.getConnectionHeader();
-                LOG.info("ACK ConnectionHeader: " + connectionHeader);
-
-                /**
-                 * Bosch IoT Gateway does the following: If you keep sending data to it via a
-                 * connection (say channel #0) that the Bosch IoT Gateway has already abandoned,
-                 * it will acknowledge with the next channel in line that is actually alive. For
-                 * example it will send the acknowledge with channel #1 instead of the dead
-                 * channel #0.<br />
-                 * <br />
-                 *
-                 * For this alive channel, it will increment the sequence id and it forces you
-                 * to use the current sequence id when talking to it over the alive channel next
-                 * time. That means the correct channel's sequence id has to be incremented
-                 * during processing the acknowledge.<br />
-                 * <br />
-                 *
-                 * Here, the sequence id is read from the acknowledge and it is written into the
-                 */
-                final Connection acknowledgedConnection = getConnectionManager()
-                        .retrieveConnection(connectionHeader.getChannel());
-                acknowledgedConnection.setReceiveSequenceCounter(connectionHeader.getSequenceCounter());
-            }
+//            if (knxPacket.getConnectionHeader() != null) {
+//
+//                final KNXConnectionHeader connectionHeader = knxPacket.getConnectionHeader();
+//                LOG.info("ACK ConnectionHeader: " + connectionHeader);
+//
+//                /**
+//                 * Bosch IoT Gateway does the following: If you keep sending data to it via a
+//                 * connection (say channel #0) that the Bosch IoT Gateway has already abandoned,
+//                 * it will acknowledge with the next channel in line that is actually alive. For
+//                 * example it will send the acknowledge with channel #1 instead of the dead
+//                 * channel #0.<br />
+//                 * <br />
+//                 *
+//                 * For this alive channel, it will increment the sequence id and it forces you
+//                 * to use the current sequence id when talking to it over the alive channel next
+//                 * time. That means the correct channel's sequence id has to be incremented
+//                 * during processing the acknowledge.<br />
+//                 * <br />
+//                 *
+//                 * Here, the sequence id is read from the acknowledge and it is written into the
+//                 */
+//                final Connection acknowledgedConnection = getConnectionManager()
+//                        .retrieveConnection(connectionHeader.getChannel());
+//                acknowledgedConnection.setReceiveSequenceCounter(connectionHeader.getSequenceCounter());
+//            }
             break;
 
         default:
@@ -228,7 +231,8 @@ public class TunnelingController extends BaseController {
 
     private void sendConnectionStateResponse(final ConnectionStatus connectionStatus, final Connection connection,
             final DatagramSocket datagramSocket, final DatagramPacket datagramPacket, final KNXPacket knxPacket,
-            final InetAddress inetAddress, final int port) throws IOException, UnknownHostException {
+            final InetAddress inetAddress, final int port)
+            throws IOException, UnknownHostException, SequenceCounterException {
 
         HPAIStructure controlEndpointHPAIStructure;
         final KNXPacket sendConnectionStateResponse = createConnectionStateResponse(connectionStatus, datagramSocket,
@@ -241,7 +245,8 @@ public class TunnelingController extends BaseController {
         final InetSocketAddress socketAddr = new InetSocketAddress(controlEndpointHPAIStructure.getIpAddressAsObject(),
                 controlEndpointHPAIStructure.getPort());
 
-        connection.sendResponse(sendConnectionStateResponse, socketAddr);
+//        connection.sendResponse(sendConnectionStateResponse, socketAddr);
+        connection.sendAcknowledge(sendConnectionStateResponse, socketAddr);
     }
 
     public void sendTunnelRequestConnect(final Connection connection) throws CommunicationException {
@@ -338,7 +343,8 @@ public class TunnelingController extends BaseController {
                 final KNXPacket ackKnxPacket = new KNXPacket(knxPacket);
                 ackKnxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
                 ackKnxPacket.setCemiTunnelRequest(null);
-                knxPacket.getConnection().sendResponse(ackKnxPacket, datagramPacket.getSocketAddress());
+//                knxPacket.getConnection().sendResponse(ackKnxPacket, datagramPacket.getSocketAddress());
+                knxPacket.getConnection().sendAcknowledge(ackKnxPacket, datagramPacket.getSocketAddress());
 
                 try {
                     Thread.sleep(SLEEP_TIME_IN_MILLIS);
@@ -416,8 +422,9 @@ public class TunnelingController extends BaseController {
                 ackKnxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
                 ackKnxPacket.setCemiTunnelRequest(null);
 
-                LOG.info(knxPacket.getConnection());
-                knxPacket.getConnection().sendResponse(ackKnxPacket, datagramPacket.getSocketAddress());
+//                LOG.info(knxPacket.getConnection());
+//                knxPacket.getConnection().sendResponse(ackKnxPacket, datagramPacket.getSocketAddress());
+                knxPacket.getConnection().sendAcknowledge(ackKnxPacket, datagramPacket.getSocketAddress());
 
                 // send confirm
                 final KNXPacket response = new KNXPacket(knxPacket);
@@ -456,16 +463,18 @@ public class TunnelingController extends BaseController {
 
         case DEVICE_DESCRIPTION_READ_TCPI:
         case DEVICE_DESCRIPTION_READ_TCPI_EXT:
+
             // send acknowledge
             tunnelResponse = sendTunnelResponse(knxPacket, datagramSocket, datagramPacket);
-            knxPacket.getConnection().sendResponse(tunnelResponse, datagramPacket.getSocketAddress());
+//            knxPacket.getConnection().sendResponse(tunnelResponse, datagramPacket.getSocketAddress());
+            knxPacket.getConnection().sendAcknowledge(tunnelResponse, datagramPacket.getSocketAddress());
 
             // all four packets req+OK, ind+OK belong to the same sequence counter value
 //			sequenceCounter = knxPacket.getConnection().getSequenceCounter();
 
 //            device = retrieveDevice(knxPacket);
 
-            // send message acknowledge, send answer message, send confirm
+            // send message confirmation (!= acknowledge, acknowledge was sent above)
             confirmKNXPacket = new KNXPacket(knxPacket);
 //			confirmKNXPacket.getConnectionHeader().setSequenceCounter(sequenceCounter);
             confirmKNXPacket.getCemiTunnelRequest().setMessageCode(CONFIRM_PRIMITIVE);
@@ -477,8 +486,8 @@ public class TunnelingController extends BaseController {
             // <------- FIX for different application services!
             confirmKNXPacket.getCemiTunnelRequest().setApci(DEVICE_DESCRIPTION_READ_APCI);
 
-            confirmKNXPacket.getConnectionHeader()
-                    .setSequenceCounter(knxPacket.getConnection().getReceiveSequenceCounter());
+//            confirmKNXPacket.getConnectionHeader()
+//                    .setSequenceCounter(knxPacket.getConnection().getReceiveSequenceCounter());
 
             knxPacket.getConnection().sendResponse(confirmKNXPacket, datagramPacket.getSocketAddress());
 
@@ -523,7 +532,8 @@ public class TunnelingController extends BaseController {
             acknowledgeKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
 
             // send response
-            knxPacket.getConnection().sendResponse(acknowledgeKNXPacket, datagramPacket.getSocketAddress());
+//            knxPacket.getConnection().sendResponse(acknowledgeKNXPacket, datagramPacket.getSocketAddress());
+            knxPacket.getConnection().sendAcknowledge(acknowledgeKNXPacket, datagramPacket.getSocketAddress());
 
             indicationKNXPacket = new KNXPacket(knxPacket);
             indicationKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);
@@ -546,13 +556,15 @@ public class TunnelingController extends BaseController {
             acknowledgeKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_RESPONSE);
 
             // send back acknowledge
-            knxPacket.getConnection().sendResponse(acknowledgeKNXPacket, datagramPacket.getSocketAddress());
+//            knxPacket.getConnection().sendResponse(acknowledgeKNXPacket, datagramPacket.getSocketAddress());
+            knxPacket.getConnection().sendAcknowledge(acknowledgeKNXPacket, datagramPacket.getSocketAddress());
 
             // send confirmation
             // Example Wireshark: TunnelReq #02:0 L_Data.con 1.1.10->1.1.255 Connect
             confirmKNXPacket = new KNXPacket(knxPacket);
             confirmKNXPacket.getHeader().setServiceIdentifier(ServiceIdentifier.TUNNEL_REQUEST);
             confirmKNXPacket.getCemiTunnelRequest().setMessageCode(BaseController.CONFIRM_PRIMITIVE);
+            // TODO: why is this hardcoded 1.1.10??????
             confirmKNXPacket.getCemiTunnelRequest().setSourceKNXAddress(Utils.knxAddressToInteger("1.1.10"));
 
             // send back confirmation

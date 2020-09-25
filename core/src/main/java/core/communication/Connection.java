@@ -16,17 +16,19 @@ public interface Connection {
 
     DatagramSocket getDatagramSocket();
 
+    void sendRequest(KNXPacket knxPacket) throws IOException, CommunicationException;
+
     // TODO: change to KNXPacket and insert a output pipeline that converts a
     // DatagramPacket to a KNX packet
     void sendResponse(DatagramPacket datagramPacket) throws IOException;
 
-    void sendRequest(KNXPacket knxPacket) throws IOException, CommunicationException;
-
     void sendResponse(KNXPacket knxPacket) throws IOException, SequenceCounterException;
 
-    void sendResponse(KNXPacket knxPacket, SocketAddress socketAddress) throws IOException;
+    void sendResponse(KNXPacket knxPacket, SocketAddress socketAddress) throws IOException, SequenceCounterException;
 
     void sendResponse(DatagramPacket datagramPacket, InetAddress inetAddress, int port) throws IOException;
+
+    void sendAcknowledge(KNXPacket ackKnxPacket, SocketAddress socketAddress) throws IOException;
 
     ConnectionType getConnectionType();
 
@@ -58,7 +60,7 @@ public interface Connection {
 
     /**
      * Touch the connection so it is deemed alive and should not be purged
-     * 
+     *
      * @param timestampLastUsed
      */
     void setTimestampLastUsed(long timestampLastUsed);
