@@ -83,15 +83,13 @@ public class DataGeneratorResource {
 
             knxComObject.setDataGenerator(dataGenerator);
 
-            final Optional<Connection> connection = connectionManager.getLiveConnection();
+            final Optional<Connection> connection = connectionManager.getLiveTunnelingConnection();
             if (connection.isPresent()) {
 
-                LOG.info("Tunneling controller starts data sender for connection " + connection.get().getId());
-//                DatasenderRunnable dataSenderRunnable = startThread(getClass().getName() + " CONNECT_REQUEST", connection);
+                LOG.info("Starting data sender for connection " + connection.get().getId());
 
                 final DataSenderRunnable dataSenderRunnable = new DataSenderRunnable();
-//              dataSenderRunnable.setDeviceIndex(Main.DEVICE_INDEX);
-                dataSenderRunnable.setLabel("bla");
+                dataSenderRunnable.setLabel(tempGroupAddress + " " + toString());
                 dataSenderRunnable.setDataSender(dataSender);
                 dataSenderRunnable.setConnection(connection.get());
                 dataSenderRunnable.setDeviceService(deviceService);
@@ -103,6 +101,7 @@ public class DataGeneratorResource {
             final Status status = new Status();
             status.setStatus("OK");
             final Gson gson = new Gson();
+
             return Response.status(201, MediaType.APPLICATION_JSON).entity(gson.toJson(status)).build();
 
         } catch (final FactoryException e) {

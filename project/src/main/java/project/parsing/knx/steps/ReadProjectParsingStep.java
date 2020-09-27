@@ -22,21 +22,21 @@ import project.parsing.steps.ParsingStep;
  */
 public class ReadProjectParsingStep implements ParsingStep<KNXProjectParsingContext> {
 
-	@SuppressWarnings("unused")
-	private static final Logger LOG = LogManager.getLogger(ReadProjectParsingStep.class);
+    @SuppressWarnings("unused")
+    private static final Logger LOG = LogManager.getLogger(ReadProjectParsingStep.class);
 
-	private final ProjectParserConsumer consumer = new ProjectParserConsumer();
+    private final ProjectParserConsumer consumer = new ProjectParserConsumer();
 
-	@Override
-	public void process(final KNXProjectParsingContext context) throws IOException {
-		walkFolder(context);
-	}
+    @Override
+    public void process(final KNXProjectParsingContext context) throws IOException {
+        walkFolder(context);
+    }
 
-	private void walkFolder(final KNXProjectParsingContext context) throws IOException {
+    private void walkFolder(final KNXProjectParsingContext context) throws IOException {
 
-		consumer.setContext(context);
+        consumer.setContext(context);
 
-		// @formatter:off
+        // @formatter:off
 
 		// for some reason, the stream has to be closed.
 		// If this stream is not closed, then at cleaning up the
@@ -51,13 +51,16 @@ public class ReadProjectParsingStep implements ParsingStep<KNXProjectParsingCont
 			final Optional<Path> projectFileOptional = stream.findFirst();
 
 			if (projectFileOptional.isPresent()) {
+
+			    // tell the consumer to process the xml file
 				consumer.accept(projectFileOptional.get());
+
 			} else {
 				throw new IOException("Cannot find a project.xml in any of the project's folders! Cannot parse project!");
 			}
 		}
 
 		// @formatter:on
-	}
+    }
 
 }

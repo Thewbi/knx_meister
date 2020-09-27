@@ -30,13 +30,6 @@ public interface Device {
 
     Map<String, KNXComObject> getComObjects();
 
-//	Map<Integer, KNXComObject> getComObjectsByDatapointType();
-
     Map<Integer, KNXComObject> getComObjectsByDatapointId();
-
-//	// DEBUG
-//	void setValue(int value);
-//
-//	int getValue();
 
 }

@@ -24,13 +24,17 @@ public class DefaultProjectService implements ProjectService {
     private KNXProject knxProject;
 
     @Override
-    public void parseProjectFile() throws IOException, ProjectParsingException {
+    public KNXProject parseProjectFile() throws IOException, ProjectParsingException {
 
         final File projectFile = new File(
                 configurationManager.getPropertyAsString(ConfigurationManager.PROJECT_FILE_KEY));
 
+        // DEBUG
         LOG.info("Parsing file: '{}'", projectFile.getAbsoluteFile());
+
         knxProject = projectParser.parse(projectFile);
+
+        return knxProject;
     }
 
     public void setConfigurationManager(final ConfigurationManager configurationManager) {

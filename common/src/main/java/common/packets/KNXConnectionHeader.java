@@ -7,6 +7,7 @@ import api.exception.SequenceCounterException;
 
 public class KNXConnectionHeader {
 
+    @SuppressWarnings("unused")
     private static final Logger LOG = LogManager.getLogger(KNXConnectionHeader.class);
 
     private short length = 4;

@@ -19,59 +19,62 @@ import project.parsing.steps.ParsingStep;
 
 public class ExtractArchiveParsingStep implements ParsingStep<KNXProjectParsingContext> {
 
-	private static final int BUFFER_SIZE = 4096;
+    private static final int BUFFER_SIZE = 4096;
 
-	private static final Logger LOG = LogManager.getLogger(ExtractArchiveParsingStep.class);
+    private static final Logger LOG = LogManager.getLogger(ExtractArchiveParsingStep.class);
 
-	@Override
-	public void process(final KNXProjectParsingContext context) throws IOException {
+    @Override
+    public void process(final KNXProjectParsingContext context) throws IOException {
 
-		final Path tempDirectory = Files.createTempDirectory(null);
-		LOG.info("pathToTempDirectory = " + tempDirectory);
-		context.setTempDirectory(tempDirectory);
+        final Path tempDirectory = Files.createTempDirectory(null);
 
-		try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(context.getKnxProjectFile()))) {
+        // DEBUG
+        LOG.trace("pathToTempDirectory = " + tempDirectory);
 
-			ZipEntry zipEntry = zipInputStream.getNextEntry();
+        context.setTempDirectory(tempDirectory);
 
-			// iterates over entries in the zip file
-			while (zipEntry != null) {
+        try (ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(context.getKnxProjectFile()))) {
 
-				final String filePathAsString = tempDirectory + File.separator + zipEntry.getName();
-				final File filePath = new File(filePathAsString);
-				filePath.getParentFile().mkdirs();
+            ZipEntry zipEntry = zipInputStream.getNextEntry();
 
-				if (zipEntry.isDirectory()) {
+            // iterates over entries in the zip file
+            while (zipEntry != null) {
 
-					// if the entry is a directory, make the directory
-					final File dir = new File(filePathAsString);
-					dir.mkdir();
+                final String filePathAsString = tempDirectory + File.separator + zipEntry.getName();
+                final File filePath = new File(filePathAsString);
+                filePath.getParentFile().mkdirs();
 
-				} else {
+                if (zipEntry.isDirectory()) {
 
-					// if the entry is a file, extracts it
-					extractFile(zipInputStream, filePathAsString);
+                    // if the entry is a directory, make the directory
+                    final File dir = new File(filePathAsString);
+                    dir.mkdir();
 
-				}
+                } else {
 
-				zipInputStream.closeEntry();
-				zipEntry = zipInputStream.getNextEntry();
-			}
-		}
-	}
+                    // if the entry is a file, extracts it
+                    extractFile(zipInputStream, filePathAsString);
 
-	private void extractFile(final ZipInputStream zipInputStream, final String filePath)
-			throws FileNotFoundException, IOException {
+                }
 
-		try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(filePath))) {
+                zipInputStream.closeEntry();
+                zipEntry = zipInputStream.getNextEntry();
+            }
+        }
+    }
 
-			final byte[] bytesIn = new byte[BUFFER_SIZE];
-			int read = 0;
+    private void extractFile(final ZipInputStream zipInputStream, final String filePath)
+            throws FileNotFoundException, IOException {
 
-			while ((read = zipInputStream.read(bytesIn)) != -1) {
-				bufferedOutputStream.write(bytesIn, 0, read);
-			}
-		}
-	}
+        try (BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(filePath))) {
+
+            final byte[] bytesIn = new byte[BUFFER_SIZE];
+            int read = 0;
+
+            while ((read = zipInputStream.read(bytesIn)) != -1) {
+                bufferedOutputStream.write(bytesIn, 0, read);
+            }
+        }
+    }
 
 }

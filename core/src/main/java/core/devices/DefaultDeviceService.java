@@ -17,12 +17,12 @@ import common.utils.Utils;
 
 public class DefaultDeviceService implements DeviceService {
 
-    @SuppressWarnings("unused")
     private static final Logger LOG = LogManager.getLogger(DefaultDeviceService.class);
 
-    // 1.1.101
-//    private static final int DEVICE_ADDRESS = 0x1165;
+    /** normal mode or programming mode */
+    private static final DeviceStatus DEVICE_STATUS = DeviceStatus.NORMAL_MODE;
 
+    /** all devices known to the service */
     private final Map<String, Device> devices = new HashMap<>();
 
     @Override
@@ -34,9 +34,7 @@ public class DefaultDeviceService implements DeviceService {
 
             device.setHostPhysicalAddress(Utils.knxAddressToInteger(knxDeviceInstance.getAddress()));
             device.setPhysicalAddress(Utils.knxAddressToInteger(knxDeviceInstance.getAddress()));
-
-//      device.setDeviceStatus(DeviceStatus.PROGRAMMING_MODE);
-            device.setDeviceStatus(DeviceStatus.NORMAL_MODE);
+            device.setDeviceStatus(DEVICE_STATUS);
 
             knxDeviceInstance.getComObjects().values().stream().forEach(knxComObject -> {
 
@@ -46,11 +44,13 @@ public class DefaultDeviceService implements DeviceService {
                     final String groupAddress = knxGroupAddress.getGroupAddress();
                     device.getDeviceProperties().put(groupAddress, knxGroupAddress);
 
+                    // DEBUG
                     // PUT_A and PUT_B put comObjects into knxDeviceInstance.
                     // Now copy from knxDeviceInstance into Device / DefaultDevice
                     LOG.info("PUT_C into device " + device.getPhysicalAddress() + " DataPointId:"
                             + knxComObject.getNumber() + " " + knxComObject.getKnxGroupAddress() + " "
                             + knxComObject.getHardwareName() + " " + knxComObject.getText());
+
                     device.getComObjects().put(groupAddress, knxComObject);
                     device.getComObjectsByDatapointId().put(knxComObject.getNumber(), knxComObject);
                 }

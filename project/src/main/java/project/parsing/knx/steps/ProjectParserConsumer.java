@@ -22,71 +22,73 @@ import project.parsing.knx.KNXProjectParsingContext;
 
 public class ProjectParserConsumer implements Consumer<Path> {
 
-	private static final String GROUP_ADDRESS_STYLE_ATTRIBUTE = "GroupAddressStyle";
+    private static final String PROJECT_TAG_NAME = "Project";
 
-	private static final String NAME_ATTRIBUTE = "Name";
+    private static final String GROUP_ADDRESS_STYLE_ATTRIBUTE = "GroupAddressStyle";
 
-	private static final String ID_ATTRIBUTE = "Id";
+    private static final String NAME_ATTRIBUTE = "Name";
 
-	private static final Logger LOG = LogManager.getLogger(ProjectParserConsumer.class);
+    private static final String ID_ATTRIBUTE = "Id";
 
-	private KNXProjectParsingContext context;
+    private static final Logger LOG = LogManager.getLogger(ProjectParserConsumer.class);
 
-	@Override
-	public void accept(final Path path) {
+    private KNXProjectParsingContext context;
 
-		LOG.info("accept()");
+    @Override
+    public void accept(final Path path) {
 
-		try {
+        LOG.trace("accept()");
 
-			final KNXProject knxProject = new KNXProject();
-			context.setKnxProject(knxProject);
+        try {
 
-			processXML(path, knxProject);
+            final KNXProject knxProject = new KNXProject();
+            context.setKnxProject(knxProject);
 
-		} catch (final Exception e) {
-			LOG.error(e.getMessage(), e);
-			context.setKnxProject(null);
-		}
+            processXML(path, knxProject);
 
-	}
+        } catch (final Exception e) {
+            LOG.error(e.getMessage(), e);
+            context.setKnxProject(null);
+        }
 
-	private void processXML(final Path path, final KNXProject knxProject)
-			throws ParserConfigurationException, SAXException, IOException {
+    }
 
-		final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-		final DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
-		final Document document = documentBuilder.parse(path.toFile());
+    private void processXML(final Path path, final KNXProject knxProject)
+            throws ParserConfigurationException, SAXException, IOException {
 
-		final Element projectElement = retrieveProjectElement(document);
-		knxProject.setId(projectElement.getAttribute(ID_ATTRIBUTE));
+        final DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+        final DocumentBuilder documentBuilder = documentBuilderFactory.newDocumentBuilder();
+        final Document document = documentBuilder.parse(path.toFile());
 
-		final Element projectInformationElement = retrieveProjectInformationElement(projectElement);
-		knxProject.setName(projectInformationElement.getAttribute(NAME_ATTRIBUTE));
+        final Element projectElement = retrieveProjectElement(document);
+        knxProject.setId(projectElement.getAttribute(ID_ATTRIBUTE));
 
-		final String attribute = projectInformationElement.getAttribute(GROUP_ADDRESS_STYLE_ATTRIBUTE);
-		knxProject.setGroupAddressStyle(KNXGroupAddressStyle.fromString(attribute));
-	}
+        final Element projectInformationElement = retrieveProjectInformationElement(projectElement);
+        knxProject.setName(projectInformationElement.getAttribute(NAME_ATTRIBUTE));
 
-	private Element retrieveProjectElement(final Document document) {
+        final String attribute = projectInformationElement.getAttribute(GROUP_ADDRESS_STYLE_ATTRIBUTE);
+        knxProject.setGroupAddressStyle(KNXGroupAddressStyle.fromString(attribute));
+    }
 
-		final NodeList elementsByTagName = document.getElementsByTagName("Project");
-		final Node projectNode = elementsByTagName.item(0);
-		final Element projectElement = (Element) projectNode;
+    private Element retrieveProjectElement(final Document document) {
 
-		return projectElement;
-	}
+        final NodeList elementsByTagName = document.getElementsByTagName(PROJECT_TAG_NAME);
+        final Node projectNode = elementsByTagName.item(0);
+        final Element projectElement = (Element) projectNode;
 
-	private Element retrieveProjectInformationElement(final Element projectElement) {
-		return (Element) projectElement.getChildNodes().item(1);
-	}
+        return projectElement;
+    }
 
-	public KNXProjectParsingContext getContext() {
-		return context;
-	}
+    private Element retrieveProjectInformationElement(final Element projectElement) {
+        return (Element) projectElement.getChildNodes().item(1);
+    }
 
-	public void setContext(final KNXProjectParsingContext context) {
-		this.context = context;
-	}
+    public KNXProjectParsingContext getContext() {
+        return context;
+    }
+
+    public void setContext(final KNXProjectParsingContext context) {
+        this.context = context;
+    }
 
 }

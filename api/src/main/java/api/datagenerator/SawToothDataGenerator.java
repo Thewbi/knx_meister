@@ -41,8 +41,8 @@ public class SawToothDataGenerator extends BoundedDataGenerator {
 
     @Override
     public String toString() {
-        return "SawToothDataGenerator [getUpperBound()=" + getUpperBound() + ", getLowerBound()=" + getLowerBound()
-                + ", Type=" + getDataGeneratorType() + "]";
+        return getDataGeneratorType().name() + " [currentValue=" + currentValue + ", increment=" + increment
+                + ", upperBound=" + getUpperBound() + ", lowerBound=" + getLowerBound() + "]";
     }
 
 }

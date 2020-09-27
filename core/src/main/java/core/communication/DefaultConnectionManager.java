@@ -82,6 +82,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
 
     private void startDumpConnectionsThread(final int periodInMillis) {
+
         // output connections
         final Runnable runnable = () -> {
 
@@ -142,7 +143,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
 
     @Override
-    public Optional<Connection> getLiveConnection() {
+    public Optional<Connection> getLiveTunnelingConnection() {
 
         if (MapUtils.isEmpty(connectionMap)) {
             return null;
@@ -198,7 +199,7 @@ public class DefaultConnectionManager implements ConnectionManager {
     @Override
     public void closeConnection(final int id) {
 
-        LOG.info("Removing connnection with id {}", id);
+        LOG.info("Removing connection with id {}", id);
 
         if (!connectionMap.containsKey(id)) {
             return;

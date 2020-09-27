@@ -6,7 +6,7 @@ import api.exception.ProjectParsingException;
 
 public interface ProjectService {
 
-    void parseProjectFile() throws IOException, ProjectParsingException;
+    KNXProject parseProjectFile() throws IOException, ProjectParsingException;
 
     KNXProject getProject();
 

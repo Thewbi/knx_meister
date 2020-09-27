@@ -23,6 +23,7 @@ import api.device.Device;
 import api.device.DeviceService;
 import api.device.dto.DeviceDto;
 import api.factory.Factory;
+import api.factory.exception.FactoryException;
 import api.pipeline.Pipeline;
 import api.pipeline.PipelineStep;
 import api.project.KNXComObject;
@@ -64,18 +65,8 @@ import object_server.pipeline.ConverterPipelineStep;
 import object_server.requests.BaseRequest;
 import object_server.requests.DefaultRequestFactory;
 import project.parsing.ProjectParser;
-import project.parsing.knx.KNXProjectParser;
+import project.parsing.factory.ProjectParserFactory;
 import project.parsing.knx.KNXProjectParsingContext;
-import project.parsing.knx.steps.ApplicationProgramParsingStep;
-import project.parsing.knx.steps.DatapointTypeParsingStep;
-import project.parsing.knx.steps.DeleteTempFolderParsingStep;
-import project.parsing.knx.steps.ExtractArchiveParsingStep;
-import project.parsing.knx.steps.GroupAddressParsingStep;
-import project.parsing.knx.steps.HardwareParsingStep;
-import project.parsing.knx.steps.ManufacturerParsingStep;
-import project.parsing.knx.steps.OutputParsingStep;
-import project.parsing.knx.steps.ReadProjectInstallationsParsingStep;
-import project.parsing.knx.steps.ReadProjectParsingStep;
 import project.service.DefaultProjectService;
 
 @Component
@@ -103,9 +94,7 @@ public class Configuration {
 
     @Bean
     public DeviceService getDeviceService() {
-
         final DefaultDeviceService deviceService = new DefaultDeviceService();
-
         return deviceService;
     }
 
@@ -147,9 +136,14 @@ public class Configuration {
         return outwardOutputPipelineStep;
     }
 
+    /**
+     * Input: KNXPacket, output: java.net.DatagramPacket for sending over ethernet.
+     *
+     * @return
+     */
     @Bean
+    @Qualifier("knxToDatagramPacketOoutputConverter")
     public OutwardConverterPipelineStep getOutwardConverterPipelineStep() {
-
         final OutwardConverterPipelineStep outwardConverterPipelineStep = new OutwardConverterPipelineStep();
         return outwardConverterPipelineStep;
     }
@@ -158,10 +152,10 @@ public class Configuration {
     @Qualifier("outwardPipeline")
     public Pipeline<Object, Object> getOutwardPipeline(
             @Qualifier("sequenceOutwardOutput") final PipelineStep<Object, Object> outwardOutputPipelineStep,
-            final OutwardConverterPipelineStep outwardConverterPipelineStep) {
+            @Qualifier("knxToDatagramPacketOoutputConverter") final OutwardConverterPipelineStep outwardConverterPipelineStep) {
 
         final Pipeline<Object, Object> outwardPipeline = new DefaultPipeline();
-        outwardPipeline.addStep(outwardOutputPipelineStep);
+//        outwardPipeline.addStep(outwardOutputPipelineStep);
         outwardPipeline.addStep(outwardConverterPipelineStep);
 
         return outwardPipeline;
@@ -259,32 +253,9 @@ public class Configuration {
     }
 
     @Bean
-    public ProjectParser<KNXProjectParsingContext> getProjectParser() {
-
-        final ExtractArchiveParsingStep extractArchiveParsingStep = new ExtractArchiveParsingStep();
-        final ReadProjectParsingStep readProjectParsingStep = new ReadProjectParsingStep();
-        final ManufacturerParsingStep manufacturerParsingStep = new ManufacturerParsingStep();
-        final ReadProjectInstallationsParsingStep readProjectInstallationsParsingStep = new ReadProjectInstallationsParsingStep();
-        final HardwareParsingStep hardwareParsingStep = new HardwareParsingStep();
-        final ApplicationProgramParsingStep applicationProgramParsingStep = new ApplicationProgramParsingStep();
-        final GroupAddressParsingStep groupAddressParsingStep = new GroupAddressParsingStep();
-        final DatapointTypeParsingStep datapointTypeParsingStep = new DatapointTypeParsingStep();
-        final DeleteTempFolderParsingStep deleteTempFolderParsingStep = new DeleteTempFolderParsingStep();
-        final OutputParsingStep outputParsingStep = new OutputParsingStep();
-
-        final ProjectParser<KNXProjectParsingContext> knxProjectParser = new KNXProjectParser();
-        knxProjectParser.getParsingSteps().add(extractArchiveParsingStep);
-        knxProjectParser.getParsingSteps().add(readProjectParsingStep);
-        knxProjectParser.getParsingSteps().add(manufacturerParsingStep);
-        knxProjectParser.getParsingSteps().add(readProjectInstallationsParsingStep);
-        knxProjectParser.getParsingSteps().add(hardwareParsingStep);
-        knxProjectParser.getParsingSteps().add(applicationProgramParsingStep);
-        knxProjectParser.getParsingSteps().add(groupAddressParsingStep);
-        knxProjectParser.getParsingSteps().add(datapointTypeParsingStep);
-        knxProjectParser.getParsingSteps().add(deleteTempFolderParsingStep);
-        knxProjectParser.getParsingSteps().add(outputParsingStep);
-
-        return knxProjectParser;
+    public ProjectParser<KNXProjectParsingContext> getProjectParser() throws FactoryException {
+        final ProjectParserFactory projectParserFactory = new ProjectParserFactory();
+        return projectParserFactory.create();
     }
 
     @Bean

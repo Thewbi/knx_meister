@@ -44,15 +44,9 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
 
     private ConfigurationManager configurationManager;
 
-//	private Device device;
-
     private DataSender dataSender;
 
     private DeviceService deviceService;
-
-//	public BaseController(final String localInetAddress) throws SocketException, UnknownHostException {
-//		this.localInetAddress = localInetAddress;
-//	}
 
     /**
      * 7.8.2 CONNECT_RESPONSE Example: 8.8.6 CONNECT_RESPONSE
@@ -169,15 +163,6 @@ public abstract class BaseController extends BaseDatagramPacketCallback {
     public void setConnectionManager(final ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
     }
-
-//    public Device getDevice() {
-////		return device;
-//        return null;
-//    }
-//
-//	public void setDevice(final Device device) {
-//		this.device = device;
-//	}
 
     public ConnectionManager getConnectionManager() {
         return connectionManager;

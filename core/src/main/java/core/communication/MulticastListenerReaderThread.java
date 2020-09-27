@@ -43,16 +43,6 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
      */
     private final List<DatagramPacketCallback> datagramPacketCallbacks = new ArrayList<>();
 
-//	/**
-//	 * ctor
-//	 *
-//	 * @param bindPort
-//	 */
-//	public MulticastListenerReaderThread(final String localIP, final int bindPort) {
-//		this.localIP = localIP;
-//		this.bindPort = bindPort;
-//	}
-
     @Override
     public void run() {
 
@@ -204,7 +194,7 @@ public class MulticastListenerReaderThread implements Runnable, DatagramPacketCa
 
             if (datagramPacketCallback.accepts(knxPacket)) {
 
-                LOG.info("ServiceIdentifier: " + knxPacket.getHeader().getServiceIdentifier() + " is accepted by "
+                LOG.trace("ServiceIdentifier: " + knxPacket.getHeader().getServiceIdentifier() + " is accepted by "
                         + datagramPacketCallback);
 
                 packetAcceptedAtLeastOnce = true;

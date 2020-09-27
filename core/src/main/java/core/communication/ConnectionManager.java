@@ -35,6 +35,22 @@ public interface ConnectionManager {
 
     void setOutputPipeline(Pipeline<Object, Object> outputPipeline);
 
-    Optional<Connection> getLiveConnection();
+    /**
+     * Select one of the currently active connections, which means it has the
+     * following properties:
+     * <ol>
+     * <li />Alive (has been recently used)
+     * <li />Is a tunneling connection (has the tunneling type)
+     * </ol>
+     * It is important to use a live connection because the communication partner
+     * has not abandoned that connection yet and is actively listening to it. <br/>
+     * <br/>
+     * It is important to use a tunneling connection because data is only processed
+     * by the connection partner if it is send over a tunneling connection. Data
+     * send over a normal connection is just ignored on the receiver side.
+     *
+     * @return
+     */
+    Optional<Connection> getLiveTunnelingConnection();
 
 }
