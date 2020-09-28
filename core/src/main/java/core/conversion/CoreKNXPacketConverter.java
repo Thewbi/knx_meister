@@ -11,210 +11,217 @@ import core.packets.ConnectionStatus;
 import core.packets.DescriptionInformationBlock;
 import core.packets.HPAIStructure;
 import core.packets.KNXPacket;
+import core.packets.Structure;
 import core.packets.StructureType;
 
 public class CoreKNXPacketConverter extends BaseKNXPacketConverter {
 
-	private static final Logger LOG = LogManager.getLogger(CoreKNXPacketConverter.class);
+    private static final Logger LOG = LogManager.getLogger(CoreKNXPacketConverter.class);
 
-	private final ByteArrayToStructureConverter byteArrayToStructureConverter = new ByteArrayToStructureConverter();
+    private final ByteArrayToStructureConverter byteArrayToStructureConverter = new ByteArrayToStructureConverter();
 
-	private final ByteArrayToDIBConverter byteArrayToDIBConverter = new ByteArrayToDIBConverter();
+    private final ByteArrayToDIBConverter byteArrayToDIBConverter = new ByteArrayToDIBConverter();
 
-	private final boolean acceptAll = false;
+    private final boolean acceptAll = false;
 
-	@Override
-	public void convert(final byte[] source, final KNXPacket knxPacket) {
+    @Override
+    public void convert(final byte[] source, final KNXPacket knxPacket) {
 
-		int index = 0;
+        int index = 0;
 
-		// header
-		final KNXHeader header = knxPacket.getHeader();
-		header.fromBytes(source, index);
-		index += header.getLength();
+        // header
+        final KNXHeader header = knxPacket.getHeader();
+        header.fromBytes(source, index);
+        index += header.getLength();
 
-		// validate, early out
-		if (!accept(header)) {
-			return;
-		}
+        // validate, early out
+        if (!accept(header)) {
+            return;
+        }
 
-		DescriptionInformationBlock descriptionInformationBlock = null;
-		ConnectionRequestInformation connectionRequestInformation = null;
-		HPAIStructure dataEndpointHPAIStructure = null;
+        DescriptionInformationBlock descriptionInformationBlock = null;
+        ConnectionRequestInformation connectionRequestInformation = null;
+        HPAIStructure dataEndpointHPAIStructure = null;
 
-		// HPAI structure - Control Endpoint
-		HPAIStructure structure = null;
+        // HPAI structure - Control Endpoint
+        HPAIStructure structure = null;
 
-		switch (header.getServiceIdentifier()) {
+        switch (header.getServiceIdentifier()) {
 
-		case SEARCH_REQUEST_EXT:
-		case SEARCH_RESPONSE_EXT:
-			LOG.trace("KNXPacketConverter ignoring: " + header.getServiceIdentifier());
-			LOG.trace(">>>>>>>>>> IGNORING " + knxPacket.getHeader().getServiceIdentifier().toString());
-			break;
+        case SEARCH_REQUEST_EXT:
+        case SEARCH_RESPONSE_EXT:
+            LOG.trace("KNXPacketConverter ignoring: " + header.getServiceIdentifier());
+            LOG.trace(">>>>>>>>>> IGNORING " + knxPacket.getHeader().getServiceIdentifier().toString());
+            break;
 
-		case SEARCH_REQUEST:
-			// HPAI structure - Control Endpoint
-			structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
-			knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
-			index += structure.getLength();
-			break;
+        case SEARCH_REQUEST:
+            // HPAI structure - Control Endpoint
+            structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
+            knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
+            index += structure.getLength();
+            break;
 
-		case SEARCH_RESPONSE:
-			// HPAI structure - Control Endpoint
-			structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
-			knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
-			index += structure.getLength();
+        case SEARCH_RESPONSE:
+            // HPAI structure - Control Endpoint
+            structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
+            knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
+            index += structure.getLength();
 
-			// device info DescriptionInformationBlock (DIB)
-			descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
-			LOG.trace("Parsing device info DIB from : "
-					+ Utils.integerToStringNoPrefix(source, index, descriptionInformationBlock.getLength()));
-			index += descriptionInformationBlock.getLength();
-			knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
+            // device info DescriptionInformationBlock (DIB)
+            descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
+            LOG.trace("Parsing device info DIB from : "
+                    + Utils.integerToStringNoPrefix(source, index, descriptionInformationBlock.getLength()));
+            index += descriptionInformationBlock.getLength();
+            knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
 
-			// supported service families - SuppSvcFamilies DescriptionInformationBlock
-			// (DIB)
-			descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
-			index += descriptionInformationBlock.getLength();
-			knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
+            // supported service families - SuppSvcFamilies DescriptionInformationBlock
+            // (DIB)
+            descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
+            index += descriptionInformationBlock.getLength();
+            knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
 
-			// MfrData DescriptionInformationBlock (DIB)
-			descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
+            // MfrData DescriptionInformationBlock (DIB)
+            descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
 
-			index += descriptionInformationBlock.getLength();
-			knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
+            index += descriptionInformationBlock.getLength();
+            knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
 
-			break;
+            break;
 
-		case DESCRIPTION_REQUEST:
-			// HPAI structure - Control Endpoint
-			structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
-			knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
-			index += structure.getLength();
-			break;
+        case DESCRIPTION_REQUEST:
+            // HPAI structure - Control Endpoint
+            structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
+            knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
+            index += structure.getLength();
+            break;
 
-		case DESCRIPTION_RESPONSE:
-			// device info DescriptionInformationBlock (DIB)
-			descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
-			index += descriptionInformationBlock.getLength();
-			knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
+        case DESCRIPTION_RESPONSE:
+            // device info DescriptionInformationBlock (DIB)
+            descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
+            index += descriptionInformationBlock.getLength();
+            knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
 
-			// supported service families - SuppSvcFamilies DescriptionInformationBlock
-			// (DIB)
-			descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
-			index += descriptionInformationBlock.getLength();
-			knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
+            // supported service families - SuppSvcFamilies DescriptionInformationBlock
+            // (DIB)
+            descriptionInformationBlock = byteArrayToDIBConverter.convert(source, index);
+            index += descriptionInformationBlock.getLength();
+            knxPacket.getDibMap().put(descriptionInformationBlock.getType(), descriptionInformationBlock);
 
-			// more optional stuff
+            // more optional stuff
 
-			break;
+            break;
 
-		case CONNECT_REQUEST:
-			// HPAI structure - Control Endpoint
-			structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
-			knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
-			index += structure.getLength();
+        case CONNECT_REQUEST:
+            // HPAI structure - Control Endpoint
+            structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
+            knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
+            index += structure.getLength();
 
-			// HPAI structure - Data Endpoint (First HPAI is the control endpoint)
-			dataEndpointHPAIStructure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
-			knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataEndpointHPAIStructure);
-			index += dataEndpointHPAIStructure.getLength();
+            // HPAI structure - Data Endpoint (First HPAI is the control endpoint)
+            dataEndpointHPAIStructure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
+            knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataEndpointHPAIStructure);
+            index += dataEndpointHPAIStructure.getLength();
 
-			// Connection Request Information (CRI)
-			connectionRequestInformation = (ConnectionRequestInformation) byteArrayToStructureConverter.convert(source,
-					index);
-			knxPacket.getStructureMap().put(connectionRequestInformation.getStructureType(),
-					connectionRequestInformation);
-			index += connectionRequestInformation.getLength();
+            final Structure convertedStructure = byteArrayToStructureConverter.convert(source, index);
+            if (convertedStructure instanceof ConnectionRequestInformation) {
+                // Connection Request Information (CRI)
+                connectionRequestInformation = (ConnectionRequestInformation) convertedStructure;
+                knxPacket.getStructureMap().put(connectionRequestInformation.getStructureType(),
+                        connectionRequestInformation);
+                index += connectionRequestInformation.getLength();
 
-			LOG.trace("Conn Type: " + connectionRequestInformation.getStructureType().name());
-			LOG.trace("Conn Layer: " + connectionRequestInformation.getKnxLayer());
-			break;
+                LOG.trace("Conn Type: " + connectionRequestInformation.getStructureType().name());
+                LOG.trace("Conn Layer: " + connectionRequestInformation.getKnxLayer());
+            } else if (convertedStructure instanceof HPAIStructure) {
+                final HPAIStructure hpaiStructure = (HPAIStructure) convertedStructure;
+                knxPacket.getStructureMap().put(hpaiStructure.getStructureType(), hpaiStructure);
+            }
 
-		case CONNECT_RESPONSE:
+            break;
 
-			final int communicationChannelId = source[index];
-			LOG.info("communicationChannelId: " + communicationChannelId);
-			knxPacket.setCommunicationChannelId(communicationChannelId);
-			index++;
+        case CONNECT_RESPONSE:
 
-			final ConnectionStatus connectionStatus = ConnectionStatus.fromInt(source[index]);
-			LOG.info("connectionStatus: " + connectionStatus);
-			knxPacket.setConnectionStatus(connectionStatus);
-			index++;
+            final int communicationChannelId = source[index];
+            LOG.info("communicationChannelId: " + communicationChannelId);
+            knxPacket.setCommunicationChannelId(communicationChannelId);
+            index++;
 
-			// HPAI structure - Data Endpoint (First HPAI is the control endpoint)
-			dataEndpointHPAIStructure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
-			knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataEndpointHPAIStructure);
-			index += dataEndpointHPAIStructure.getLength();
+            final ConnectionStatus connectionStatus = ConnectionStatus.fromInt(source[index]);
+            LOG.info("connectionStatus: " + connectionStatus);
+            knxPacket.setConnectionStatus(connectionStatus);
+            index++;
 
-			final ConnectionResponseDataBlock connectionResponseDataBlock = new ConnectionResponseDataBlock();
-			connectionResponseDataBlock.fromBytes(source, index);
-			index += connectionResponseDataBlock.getLength();
+            // HPAI structure - Data Endpoint (First HPAI is the control endpoint)
+            dataEndpointHPAIStructure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
+            knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataEndpointHPAIStructure);
+            index += dataEndpointHPAIStructure.getLength();
 
-			break;
+            final ConnectionResponseDataBlock connectionResponseDataBlock = new ConnectionResponseDataBlock();
+            connectionResponseDataBlock.fromBytes(source, index);
+            index += connectionResponseDataBlock.getLength();
 
-		case CONNECTIONSTATE_REQUEST:
+            break;
 
-			// communication channel
-			knxPacket.setCommunicationChannelId(source[index++]);
+        case CONNECTIONSTATE_REQUEST:
 
-			// skip reserved byte
-			index++;
+            // communication channel
+            knxPacket.setCommunicationChannelId(source[index++]);
 
-			// HPAI structure - Control Endpoint
-			structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
-			knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
-			index += structure.getLength();
-			break;
+            // skip reserved byte
+            index++;
 
-		case DISCONNECT_REQUEST:
-			// communication channel
-			knxPacket.setCommunicationChannelId(source[index++]);
+            // HPAI structure - Control Endpoint
+            structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
+            knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
+            index += structure.getLength();
+            break;
 
-			// skip reserved byte
-			index++;
+        case DISCONNECT_REQUEST:
+            // communication channel
+            knxPacket.setCommunicationChannelId(source[index++]);
 
-			// HPAI structure - Control Endpoint
-			structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
-			knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
-			index += structure.getLength();
-			break;
+            // skip reserved byte
+            index++;
 
-		default:
-			throw new RuntimeException("Unknown type: " + header.getServiceIdentifier());
-		}
-	}
+            // HPAI structure - Control Endpoint
+            structure = (HPAIStructure) byteArrayToStructureConverter.convert(source, index);
+            knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, structure);
+            index += structure.getLength();
+            break;
 
-	@Override
-	public boolean accept(final KNXHeader header) {
+        default:
+            throw new RuntimeException("Unknown type: " + header.getServiceIdentifier());
+        }
+    }
 
-		if (acceptAll) {
-			return true;
-		}
+    @Override
+    public boolean accept(final KNXHeader header) {
 
-		switch (header.getServiceIdentifier()) {
-		case SEARCH_REQUEST_EXT:
-		case SEARCH_RESPONSE_EXT:
-		case SEARCH_REQUEST:
-		case SEARCH_RESPONSE:
-		case DESCRIPTION_REQUEST:
-		case DESCRIPTION_RESPONSE:
-		case CONNECT_REQUEST:
-		case CONNECT_RESPONSE:
-		case CONNECTIONSTATE_REQUEST:
-		case DISCONNECT_REQUEST:
-			return true;
+        if (acceptAll) {
+            return true;
+        }
 
-		default:
-			return false;
-		}
-	}
+        switch (header.getServiceIdentifier()) {
+        case SEARCH_REQUEST_EXT:
+        case SEARCH_RESPONSE_EXT:
+        case SEARCH_REQUEST:
+        case SEARCH_RESPONSE:
+        case DESCRIPTION_REQUEST:
+        case DESCRIPTION_RESPONSE:
+        case CONNECT_REQUEST:
+        case CONNECT_RESPONSE:
+        case CONNECTIONSTATE_REQUEST:
+        case DISCONNECT_REQUEST:
+            return true;
 
-	@Override
-	protected Logger getLogger() {
-		return LOG;
-	}
+        default:
+            return false;
+        }
+    }
+
+    @Override
+    protected Logger getLogger() {
+        return LOG;
+    }
 
 }

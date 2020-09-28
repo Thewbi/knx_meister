@@ -35,7 +35,6 @@ public class DefaultConnectionManager implements ConnectionManager {
         startPurgeConnectionsThread(PURGE_PERIOD_IN_MILLIS);
     }
 
-    @SuppressWarnings("unlikely-arg-type")
     private void startPurgeConnectionsThread(final int periodInMillis) {
 
         // output connections
@@ -162,6 +161,25 @@ public class DefaultConnectionManager implements ConnectionManager {
     }
 
     @Override
+    public Optional<Connection> getLiveBaseConnection() {
+
+        if (MapUtils.isEmpty(connectionMap)) {
+            return null;
+        }
+
+        // @formatter:off
+
+        final Optional<Connection> mostRecentlyUsedOptional = connectionMap.values()
+                .stream()
+                .filter(c -> c.getConnectionType() != ConnectionType.TUNNEL_CONNECTION)
+                .max(Comparator.comparing(Connection::getTimestampLastUsed));
+
+        // @formatter:on
+
+        return mostRecentlyUsedOptional;
+    }
+
+    @Override
     public Connection createNewConnection(final DatagramSocket datagramSocket, final ConnectionType connectionType) {
         return createNewConnection(datagramSocket, connectionIdAtomicInteger.getAndIncrement(), connectionType);
     }
@@ -196,6 +214,20 @@ public class DefaultConnectionManager implements ConnectionManager {
         return connection;
     }
 
+//    @Override
+//    public void establishTunnelingConnection() {
+//
+//        KNXConnectionHeader knxConnectionHeader = new KNXConnectionHeader();
+//
+//        HPAIStructure hpaiControlEndpoint = new HPAIStructure();
+//
+//
+//        KNXPacket knxPacket = new KNXPacket();
+//        knxPacket.setConnectionHeader(knxConnectionHeader);
+//        knxPacket.set
+//
+//    }
+
     @Override
     public void closeConnection(final int id) {
 
@@ -210,6 +242,11 @@ public class DefaultConnectionManager implements ConnectionManager {
     @Override
     public void setOutputPipeline(final Pipeline<Object, Object> outputPipeline) {
         this.outputPipeline = outputPipeline;
+    }
+
+    @Override
+    public Map<Integer, Connection> getConnectionMap() {
+        return connectionMap;
     }
 
 }

@@ -15,6 +15,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 import api.configuration.ConfigurationManager;
+import api.connection.ConnectionDto;
 import api.conversion.Converter;
 import api.data.serializer.DataSerializer;
 import api.datagenerator.DataGenerator;
@@ -37,6 +38,7 @@ import common.data.conversion.UnsignedIntByteSerializer;
 import common.packets.ServiceIdentifier;
 import common.project.conversion.KNXComObjectKNXComObjectDtoConverter;
 import core.common.KNXPacketConverter;
+import core.communication.Connection;
 import core.communication.ConnectionManager;
 import core.communication.DefaultConnectionManager;
 import core.communication.MulticastListenerReaderThread;
@@ -46,6 +48,7 @@ import core.communication.controller.DeviceManagementController;
 import core.communication.controller.ServerCoreController;
 import core.communication.controller.TunnelingController;
 import core.conversion.CoreKNXPacketConverter;
+import core.conversion.DefaultConnectionConnectionDtoConverter;
 import core.conversion.DeviceManagementKNXPacketConverter;
 import core.conversion.TunnelKNXPacketConverter;
 import core.data.sending.DataSender;
@@ -250,6 +253,13 @@ public class Configuration {
         connectionManager.setOutputPipeline(outwardPipeline);
 
         return connectionManager;
+    }
+
+    @Bean
+    public Converter<Connection, ConnectionDto> connectionConnectionDtoDeviceDtoConverter() {
+        final DefaultConnectionConnectionDtoConverter defaultConnectionConnectionDtoConverter = new DefaultConnectionConnectionDtoConverter();
+
+        return defaultConnectionConnectionDtoConverter;
     }
 
     @Bean

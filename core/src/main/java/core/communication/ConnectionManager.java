@@ -1,6 +1,7 @@
 package core.communication;
 
 import java.net.DatagramSocket;
+import java.util.Map;
 import java.util.Optional;
 
 import api.pipeline.Pipeline;
@@ -52,5 +53,9 @@ public interface ConnectionManager {
      * @return
      */
     Optional<Connection> getLiveTunnelingConnection();
+
+    Optional<Connection> getLiveBaseConnection();
+
+    Map<Integer, Connection> getConnectionMap();
 
 }

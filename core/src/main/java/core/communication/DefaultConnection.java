@@ -50,9 +50,10 @@ public class DefaultConnection implements Connection {
     private HPAIStructure dataEndpoint;
 
     private void prepare() throws IOException {
-        if (getConnectionType() != ConnectionType.TUNNEL_CONNECTION) {
-            throw new IOException("This is not a tunnel connection! Cannot send data");
-        }
+
+//        if (getConnectionType() != ConnectionType.TUNNEL_CONNECTION) {
+//            throw new IOException("This is not a tunnel connection! Cannot send data");
+//        }
 
         // touch the connection because it is alive and should not be purged
         timestampLastUsed = System.currentTimeMillis();
@@ -105,8 +106,10 @@ public class DefaultConnection implements Connection {
         // increment the connections sequence counter and set the incremented value into
         // the knxPacket
         sendSequenceCounter++;
-        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
-        knxPacket.getConnectionHeader().setChannel((short) id);
+        if (knxPacket.getConnectionHeader() != null) {
+            knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
+            knxPacket.getConnectionHeader().setChannel((short) id);
+        }
 
         DatagramPacket datagramPacket;
         try {
@@ -166,27 +169,50 @@ public class DefaultConnection implements Connection {
 
         prepare();
 
-        // increment the connections sequence counter and set the incremented value into
-        // the knxPacket
-        sendSequenceCounter++;
-        knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
-        knxPacket.getConnectionHeader().setChannel((short) id);
-
-        final InetSocketAddress inetSocketAddress = new InetSocketAddress(datagramSocket.getInetAddress(),
-                datagramSocket.getPort());
-        DatagramPacket datagramPacket;
-        try {
-            final Object[] objectArray = new Object[2];
-            objectArray[0] = knxPacket;
-            objectArray[1] = inetSocketAddress;
-
-            datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
-        } catch (final Exception e) {
-            LOG.error(e.getMessage(), e);
-            throw new IOException(e);
+        if (knxPacket.getConnectionHeader() != null) {
+            // increment the connections sequence counter and set the incremented value into
+            // the knxPacket
+            sendSequenceCounter++;
+            knxPacket.getConnectionHeader().setSequenceCounter(sendSequenceCounter);
+            knxPacket.getConnectionHeader().setChannel((short) id);
         }
 
-        LOG.trace("Connection {} is sending packet over socketAddress {}", id, inetSocketAddress);
+//        if (dataEndpoint == null) {
+//            LOG.warn("DataEndpoint is null!");
+//            return;
+//        }
+//
+//        final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
+//                dataEndpoint.getIpAddressAsObject(), dataEndpoint.getPort());
+
+//        final InetAddress inetAddress = datagramSocket.getInetAddress();
+//        final int port = datagramSocket.getPort();
+//        LOG.info("Address: '{}' Port: '{}'", inetAddress, port);
+
+//        final InetAddress inetAddress = controlEndpoint.getIpAddressAsObject();
+//        final int port = controlEndpoint.getPort();
+//        LOG.info("Address: '{}' Port: '{}'", inetAddress, port);
+
+//        final InetSocketAddress inetSocketAddress = new InetSocketAddress(inetAddress, port);
+//        DatagramPacket datagramPacket;
+//        try {
+//            final Object[] objectArray = new Object[2];
+//            objectArray[0] = knxPacket;
+//            objectArray[1] = inetSocketAddress;
+//
+//            datagramPacket = (DatagramPacket) outputPipeline.execute(objectArray);
+//        } catch (final Exception e) {
+//            LOG.error(e.getMessage(), e);
+//            throw new IOException(e);
+//        }
+
+//        LOG.trace("Connection {} is sending packet over socketAddress {}", id, inetSocketAddress);
+
+        final InetSocketAddress destinationInetSocketAddress = new InetSocketAddress(
+                InetAddress.getByName("192.168.2.2"), 3671);
+
+        final byte[] bytes = knxPacket.getBytes();
+        final DatagramPacket datagramPacket = new DatagramPacket(bytes, bytes.length, destinationInetSocketAddress);
 
         datagramSocket.send(datagramPacket);
     }

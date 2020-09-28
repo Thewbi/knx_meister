@@ -11,82 +11,84 @@ import common.utils.Utils;
  */
 public class HPAIStructure extends Structure {
 
-	private byte[] ipAddress = new byte[4];
+    private static final int IPV4_UDP = 0x01;
 
-	private int port;
+    private byte[] ipAddress = new byte[4];
 
-	public HPAIStructure() {
-		setStructureType(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
-	}
+    private int port;
 
-	public HPAIStructure(final HPAIStructure other) {
-		setLength(other.getLength());
-		setStructureType(other.getStructureType());
-		ipAddress = other.ipAddress.clone();
-		port = other.port;
-	}
+    public HPAIStructure() {
+        setStructureType(StructureType.HPAI_CONTROL_ENDPOINT_UDP);
+    }
 
-	@Override
-	public Structure clone() {
-		return new HPAIStructure(this);
-	}
+    public HPAIStructure(final HPAIStructure other) {
+        setLength(other.getLength());
+        setStructureType(other.getStructureType());
+        ipAddress = other.ipAddress.clone();
+        port = other.port;
+    }
 
-	@Override
-	public byte[] getPayloadBytes() {
+    @Override
+    public Structure clone() {
+        return new HPAIStructure(this);
+    }
 
-		int index = 0;
+    @Override
+    public byte[] getPayloadBytes() {
 
-		final byte[] payload = new byte[6];
-		payload[index++] = ipAddress[0];
-		payload[index++] = ipAddress[1];
-		payload[index++] = ipAddress[2];
-		payload[index++] = ipAddress[3];
-		payload[index++] = (byte) (((port) >> 8) & 0xFF);
-		payload[index++] = (byte) (port & 0xFF);
+        int index = 0;
 
-		return payload;
-	}
+        final byte[] payload = new byte[6];
+        payload[index++] = ipAddress[0];
+        payload[index++] = ipAddress[1];
+        payload[index++] = ipAddress[2];
+        payload[index++] = ipAddress[3];
+        payload[index++] = (byte) (((port) >> 8) & 0xFF);
+        payload[index++] = (byte) (port & 0xFF);
 
-	@Override
-	public void fromBytes(final byte[] bytes, final int startIndex) {
+        return payload;
+    }
 
-		ipAddress[0] = bytes[startIndex];
-		ipAddress[1] = bytes[startIndex + 1];
-		ipAddress[2] = bytes[startIndex + 2];
-		ipAddress[3] = bytes[startIndex + 3];
-		port = Utils.bytesToUnsignedShort(bytes[startIndex + 4], bytes[startIndex + 5], true);
-	}
+    @Override
+    public void fromBytes(final byte[] bytes, final int startIndex) {
 
-	@Override
-	public String toString() {
+        ipAddress[0] = bytes[startIndex];
+        ipAddress[1] = bytes[startIndex + 1];
+        ipAddress[2] = bytes[startIndex + 2];
+        ipAddress[3] = bytes[startIndex + 3];
+        port = Utils.bytesToUnsignedShort(bytes[startIndex + 4], bytes[startIndex + 5], true);
+    }
 
-		final StringBuilder stringBuilder = new StringBuilder();
-		stringBuilder.append(super.toString()).append("\n");
-		stringBuilder.append("Host Protocol: ").append(getStructureType().name()).append("\n");
-		stringBuilder.append("IP Address: ").append(NetworkUtils.printIPAddress(ipAddress)).append("\n");
-		stringBuilder.append("Port Number: ").append(port & 0xFFFF);
+    @Override
+    public String toString() {
 
-		return stringBuilder.toString();
-	}
+        final StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append(super.toString()).append("\n");
+        stringBuilder.append("Host Protocol: ").append(getStructureType().name()).append("\n");
+        stringBuilder.append("IP Address: ").append(NetworkUtils.printIPAddress(ipAddress)).append("\n");
+        stringBuilder.append("Port Number: ").append(port & 0xFFFF);
 
-	public byte[] getIpAddress() {
-		return ipAddress;
-	}
+        return stringBuilder.toString();
+    }
 
-	public InetAddress getIpAddressAsObject() throws UnknownHostException {
-		return InetAddress.getByAddress(ipAddress);
-	}
+    public byte[] getIpAddress() {
+        return ipAddress;
+    }
 
-	public void setIpAddress(final byte[] ipAddress) {
-		this.ipAddress = ipAddress;
-	}
+    public InetAddress getIpAddressAsObject() throws UnknownHostException {
+        return InetAddress.getByAddress(ipAddress);
+    }
 
-	public int getPort() {
-		return port;
-	}
+    public void setIpAddress(final byte[] ipAddress) {
+        this.ipAddress = ipAddress;
+    }
 
-	public void setPort(final int port) {
-		this.port = port;
-	}
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(final int port) {
+        this.port = port;
+    }
 
 }

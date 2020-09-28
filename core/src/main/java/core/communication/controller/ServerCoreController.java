@@ -95,12 +95,11 @@ public class ServerCoreController extends BaseController {
                     .get(DescriptionInformationBlockType.DEVICE_INFO);
             hpaiStructure = getDeviceMap().get(deviceInformationDIB.getDeviceSerialNumberAsString());
 
-            final KNXPacket sendConnectionRequest = sendConnectionRequest(datagramPacket, knxPacket,
-                    hpaiStructure.getIpAddressAsObject(), hpaiStructure.getPort());
+            final KNXPacket connectionRequestKNXPacket = retrieveConnectionRequestKNXPacket();
 
             final InetSocketAddress inetSocketAddress = new InetSocketAddress(hpaiStructure.getIpAddressAsObject(),
                     hpaiStructure.getPort());
-            connection.sendResponse(sendConnectionRequest, inetSocketAddress);
+            connection.sendResponse(connectionRequestKNXPacket, inetSocketAddress);
             break;
 
         // 0x0206
@@ -138,8 +137,7 @@ public class ServerCoreController extends BaseController {
      * @return
      * @throws UnknownHostException
      */
-    private KNXPacket sendConnectionRequest(final DatagramPacket originalDatagramPacket,
-            final KNXPacket originalKNXPacket, final InetAddress inetAddress, final int port) throws IOException {
+    public KNXPacket retrieveConnectionRequestKNXPacket() throws IOException {
 
         final HPAIStructure controlHPAIStructure = new HPAIStructure();
         controlHPAIStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
@@ -149,14 +147,15 @@ public class ServerCoreController extends BaseController {
         dataHPAIStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
         dataHPAIStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_DATA_PORT);
 
+        final ConnectionRequestInformation connectionRequestInformation = new ConnectionRequestInformation();
+        connectionRequestInformation.setStructureType(StructureType.TUNNELING_CONNECTION);
+        connectionRequestInformation.setKnxLayer(KNXLayer.TUNNEL_LINKLAYER.getValue());
+
+        // construct the packet
         final KNXPacket knxPacket = new KNXPacket();
         knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_REQUEST);
         knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, controlHPAIStructure);
         knxPacket.getStructureMap().put(StructureType.HPAI_DATA_ENDPOINT_UDP, dataHPAIStructure);
-
-        final ConnectionRequestInformation connectionRequestInformation = new ConnectionRequestInformation();
-        connectionRequestInformation.setStructureType(StructureType.TUNNELING_CONNECTION);
-        connectionRequestInformation.setKnxLayer(KNXLayer.TUNNEL_LINKLAYER.getValue());
         knxPacket.getStructureMap().put(connectionRequestInformation.getStructureType(), connectionRequestInformation);
 
         return knxPacket;
@@ -229,6 +228,7 @@ public class ServerCoreController extends BaseController {
         // header
         knxPacket.getHeader().setServiceIdentifier(ServiceIdentifier.CONNECT_REQUEST);
 
+        // Control Endpoint
         // HPAI - as a IP address, specify the IP address of the NIC you want to receive
         // the response on
         HPAIStructure hpaiStructure = new HPAIStructure();
@@ -236,6 +236,7 @@ public class ServerCoreController extends BaseController {
         hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
         knxPacket.getStructureMap().put(StructureType.HPAI_CONTROL_ENDPOINT_UDP, hpaiStructure);
 
+        // Data Endpoint
         hpaiStructure = new HPAIStructure();
         hpaiStructure.setIpAddress(InetAddress.getByName(getLocalInetAddress()).getAddress());
         hpaiStructure.setPort((short) ConfigurationManager.POINT_TO_POINT_CONTROL_PORT);
